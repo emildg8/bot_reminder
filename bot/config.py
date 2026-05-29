@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,6 +30,8 @@ class Settings(BaseSettings):
 
     log_max_bytes: int = 2 * 1024 * 1024
     log_backup_count: int = 2
+
+    admin_telegram_ids: list[int] = Field(default_factory=list)
 
     groq_model: str = "llama-3.1-8b-instant"
     gemini_model: str = "gemini-2.0-flash"
