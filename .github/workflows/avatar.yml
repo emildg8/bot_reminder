@@ -1,0 +1,29 @@
+name: Bot Avatar
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "assets/bot_avatar.jpg"
+      - "assets/bot_avatar.png"
+      - "scripts/set_bot_avatar.py"
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -q
+
+      - name: Upload avatar to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: python scripts/set_bot_avatar.py

@@ -72,6 +72,7 @@ docker compose up -d --build
 | `GEMINI_API_KEY` | LLM ([aistudio.google.com](https://aistudio.google.com)) |
 | `OPENAI_API_KEY` | Опциональный fallback |
 | `ADMIN_TELEGRAM_IDS` | ID админов: `250891839` или `111,222` |
+| `SET_BOT_AVATAR` | `1` — загрузить аватар из `assets/` при старте |
 | `WHISPER_MODEL` | `tiny` / `base` |
 | `USE_YANDEX_STT` | `true` для Yandex SpeechKit |
 
@@ -80,6 +81,21 @@ docker compose up -d --build
 1. Правила + dateparser (быстро, без API)
 2. Groq → Gemini (если ключи заданы)
 3. OpenAI (опционально)
+
+## Аватар бота
+
+Файлы: `assets/bot_avatar.jpg` (640×640).
+
+```bash
+# один раз после деплоя или смены картинки
+make avatar
+# или
+python scripts/set_bot_avatar.py
+```
+
+На Wispbyte: добавь `SET_BOT_AVATAR=1` в Environment — аватар загрузится при старте.
+
+**GitHub Actions:** добавь секрет `BOT_TOKEN` в Settings → Secrets — аватар обновится автоматически при push в `assets/bot_avatar.jpg` или вручную через workflow **Bot Avatar**.
 
 ## CI
 

@@ -25,3 +25,6 @@ deploy:
 	git pull origin main
 	pip install -r requirements.txt -q
 	@echo "Restart bot process manually or via panel"
+
+avatar:
+	python scripts/set_bot_avatar.py
