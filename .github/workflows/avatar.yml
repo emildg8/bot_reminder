@@ -26,4 +26,9 @@ jobs:
       - name: Upload avatar to Telegram
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-        run: python scripts/set_bot_avatar.py
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then
+            echo "::warning::BOT_TOKEN secret not set — skip avatar upload"
+            exit 0
+          fi
+          python scripts/set_bot_avatar.py
