@@ -80,6 +80,35 @@ URL **обязательно** с `https://` и `.git` в конце.
 
 После ввода URL нажмите **Save**, затем **Clone**.
 
+### Если Clone падает с `repository '.' does not exist` (баг Wispbyte)
+
+Кнопка **Clone** на панели может не работать — git получает `.` вместо URL. Обходные варианты:
+
+**Вариант A — одна команда в Startup (рекомендуется, сервер может быть пустым)**
+
+В **Startup command** вставьте целиком:
+
+```bash
+cd /home/container && if [ ! -f bot/main.py ]; then TMP=$(mktemp -d) && git clone --depth 1 -b main https://github.com/emildg8/bot_reminder.git "$TMP" && cp -r "$TMP"/. . && rm -rf "$TMP"; fi && pip install -r requirements.txt -q && python -m bot.main
+```
+
+Запустите сервер — код скачается с GitHub при первом старте.
+
+Если `start.sh` уже есть на сервере, можно короче: `bash start.sh`
+
+**Вариант B — ручная загрузка**
+
+1. Скачайте ZIP: https://github.com/emildg8/bot_reminder/archive/refs/heads/main.zip
+2. Распакуйте в корень сервера через **File Manager** (должен быть `bot/main.py` в корне).
+3. Startup command:
+   ```bash
+   pip install -r requirements.txt && python -m bot.main
+   ```
+
+**Вариант C — попробовать формат owner/repo**
+
+В поле URL только: `emildg8/bot_reminder` (без `https://`) — у некоторых панелей так парсится.
+
 ### Startup command
 
 Первый запуск (установка зависимостей):
