@@ -16,8 +16,7 @@ from bot.db.repository import (
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft
 from bot.services.duplicates import find_duplicate_reminder
-from bot.services.reminder_apply import apply_parsed_to_reminder
-from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
+from bot.texts.messages import format_confirm_card, format_created, format_updated
 from bot.services.scheduler import schedule_reminder, scheduler
 from bot.services.timezone_ctx import get_effective_timezone
 
@@ -68,9 +67,7 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
 
             schedule_reminder(bot, reminder_id, next_run)
             when = next_run.astimezone(ZoneInfo(reminder.timezone)).strftime("%d.%m.%Y %H:%M")
-            await callback.message.edit_text(
-                f"✏️ Напоминание #{reminder_id} обновлено. Следующий раз: {when}"
-            )
+            await callback.message.edit_text(format_updated(reminder_id, when))
             await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
             await callback.answer()
             return
@@ -111,7 +108,7 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
 
     schedule_reminder(bot, reminder.id, next_run)
     when = next_run.astimezone(ZoneInfo(tz)).strftime("%d.%m.%Y %H:%M")
-    await callback.message.edit_text(f"✅ Напоминание создано (#{reminder.id}). Первый раз: {when}")
+    await callback.message.edit_text(format_created(reminder.id, when, entry.parsed.text))
     await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
     await callback.answer()
 

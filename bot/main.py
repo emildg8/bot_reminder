@@ -22,6 +22,7 @@ from bot.handlers import (
     menu,
     search,
     start,
+    status,
 )
 from bot.logging_setup import setup_logging
 from bot.services.backup import backup_database
@@ -76,6 +77,7 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(group.router)
     dp.include_router(menu.router)
+    dp.include_router(status.router)
     dp.include_router(manage.router)
     dp.include_router(list_cmd.router)
     dp.include_router(list_callbacks.router)

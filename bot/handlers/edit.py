@@ -11,7 +11,8 @@ from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_p
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
-from bot.services.reminder_utils import format_reminder_summary
+from bot.services.reminder_display import format_parsed_summary_html
+from bot.texts.messages import format_confirm_card
 
 router = Router()
 
@@ -122,7 +123,7 @@ async def _parse_and_confirm_edit(
         return
 
     clear_edit_pending(user_id)
-    summary = format_reminder_summary(parsed, timezone)
+    summary = format_parsed_summary_html(parsed, timezone)
     prefix = ""
     if mention_username and not mention_telegram_id:
         prefix = f"⚠️ @{mention_username} не найден — упоминание сброшено.\n\n"
@@ -138,7 +139,10 @@ async def _parse_and_confirm_edit(
         mention_provided=mention_provided,
         edit_reminder_id=reminder_id,
     )
+    body = format_confirm_card(summary, is_edit=True)
+    if prefix:
+        body = prefix + body
     await message.answer(
-        f"✏️ Изменить #{reminder_id}?\n\n{prefix}{summary}\n\nПодтверди изменение:",
+        body,
         reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),
     )

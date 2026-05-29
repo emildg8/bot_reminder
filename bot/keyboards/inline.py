@@ -1,5 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from bot.texts.messages import EXAMPLE_PHRASES
+
 TIMEZONE_OPTIONS = [
     ("Europe/Moscow", "Москва"),
     ("Europe/Kaliningrad", "Калининград"),
@@ -53,9 +55,9 @@ def reminder_actions_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="+5 мин", callback_data=f"snooze:{reminder_id}:5"),
-                InlineKeyboardButton(text="+15 мин", callback_data=f"snooze:{reminder_id}:15"),
-                InlineKeyboardButton(text="+30 мин", callback_data=f"snooze:{reminder_id}:30"),
+                InlineKeyboardButton(text="⏰ +5", callback_data=f"snooze:{reminder_id}:5"),
+                InlineKeyboardButton(text="⏰ +15", callback_data=f"snooze:{reminder_id}:15"),
+                InlineKeyboardButton(text="⏰ +30", callback_data=f"snooze:{reminder_id}:30"),
             ],
             [
                 InlineKeyboardButton(text="✏️ Изменить", callback_data=f"edit:{reminder_id}"),
@@ -116,6 +118,19 @@ def clear_confirm_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def examples_keyboard() -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for idx, (label, _) in enumerate(EXAMPLE_PHRASES):
+        row.append(InlineKeyboardButton(text=label, callback_data=f"ex:{idx}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -124,9 +139,12 @@ def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📋 Список", callback_data="menu:list"),
             ],
             [
+                InlineKeyboardButton(text="📊 Статус", callback_data="menu:status"),
+                InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
+            ],
+            [
                 InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
                 InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
             ],
-            [InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples")],
         ]
     )

@@ -11,6 +11,8 @@ from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
 from bot.services.drafts import store_draft
+from bot.services.reminder_display import format_parsed_summary_html
+from bot.texts.messages import PARSE_FAIL, format_confirm_card
 from bot.services.media import (
     download_telegram_file,
     extract_audio_from_video,
@@ -19,7 +21,6 @@ from bot.services.media import (
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
-from bot.services.reminder_utils import format_reminder_summary
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -54,19 +55,10 @@ async def _process_text_and_reply(
     parsed = await parse_reminder(phrase, timezone)
 
     if parsed is None:
-        await message.answer(
-            "Не понял время. Напиши, например:\n"
-            "• через 30 минут выпить таблетки\n"
-            "• каждый день в 9:00 зарядка\n"
-            "• каждые 2 часа встать\n"
-            "• по будням в 09:00 зарядка\n"
-            "• @username через 1 час задача (в группе)\n\n"
-            "Справка: /help",
-            reply_markup=main_menu_keyboard(),
-        )
+        await message.answer(PARSE_FAIL, reply_markup=main_menu_keyboard())
         return
 
-    summary = format_reminder_summary(parsed, timezone)
+    summary = format_parsed_summary_html(parsed, timezone)
     prefix = f"🎤 Распознано: {text}\n\n" if source_label else ""
     if mention_username and not mention_telegram_id:
         prefix += (
@@ -85,8 +77,11 @@ async def _process_text_and_reply(
         mention_provided=mention_provided,
     )
 
+    body = format_confirm_card(summary)
+    if prefix:
+        body = prefix + body
     await message.answer(
-        f"{prefix}{summary}\n\nСоздать напоминание?",
+        body,
         reply_markup=confirm_reminder_keyboard(draft_id),
     )
 

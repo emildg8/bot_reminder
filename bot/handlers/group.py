@@ -4,6 +4,7 @@ from aiogram.types import ChatMemberUpdated
 
 from bot.keyboards.inline import main_menu_inline_keyboard
 from bot.keyboards.reply import main_menu_keyboard
+from bot.texts.messages import GROUP_WELCOME
 
 router = Router()
 
@@ -15,16 +16,11 @@ async def on_bot_added(event: ChatMemberUpdated) -> None:
 
     await event.bot.send_message(
         event.chat.id,
-        "Привет! Я напоминалка для этой группы.\n\n"
-        "Напиши фразу, например:\n"
-        "• через 30 минут созвон\n"
-        "• по будням в 09:00 стендап\n\n"
-        "Часовой пояс группы: /timezone\n"
-        "Команды: /list /search /pause /help /menu",
+        GROUP_WELCOME,
         reply_markup=main_menu_keyboard(),
     )
     await event.bot.send_message(
         event.chat.id,
-        "Быстрые действия:",
+        "⚡️ Быстрые действия:",
         reply_markup=main_menu_inline_keyboard(),
     )

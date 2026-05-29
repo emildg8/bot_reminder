@@ -21,12 +21,12 @@ async def build_list_message(chat_id: int, viewer_id: int, page: int = 0) -> tup
         reminders = await get_active_chat_reminders(session, chat_id)
 
     if not reminders:
-        return "Активных напоминаний нет.", None
+        return "📭 <b>Нет активных напоминаний</b>\n\nНапиши фразу или нажми ➕ Создать.", None
 
     page_items, page, total_pages = _paginate(reminders, page)
     lines = [format_reminder_list_line(r, r.timezone) for r in page_items]
 
-    header = f"<b>Активных: {len(reminders)}</b>"
+    header = f"📋 <b>Напоминания</b> · {len(reminders)}"
     if paused:
         header += " · ⏸ <i>на паузе</i>"
     if total_pages > 1:

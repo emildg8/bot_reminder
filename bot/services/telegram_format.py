@@ -29,4 +29,4 @@ def format_reminder_message(
         else:
             prefix = f'<a href="tg://user?id={target_id}">участник</a>, '
 
-    return f"⏰ {prefix}<b>Напоминание:</b> {escape(text)}"
+    return f"⏰ {prefix}<b>{escape(text)}</b>"

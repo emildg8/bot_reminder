@@ -1,11 +1,22 @@
 """Форматирование напоминаний для списка и UI."""
 
+from html import escape
+
 from zoneinfo import ZoneInfo
 
 from bot.db.models import Reminder
-from bot.services.reminder_utils import mask_to_weekdays
+from bot.services.nlp.schemas import ParsedReminder
+from bot.services.reminder_utils import compute_next_run, mask_to_weekdays
+from bot.services.timezone_labels import format_timezone_label
 
 WEEKDAY_NAMES = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+
+KIND_ICONS = {
+    "once": "⏱",
+    "interval": "🔁",
+    "daily": "📅",
+    "weekly": "📆",
+}
 
 KIND_LABELS = {
     "once": "разово",
@@ -67,13 +78,43 @@ def format_reminder_schedule(reminder: Reminder, timezone: str) -> str:
 
 def format_reminder_list_line(reminder: Reminder, timezone: str | None = None) -> str:
     tz_name = timezone or reminder.timezone
+    icon = KIND_ICONS.get(reminder.kind, "📌")
     kind = KIND_LABELS.get(reminder.kind, reminder.kind)
     when = format_reminder_schedule(reminder, tz_name)
     mention = " 👤" if reminder.mention_telegram_id else ""
-    text = reminder.text
-    if len(text) > 80:
-        text = text[:77] + "…"
-    return f"#{reminder.id} [{kind}] {when} — {text}{mention}"
+    text = escape(reminder.text)
+    if len(reminder.text) > 70:
+        text = escape(reminder.text[:67]) + "…"
+    return f"{icon} <b>#{reminder.id}</b> · {kind} · {when}\n   {text}{mention}"
+
+
+def format_parsed_summary_html(parsed: ParsedReminder, timezone: str) -> str:
+    tz = ZoneInfo(timezone)
+    next_run = compute_next_run(parsed, timezone).astimezone(tz)
+    icon = KIND_ICONS.get(parsed.kind, "📌")
+    kind = KIND_LABELS.get(parsed.kind, parsed.kind)
+    tz_label = format_timezone_label(timezone)
+
+    when_line = ""
+    if parsed.kind == "once":
+        when_line = next_run.strftime("%d.%m.%Y %H:%M")
+    elif parsed.kind == "interval":
+        when_line = format_interval_seconds(parsed.interval_seconds)
+        when_line += f", первый раз {next_run.strftime('%d.%m %H:%M')}"
+    elif parsed.kind == "daily" and parsed.daily_time:
+        when_line = f"ежедневно в {parsed.daily_time.strftime('%H:%M')}"
+    elif parsed.kind == "weekly" and parsed.daily_time and parsed.weekdays:
+        days = format_weekdays_label(weekdays=parsed.weekdays)
+        when_line = f"{days} в {parsed.daily_time.strftime('%H:%M')}"
+    else:
+        when_line = next_run.strftime("%d.%m.%Y %H:%M")
+
+    return (
+        f"{icon} <b>{kind.capitalize()}</b>\n"
+        f"🕐 {when_line}\n"
+        f"📝 {escape(parsed.text)}\n"
+        f"🌍 {tz_label}"
+    )
 
 
 def reminder_to_export_dict(reminder: Reminder) -> dict:

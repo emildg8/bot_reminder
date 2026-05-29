@@ -13,6 +13,8 @@ from bot.db.repository import (
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.timezone_ctx import is_group_chat
+from bot.services.timezone_labels import format_timezone_label
+from bot.texts.messages import WELCOME_BACK, WELCOME_ONBOARDING
 
 router = Router()
 
@@ -34,14 +36,10 @@ async def cmd_start(message: Message) -> None:
         )
 
     if not user.timezone_confirmed and message.chat.id > 0:
-        await message.answer(
-            "Привет! Я бот-напоминалка.\n\n"
-            "Сначала выбери часовой пояс — от него зависит время напоминаний:",
-            reply_markup=timezone_keyboard(),
-        )
+        await message.answer(WELCOME_ONBOARDING, reply_markup=timezone_keyboard())
         return
 
-    tz_label = "группы" if is_group_chat(message.chat.id) else "твой"
+    tz_scope = "группы" if is_group_chat(message.chat.id) else "твой"
     async with async_session() as session:
         if is_group_chat(message.chat.id):
             chat = await get_or_create_chat(session, message.chat.id, settings.default_timezone)
@@ -50,48 +48,46 @@ async def cmd_start(message: Message) -> None:
             tz = user.timezone
 
     await message.answer(
-        "Привет! Я бот-напоминалка.\n\n"
-        "Создай напоминание текстом, голосом или кружочком.\n"
-        "Или выбери действие кнопками ниже.\n\n"
-        f"Часовой пояс ({tz_label}): <b>{tz}</b>",
+        WELCOME_BACK.format(tz_scope=tz_scope, tz_label=format_timezone_label(tz)),
         reply_markup=main_menu_keyboard(),
     )
-    await message.answer("Быстрые действия:", reply_markup=main_menu_inline_keyboard())
+    await message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
 
 
 @router.message(lambda m: m.text and m.text.startswith("/timezone"))
 async def cmd_timezone(message: Message) -> None:
     label = "группы" if is_group_chat(message.chat.id) else "личный"
-    await message.answer(f"Выбери часовой пояс ({label}):", reply_markup=timezone_keyboard())
+    await message.answer(f"🕐 Выбери часовой пояс ({label}):", reply_markup=timezone_keyboard())
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("tz_menu:"))
 async def tz_menu(callback: CallbackQuery) -> None:
     target = callback.data.split(":", 1)[1]
     if target == "offset":
-        await callback.message.edit_text("Выбери UTC offset:", reply_markup=timezone_offset_keyboard())
+        await callback.message.edit_text("🕐 Выбери UTC offset:", reply_markup=timezone_offset_keyboard())
     else:
-        await callback.message.edit_text("Выбери часовой пояс:", reply_markup=timezone_keyboard())
+        await callback.message.edit_text("🕐 Выбери часовой пояс:", reply_markup=timezone_keyboard())
     await callback.answer()
 
 
 async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
     chat_id = callback.message.chat.id
+    tz_label = format_timezone_label(timezone)
     async with async_session() as session:
         if is_group_chat(chat_id):
             chat = await get_or_create_chat(session, chat_id, settings.default_timezone)
             await update_chat_timezone(session, chat, timezone)
-            label = f"Часовой пояс группы: {timezone}"
+            label = f"✅ Часовой пояс группы: <b>{tz_label}</b>"
         else:
             user = await get_or_create_user(
                 session, callback.from_user.id, settings.default_timezone
             )
             await update_user_timezone(session, user, timezone)
-            label = f"Часовой пояс: {timezone}"
+            label = f"✅ Часовой пояс: <b>{tz_label}</b>"
 
-    await callback.message.edit_text(label + "\n\nМожешь создавать напоминания!")
+    await callback.message.edit_text(label + "\n\nМожешь создавать напоминания ✨")
     if not is_group_chat(chat_id):
-        await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
+        await callback.message.answer("⌨️ Меню:", reply_markup=main_menu_keyboard())
     await callback.answer("Сохранено")
 
 
