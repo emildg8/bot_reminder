@@ -36,11 +36,13 @@ def timezone_offset_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def confirm_reminder_keyboard(draft_id: str) -> InlineKeyboardMarkup:
+def confirm_reminder_keyboard(draft_id: str, edit_id: int | None = None) -> InlineKeyboardMarkup:
+    confirm_data = f"confirm_edit:{edit_id}:{draft_id}" if edit_id else f"confirm:{draft_id}"
+    confirm_label = "✅ Сохранить" if edit_id else "✅ Создать"
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="✅ Создать", callback_data=f"confirm:{draft_id}"),
+                InlineKeyboardButton(text=confirm_label, callback_data=confirm_data),
                 InlineKeyboardButton(text="❌ Отмена", callback_data=f"cancel:{draft_id}"),
             ]
         ]
@@ -56,19 +58,31 @@ def reminder_actions_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="+30 мин", callback_data=f"snooze:{reminder_id}:30"),
             ],
             [
+                InlineKeyboardButton(text="✏️ Изменить", callback_data=f"edit:{reminder_id}"),
                 InlineKeyboardButton(text="✅ Готово", callback_data=f"done:{reminder_id}"),
+            ],
+            [
                 InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{reminder_id}"),
             ],
         ]
     )
 
 
-def list_reminder_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{reminder_id}")]
-        ]
-    )
+def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMarkup | None:
+    """Кнопки управления только для напоминаний текущего пользователя."""
+    rows: list[list[InlineKeyboardButton]] = []
+    for reminder in reminders:
+        if reminder.created_by_telegram_id != viewer_telegram_id:
+            continue
+        rows.append(
+            [
+                InlineKeyboardButton(text=f"#{reminder.id} ✏️", callback_data=f"edit:{reminder.id}"),
+                InlineKeyboardButton(text=f"#{reminder.id} 🗑", callback_data=f"delete:{reminder.id}"),
+            ]
+        )
+    if not rows:
+        return None
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def clear_confirm_keyboard() -> InlineKeyboardMarkup:

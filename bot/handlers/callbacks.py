@@ -2,10 +2,9 @@ from datetime import datetime, timedelta
 
 from aiogram import Bot, Router
 from aiogram.types import CallbackQuery
-from sqlalchemy import select
 from zoneinfo import ZoneInfo
 
-from bot.db.models import User
+from bot.config import settings
 from bot.db.repository import (
     async_session,
     create_reminder,
@@ -16,22 +15,25 @@ from bot.db.repository import (
 )
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft
+from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.scheduler import schedule_reminder, scheduler
 
 router = Router()
 
 
-async def _get_reminder_owner(session, reminder) -> User | None:
-    result = await session.execute(select(User).where(User.id == reminder.user_id))
-    return result.scalar_one_or_none()
-
-
-@router.callback_query(lambda c: c.data and c.data.startswith("confirm:"))
+@router.callback_query(lambda c: c.data and (c.data.startswith("confirm:") or c.data.startswith("confirm_edit:")))
 async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
-    draft_id = callback.data.split(":", 1)[1]
-    parsed = pop_draft(draft_id, callback.from_user.id)
-    if parsed is None:
+    is_edit = callback.data.startswith("confirm_edit:")
+    if is_edit:
+        _, reminder_id_str, draft_id = callback.data.split(":", 2)
+        reminder_id = int(reminder_id_str)
+    else:
+        draft_id = callback.data.split(":", 1)[1]
+        reminder_id = None
+
+    entry = pop_draft(draft_id, callback.from_user.id)
+    if entry is None:
         await callback.answer("Черновик не найден или устарел.", show_alert=True)
         return
 
@@ -39,21 +41,52 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
         user = await get_or_create_user(
             session,
             telegram_id=callback.from_user.id,
-            timezone="Europe/Moscow",
+            timezone=settings.default_timezone,
         )
-        next_run = compute_next_run(parsed, user.timezone)
+
+        if is_edit and reminder_id is not None:
+            reminder = await get_reminder(session, reminder_id)
+            if reminder is None or not reminder.is_active:
+                await callback.answer("Напоминание не найдено.", show_alert=True)
+                return
+            if reminder.created_by_telegram_id != callback.from_user.id:
+                await callback.answer("Нет доступа.", show_alert=True)
+                return
+
+            job_id = f"reminder_{reminder_id}"
+            if scheduler.get_job(job_id):
+                scheduler.remove_job(job_id)
+
+            next_run = await apply_parsed_to_reminder(
+                session, reminder, entry.parsed, reminder.timezone or user.timezone
+            )
+            if entry.mention_provided:
+                reminder.mention_telegram_id = entry.mention_telegram_id
+                await session.commit()
+
+            schedule_reminder(bot, reminder_id, next_run)
+            when = next_run.astimezone(ZoneInfo(reminder.timezone)).strftime("%d.%m.%Y %H:%M")
+            await callback.message.edit_text(
+                f"✏️ Напоминание #{reminder_id} обновлено. Следующий раз: {when}"
+            )
+            await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
+            await callback.answer()
+            return
+
+        next_run = compute_next_run(entry.parsed, user.timezone)
         reminder = await create_reminder(
             session,
             user_id=user.id,
             chat_id=callback.message.chat.id,
             created_by_telegram_id=callback.from_user.id,
             timezone=user.timezone,
-            text=parsed.text,
-            kind=parsed.kind,
+            text=entry.parsed.text,
+            kind=entry.parsed.kind,
             next_run_at=next_run,
-            interval_seconds=parsed.interval_seconds,
-            daily_time=parsed.daily_time,
-            weekdays_mask=weekdays_to_mask(parsed.weekdays) if parsed.weekdays else None,
+            interval_seconds=entry.parsed.interval_seconds,
+            daily_time=entry.parsed.daily_time,
+            weekdays_mask=weekdays_to_mask(entry.parsed.weekdays) if entry.parsed.weekdays else None,
+            mention_telegram_id=entry.mention_telegram_id,
         )
 
     schedule_reminder(bot, reminder.id, next_run)
@@ -66,7 +99,7 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("cancel:"))
 async def cancel_draft(callback: CallbackQuery) -> None:
     draft_id = callback.data.split(":", 1)[1]
-    discard_draft(draft_id)
+    discard_draft(draft_id, callback.from_user.id)
     await callback.message.edit_text("Отменено.")
     await callback.answer()
 

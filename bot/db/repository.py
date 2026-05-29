@@ -25,6 +25,8 @@ async def init_db() -> None:
                 await conn.execute(text("ALTER TABLE reminders ADD COLUMN timezone VARCHAR(64)"))
             if "weekdays_mask" not in cols:
                 await conn.execute(text("ALTER TABLE reminders ADD COLUMN weekdays_mask INTEGER"))
+            if "mention_telegram_id" not in cols:
+                await conn.execute(text("ALTER TABLE reminders ADD COLUMN mention_telegram_id BIGINT"))
 
             # Backfill for old rows (private chats): chat_id/user_id mapping.
             await conn.execute(
@@ -89,11 +91,13 @@ async def create_reminder(
     interval_seconds: int | None = None,
     daily_time: time | None = None,
     weekdays_mask: int | None = None,
+    mention_telegram_id: int | None = None,
 ) -> Reminder:
     reminder = Reminder(
         user_id=user_id,
         chat_id=chat_id,
         created_by_telegram_id=created_by_telegram_id,
+        mention_telegram_id=mention_telegram_id,
         timezone=timezone,
         text=text,
         kind=kind,

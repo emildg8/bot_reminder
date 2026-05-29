@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, time
+from datetime import datetime
 from io import BytesIO
 
 from aiogram import Bot, F, Router
@@ -18,11 +18,14 @@ from bot.db.repository import (
 )
 from bot.keyboards.inline import clear_confirm_keyboard
 from bot.keyboards.reply import main_menu_keyboard
-from bot.services.nlp.schemas import ParsedReminder
-from bot.services.reminder_utils import compute_next_run, mask_to_weekdays, weekdays_to_mask
+from bot.services.export_import import parse_import_item
+from bot.services.reminder_display import reminder_to_export_dict
+from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.scheduler import schedule_reminder, scheduler
 
 router = Router()
+
+MAX_SKIP_REASONS = 5
 
 
 @router.message(Command("export"))
@@ -35,28 +38,13 @@ async def cmd_export(message: Message) -> None:
         )
         reminders = list(result.scalars().all())
 
-    data = [
-        {
-            "id": r.id,
-            "chat_id": r.chat_id,
-            "created_by_telegram_id": r.created_by_telegram_id,
-            "timezone": r.timezone,
-            "text": r.text,
-            "kind": r.kind,
-            "next_run_at": r.next_run_at.isoformat() if r.next_run_at else None,
-            "interval_seconds": r.interval_seconds,
-            "daily_time": r.daily_time.strftime("%H:%M") if r.daily_time else None,
-            "weekdays_mask": r.weekdays_mask,
-            "is_active": r.is_active,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
-        }
-        for r in reminders
-    ]
+    data = [reminder_to_export_dict(r) for r in reminders]
 
     payload = json.dumps(
         {
             "exported_at": datetime.utcnow().isoformat() + "Z",
             "chat_id": message.chat.id,
+            "version": 2,
             "reminders": data,
         },
         ensure_ascii=False,
@@ -131,64 +119,56 @@ async def cmd_import(message: Message, bot: Bot) -> None:
         return
 
     imported = 0
+    skipped_inactive = 0
+    skip_reasons: list[str] = []
+
     async with async_session() as session:
         user = await get_or_create_user(
             session,
             telegram_id=message.from_user.id,
             timezone=settings.default_timezone,
         )
-        for item in items:
+        for idx, item in enumerate(items, start=1):
             if not item.get("is_active", True):
-                continue
-            kind = item.get("kind", "once")
-            text_val = str(item.get("text", "")).strip()
-            if not text_val:
+                skipped_inactive += 1
                 continue
 
-            tz = item.get("timezone") or user.timezone
-            daily_time = None
-            if item.get("daily_time"):
-                h, m = str(item["daily_time"]).split(":")
-                daily_time = time(int(h), int(m))
-
-            weekdays_mask = item.get("weekdays_mask")
-            weekdays_list = mask_to_weekdays(weekdays_mask) if weekdays_mask else None
-
-            next_run_at = None
-            if item.get("next_run_at"):
-                next_run_at = datetime.fromisoformat(str(item["next_run_at"]).replace("Z", "+00:00"))
-
-            parsed = ParsedReminder(
-                text=text_val,
-                kind=kind,
-                run_at=next_run_at,
-                interval_seconds=item.get("interval_seconds"),
-                daily_time=daily_time,
-                weekdays=weekdays_list,
-            )
             try:
-                next_run = compute_next_run(parsed, tz)
-            except Exception:
+                result = parse_import_item(item, user.timezone)
+                next_run = compute_next_run(result.parsed, result.timezone)
+            except Exception as exc:
+                label = item.get("text", "")[:30] or f"строка {idx}"
+                skip_reasons.append(f"«{label}»: {exc}")
                 continue
+
+            weekdays_mask = result.weekdays_mask
+            if weekdays_mask is None and result.parsed.weekdays:
+                weekdays_mask = weekdays_to_mask(result.parsed.weekdays)
 
             reminder = await create_reminder(
                 session,
                 user_id=user.id,
                 chat_id=message.chat.id,
                 created_by_telegram_id=message.from_user.id,
-                timezone=tz,
-                text=text_val,
-                kind=kind,
+                timezone=result.timezone,
+                text=result.parsed.text,
+                kind=result.parsed.kind,
                 next_run_at=next_run,
-                interval_seconds=item.get("interval_seconds"),
-                daily_time=daily_time,
-                weekdays_mask=weekdays_mask or (weekdays_to_mask(weekdays_list) if weekdays_list else None),
+                interval_seconds=result.parsed.interval_seconds,
+                daily_time=result.parsed.daily_time,
+                weekdays_mask=weekdays_mask,
+                mention_telegram_id=result.mention_telegram_id,
             )
             schedule_reminder(bot, reminder.id, next_run)
             imported += 1
 
-    await message.answer(
-        f"✅ Импортировано напоминаний: {imported}",
-        reply_markup=main_menu_keyboard(),
-    )
+    lines = [f"✅ Импортировано: {imported}"]
+    if skipped_inactive:
+        lines.append(f"⏭ Пропущено неактивных: {skipped_inactive}")
+    if skip_reasons:
+        lines.append(f"⚠️ Ошибки ({len(skip_reasons)}):")
+        lines.extend(f"• {r}" for r in skip_reasons[:MAX_SKIP_REASONS])
+        if len(skip_reasons) > MAX_SKIP_REASONS:
+            lines.append(f"• … и ещё {len(skip_reasons) - MAX_SKIP_REASONS}")
 
+    await message.answer("\n".join(lines), reply_markup=main_menu_keyboard())

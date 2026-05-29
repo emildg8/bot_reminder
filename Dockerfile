@@ -1,16 +1,20 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg git \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot ./bot
-COPY .env.example .env.example
+COPY bot/ bot/
+COPY pytest.ini .
 
-RUN mkdir -p data
+RUN mkdir -p data/logs
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 CMD ["python", "-m", "bot.main"]

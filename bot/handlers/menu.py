@@ -12,6 +12,7 @@ from bot.keyboards.reply import (
     MENU_BUTTON_TEXTS,
     main_menu_keyboard,
 )
+from bot.services.drafts import clear_edit_pending
 from bot.services.reminders_ui import send_active_reminders
 from bot.texts.help import CREATE_HINT, EXAMPLES_TEXT, HELP_TEXT
 
@@ -20,11 +21,13 @@ router = Router()
 
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
+    clear_edit_pending(message.from_user.id)
     await message.answer(HELP_TEXT, reply_markup=main_menu_keyboard())
 
 
 @router.message(Command("menu"))
 async def cmd_menu(message: Message) -> None:
+    clear_edit_pending(message.from_user.id)
     await message.answer(
         "Главное меню — выбери действие кнопкой ниже или в меню команд (/)",
         reply_markup=main_menu_keyboard(),
@@ -33,6 +36,7 @@ async def cmd_menu(message: Message) -> None:
 
 @router.message(F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_menu_buttons(message: Message) -> None:
+    clear_edit_pending(message.from_user.id)
     text = message.text
     if text == BTN_LIST:
         await send_active_reminders(message)

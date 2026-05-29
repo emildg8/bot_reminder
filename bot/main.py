@@ -5,15 +5,26 @@ from pathlib import Path
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from apscheduler.triggers.interval import IntervalTrigger
 
 from bot.config import settings
 from bot.db.repository import init_db
-from bot.handlers import admin, callbacks, create, group, health, list_cmd, manage, menu, start
+from bot.handlers import admin, callbacks, create, edit, group, health, list_cmd, manage, menu, start
 from bot.logging_setup import setup_logging
 from bot.services.bot_menu import setup_bot_commands
+from bot.services.drafts import prune_expired
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
+from bot.version import __version__
 
 logger = logging.getLogger(__name__)
+
+
+async def _notify_admins(bot: Bot, text: str) -> None:
+    for admin_id in settings.admin_telegram_ids:
+        try:
+            await bot.send_message(admin_id, text)
+        except Exception as exc:
+            logger.warning("Cannot notify admin %s: %s", admin_id, exc)
 
 
 async def main() -> None:
@@ -38,6 +49,7 @@ async def main() -> None:
 
     loop.set_exception_handler(asyncio_handler)
 
+    logger.info("Starting bot v%s", __version__)
     logger.info("Log file: %s", log_file)
     await init_db()
 
@@ -54,23 +66,28 @@ async def main() -> None:
     dp.include_router(health.router)
     dp.include_router(admin.router)
     dp.include_router(callbacks.router)
+    dp.include_router(edit.router)
     dp.include_router(create.router)
 
     scheduler.start()
+    scheduler.add_job(
+        prune_expired,
+        trigger=IntervalTrigger(minutes=15),
+        id="draft_cleanup",
+        replace_existing=True,
+    )
     await restore_scheduled_reminders(bot)
     await setup_bot_commands(bot)
 
-    logger.info("Bot started")
+    if settings.admin_telegram_ids:
+        await _notify_admins(bot, f"✅ Бот запущен · v{__version__}")
+
+    logger.info("Bot started v%s", __version__)
     try:
         await dp.start_polling(bot)
     except Exception:
         logger.exception("Bot stopped due to error")
-        if settings.admin_telegram_ids:
-            for admin_id in settings.admin_telegram_ids:
-                try:
-                    await bot.send_message(admin_id, "❗️Бот упал. Смотри логи в data/logs/bot.log")
-                except Exception:
-                    pass
+        await _notify_admins(bot, "❗️ Бот упал. Смотри логи в data/logs/bot.log")
         raise
     finally:
         logger.info("Shutting down")

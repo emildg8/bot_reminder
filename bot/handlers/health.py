@@ -1,17 +1,41 @@
-from datetime import datetime, timezone
-
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from sqlalchemy import func, select
 
-_started_at = datetime.now(timezone.utc)
+from bot.config import settings
+from bot.db.models import User
+from bot.db.repository import async_session, get_all_active_reminders
+from bot.services.runtime import format_uptime, uptime_seconds
+from bot.services.scheduler import scheduler
+from bot.version import __version__
 
 router = Router()
 
 
 @router.message(Command("ping"))
 async def cmd_ping(message: Message) -> None:
-    uptime = datetime.now(timezone.utc) - _started_at
-    secs = int(uptime.total_seconds())
-    await message.answer(f"✅ ok (uptime {secs}s)")
+    await message.answer(f"✅ ok · v{__version__} · uptime {format_uptime(uptime_seconds())}")
 
+
+@router.message(Command("health"))
+async def cmd_health(message: Message) -> None:
+    if not settings.admin_telegram_ids or message.from_user.id not in settings.admin_telegram_ids:
+        await message.answer("Команда доступна только админам.")
+        return
+
+    async with async_session() as session:
+        users_count = (await session.execute(select(func.count()).select_from(User))).scalar_one()
+        active_reminders = len(await get_all_active_reminders(session))
+
+    scheduled_jobs = len([j for j in scheduler.get_jobs() if j.id.startswith("reminder_")])
+
+    await message.answer(
+        "🩺 Health\n"
+        f"- version: {__version__}\n"
+        f"- uptime: {format_uptime(uptime_seconds())}\n"
+        f"- users: {users_count}\n"
+        f"- active reminders: {active_reminders}\n"
+        f"- scheduled jobs: {scheduled_jobs}\n"
+        f"- scheduler: {'running' if scheduler.running else 'stopped'}\n"
+    )

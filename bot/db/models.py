@@ -34,6 +34,7 @@ class Reminder(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     chat_id: Mapped[int] = mapped_column(BigInteger, index=True)
     created_by_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    mention_telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
     text: Mapped[str] = mapped_column(String(512))
     kind: Mapped[str] = mapped_column(String(16))

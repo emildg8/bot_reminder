@@ -5,6 +5,7 @@ from aiogram import Bot, F, Router
 from aiogram.types import Message
 
 from bot.db.repository import async_session, get_or_create_user
+from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
 from bot.services.drafts import store_draft
@@ -13,6 +14,8 @@ from bot.services.media import (
     extract_audio_from_video,
     transcribe_audio,
 )
+from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
+from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
 from bot.services.reminder_utils import format_reminder_summary
 
@@ -28,9 +31,26 @@ async def _get_user_timezone(telegram_id: int) -> str:
         return user.timezone
 
 
-async def _process_text_and_reply(message: Message, text: str, source_label: str = "") -> None:
+async def _process_text_and_reply(
+    message: Message,
+    text: str,
+    bot: Bot,
+    source_label: str = "",
+) -> None:
+    if source_label:
+        mention_id, mention_username, clean_text = None, None, text
+        u, cleaned = extract_leading_username(text)
+        if u:
+            mention_username = u
+            clean_text = cleaned
+    else:
+        mention_id, mention_username, clean_text = extract_mention_from_message(message)
+
+    mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
+    phrase = (clean_text or text).strip()
+
     timezone = await _get_user_timezone(message.from_user.id)
-    parsed = await parse_reminder(text, timezone)
+    parsed = await parse_reminder(phrase, timezone)
 
     if parsed is None:
         await message.answer(
@@ -38,7 +58,8 @@ async def _process_text_and_reply(message: Message, text: str, source_label: str
             "• через 30 минут выпить таблетки\n"
             "• каждый день в 9:00 зарядка\n"
             "• каждые 2 часа встать\n"
-            "• по будням в 09:00 зарядка\n\n"
+            "• по будням в 09:00 зарядка\n"
+            "• @username через 1 час задача (в группе)\n\n"
             "Справка: /help",
             reply_markup=main_menu_keyboard(),
         )
@@ -46,7 +67,22 @@ async def _process_text_and_reply(message: Message, text: str, source_label: str
 
     summary = format_reminder_summary(parsed, timezone)
     prefix = f"🎤 Распознано: {text}\n\n" if source_label else ""
-    draft_id = store_draft(message.from_user.id, parsed)
+    if mention_username and not mention_telegram_id:
+        prefix += (
+            f"⚠️ Не удалось найти @{mention_username} — "
+            "в группе напомню создателю.\n\n"
+        )
+    elif mention_telegram_id or mention_username:
+        who = f"@{mention_username}" if mention_username else "участнику"
+        prefix += f"👤 Упоминание: {who}\n\n"
+
+    mention_provided = bool(mention_username or mention_id)
+    draft_id = store_draft(
+        message.from_user.id,
+        parsed,
+        mention_telegram_id=mention_telegram_id,
+        mention_provided=mention_provided,
+    )
 
     await message.answer(
         f"{prefix}{summary}\n\nСоздать напоминание?",
@@ -55,8 +91,11 @@ async def _process_text_and_reply(message: Message, text: str, source_label: str
 
 
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
-async def handle_text(message: Message) -> None:
-    await _process_text_and_reply(message, message.text.strip())
+async def handle_text(message: Message, bot: Bot) -> None:
+    text = message.text.strip()
+    if await process_edit_phrase(message, text, bot):
+        return
+    await _process_text_and_reply(message, text, bot)
 
 
 async def _handle_audio_message(message: Message, bot: Bot, file_id: str, suffix: str, is_video: bool) -> None:
@@ -77,7 +116,7 @@ async def _handle_audio_message(message: Message, bot: Bot, file_id: str, suffix
             return
 
         await status.delete()
-        await _process_text_and_reply(message, text, source_label="voice")
+        await _process_text_and_reply(message, text, bot, source_label="voice")
     except Exception as exc:
         logger.exception("STT failed")
         await status.edit_text(f"Ошибка распознавания: {exc}")

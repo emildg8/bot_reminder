@@ -10,6 +10,7 @@ from bot.db.models import Reminder
 from bot.db.repository import async_session, get_reminder, update_reminder_next_run
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder
+from bot.services.telegram_format import format_reminder_message, is_group_chat
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +23,54 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
         if reminder is None or not reminder.is_active:
             return
 
+        mention_username: str | None = None
+        creator_username: str | None = None
+        if reminder.mention_telegram_id:
+            try:
+                chat = await bot.get_chat(reminder.mention_telegram_id)
+                mention_username = chat.username
+            except Exception:
+                pass
+        try:
+            creator_chat = await bot.get_chat(reminder.created_by_telegram_id)
+            creator_username = creator_chat.username
+        except Exception:
+            pass
+
+        body = format_reminder_message(
+            reminder.text,
+            mention_user_id=reminder.mention_telegram_id,
+            mention_username=mention_username,
+            creator_user_id=reminder.created_by_telegram_id,
+            creator_username=creator_username,
+            chat_id=reminder.chat_id,
+        )
+
+        in_group = is_group_chat(reminder.chat_id)
+        group_hint = ""
+        if in_group:
+            group_hint = "\n\n<i>Управление — в личке с ботом.</i>"
+
         try:
             await bot.send_message(
                 chat_id=reminder.chat_id,
-                text=f"⏰ Напоминание: {reminder.text}",
-                reply_markup=reminder_actions_keyboard(reminder.id),
+                text=body + group_hint,
+                reply_markup=None if in_group else reminder_actions_keyboard(reminder.id),
             )
+            if in_group:
+                try:
+                    await bot.send_message(
+                        reminder.created_by_telegram_id,
+                        f"⏰ Напоминание в группе (#{reminder.id}):\n{body}",
+                        reply_markup=reminder_actions_keyboard(reminder.id),
+                    )
+                except Exception as dm_exc:
+                    logger.warning(
+                        "Cannot DM creator %s for reminder %s: %s",
+                        reminder.created_by_telegram_id,
+                        reminder_id,
+                        dm_exc,
+                    )
         except Exception as exc:
             # Network / Telegram errors: retry позже, не двигая расписание навсегда.
             logger.exception("Failed to send reminder %s: %s", reminder_id, exc)

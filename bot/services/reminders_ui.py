@@ -1,36 +1,17 @@
-from zoneinfo import ZoneInfo
-
 from aiogram.types import Message
 
 from bot.config import settings
 from bot.db.repository import async_session, get_active_chat_reminders, get_or_create_user
-from bot.keyboards.inline import list_reminder_keyboard
-
-
-def _format_list_item(reminder, timezone: str) -> str:
-    tz = ZoneInfo(timezone)
-    if reminder.next_run_at:
-        when = reminder.next_run_at.astimezone(tz).strftime("%d.%m %H:%M")
-    elif reminder.daily_time:
-        when = f"ежедневно {reminder.daily_time.strftime('%H:%M')}"
-    else:
-        when = "—"
-
-    kind_labels = {
-        "once": "разово",
-        "interval": "интервал",
-        "daily": "ежедневно",
-        "weekly": "по дням недели",
-    }
-    kind = kind_labels.get(reminder.kind, reminder.kind)
-    return f"#{reminder.id} [{kind}] {when} — {reminder.text}"
+from bot.keyboards.inline import list_manage_keyboard
+from bot.services.reminder_display import format_reminder_list_line
 
 
 async def send_active_reminders(message: Message) -> None:
+    viewer_id = message.from_user.id
     async with async_session() as session:
         await get_or_create_user(
             session,
-            telegram_id=message.from_user.id,
+            telegram_id=viewer_id,
             timezone=settings.default_timezone,
         )
         reminders = await get_active_chat_reminders(session, message.chat.id)
@@ -39,7 +20,12 @@ async def send_active_reminders(message: Message) -> None:
         await message.answer("Активных напоминаний нет.")
         return
 
-    await message.answer(f"Активных напоминаний: {len(reminders)}")
-    for reminder in reminders:
-        text = _format_list_item(reminder, reminder.timezone)
-        await message.answer(text, reply_markup=list_reminder_keyboard(reminder.id))
+    lines = [format_reminder_list_line(r, r.timezone) for r in reminders]
+    body = f"<b>Активных напоминаний: {len(reminders)}</b>\n\n" + "\n".join(lines)
+    keyboard = list_manage_keyboard(reminders, viewer_id)
+
+    hint = ""
+    if message.chat.id < 0:
+        hint = "\n\n<i>Кнопки ✏️/🗑 — только для твоих напоминаний.</i>"
+
+    await message.answer(body + hint, reply_markup=keyboard)
