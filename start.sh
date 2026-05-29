@@ -20,10 +20,8 @@ fi
 echo "==> pip install"
 pip install -r requirements.txt -q
 
-if [[ "${SET_BOT_AVATAR:-}" == "1" && -n "${BOT_TOKEN:-}" ]]; then
-  echo "==> Setting bot avatar"
-  python scripts/set_bot_avatar.py || echo "Avatar upload skipped/failed"
-fi
+echo "==> Setting bot avatar (if needed)"
+python scripts/set_bot_avatar.py --force || echo "Avatar upload skipped/failed"
 
 echo "==> Starting bot..."
 exec python -m bot.main

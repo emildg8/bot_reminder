@@ -72,7 +72,6 @@ docker compose up -d --build
 | `GEMINI_API_KEY` | LLM ([aistudio.google.com](https://aistudio.google.com)) |
 | `OPENAI_API_KEY` | Опциональный fallback |
 | `ADMIN_TELEGRAM_IDS` | ID админов: `250891839` или `111,222` |
-| `SET_BOT_AVATAR` | `1` — загрузить аватар из `assets/` при старте |
 | `WHISPER_MODEL` | `tiny` / `base` |
 | `USE_YANDEX_STT` | `true` для Yandex SpeechKit |
 
@@ -93,9 +92,11 @@ make avatar
 python scripts/set_bot_avatar.py
 ```
 
-На Wispbyte: добавь `SET_BOT_AVATAR=1` в Environment — аватар загрузится при старте.
+На Wispbyte аватар загружается **автоматически** при каждом старте (`start.sh` + `bot.main`).
 
-**GitHub Actions:** добавь секрет `BOT_TOKEN` в Settings → Secrets — аватар обновится автоматически при push в `assets/bot_avatar.jpg` или вручную через workflow **Bot Avatar**.
+Админ-команда: `/setavatar` — принудительно обновить аватар.
+
+**GitHub Actions:** добавь секрет `BOT_TOKEN` в Settings → Secrets — аватар обновится при push в `assets/`.
 
 ## CI
 

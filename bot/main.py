@@ -11,6 +11,7 @@ from bot.config import settings
 from bot.db.repository import init_db
 from bot.handlers import admin, callbacks, create, edit, group, health, list_cmd, manage, menu, start
 from bot.logging_setup import setup_logging
+from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.bot_menu import setup_bot_commands
 from bot.services.drafts import prune_expired
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
@@ -78,6 +79,11 @@ async def main() -> None:
     )
     await restore_scheduled_reminders(bot)
     await setup_bot_commands(bot)
+
+    try:
+        await ensure_bot_avatar(bot)
+    except Exception as exc:
+        logger.warning("Avatar upload on startup failed: %s", exc)
 
     if settings.admin_telegram_ids:
         await _notify_admins(bot, f"✅ Бот запущен · v{__version__}")

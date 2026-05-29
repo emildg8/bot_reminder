@@ -7,9 +7,6 @@ requires-python = ">=3.11"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
-markers = [
-    "integration: live Telegram API tests (need BOT_TOKEN)",
-]
 
 [tool.ruff]
 target-version = "py311"

@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy import func, select
@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from bot.config import settings
 from bot.db.models import Reminder, User
 from bot.db.repository import async_session, get_all_active_reminders
+from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.runtime import format_uptime, uptime_seconds
 from bot.services.scheduler import scheduler
 from bot.version import __version__
@@ -39,3 +40,17 @@ async def cmd_stats(message: Message) -> None:
         f"- Reminders active: {reminders_active}\n"
         f"- Scheduled jobs: {scheduled_jobs}\n"
     )
+
+
+@router.message(Command("setavatar"))
+async def cmd_setavatar(message: Message, bot: Bot) -> None:
+    if not _is_admin(message.from_user.id):
+        await message.answer("Команда доступна только админам.")
+        return
+
+    await message.answer("⏳ Загружаю аватар...")
+    try:
+        await ensure_bot_avatar(bot, force=True)
+        await message.answer("✅ Аватар обновлён. Проверь профиль бота.")
+    except Exception as exc:
+        await message.answer(f"❌ Не удалось: {exc}")
