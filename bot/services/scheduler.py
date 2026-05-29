@@ -1,9 +1,11 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
+from sqlalchemy import select
+
 from bot.db.models import Reminder
 from bot.db.repository import async_session, get_reminder, update_reminder_next_run
 from bot.keyboards.inline import reminder_actions_keyboard
@@ -20,11 +22,18 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
         if reminder is None or not reminder.is_active:
             return
 
-        await bot.send_message(
-            chat_id=reminder.chat_id,
-            text=f"⏰ Напоминание: {reminder.text}",
-            reply_markup=reminder_actions_keyboard(reminder.id),
-        )
+        try:
+            await bot.send_message(
+                chat_id=reminder.chat_id,
+                text=f"⏰ Напоминание: {reminder.text}",
+                reply_markup=reminder_actions_keyboard(reminder.id),
+            )
+        except Exception as exc:
+            # Network / Telegram errors: retry позже, не двигая расписание навсегда.
+            logger.exception("Failed to send reminder %s: %s", reminder_id, exc)
+            retry_at = datetime.now().astimezone() + timedelta(minutes=2)
+            schedule_reminder(bot, reminder.id, retry_at)
+            return
 
         next_run = advance_reminder(reminder, reminder.timezone)
         job_id = f"reminder_{reminder_id}"
