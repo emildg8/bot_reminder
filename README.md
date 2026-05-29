@@ -62,22 +62,47 @@ docker compose up --build -d
 ## Деплой на Wispbyte
 
 1. Создайте бота в [@BotFather](https://t.me/BotFather), получите `BOT_TOKEN`
-2. Залейте репозиторий на GitHub
-3. На [Wispbyte](https://wispbyte.com) создайте Python-проект, подключите GitHub Pull
-4. Startup command: `python -m bot.main`
-5. Добавьте переменные окружения из `.env.example`
-6. Рекомендации для free tier:
-   - `WHISPER_MODEL=tiny`
-   - Укажите хотя бы `GROQ_API_KEY` или `GEMINI_API_KEY`
-   - Установите ffmpeg в startup script, если не доступен по умолчанию
+2. Репозиторий: https://github.com/emildg8/bot_reminder (ветка **`main`**)
+3. На [Wispbyte](https://wispbyte.com) → **Repository Settings**
 
-Пример startup script:
+### Настройки репозитория (важно)
+
+| Поле | Значение |
+|------|----------|
+| **Repository URL** | `https://github.com/emildg8/bot_reminder.git` |
+| **Branch** | `main` |
+| **GitHub Username** | оставить **пустым** (репозиторий публичный) |
+| **Personal Access Token** | оставить **пустым** |
+
+URL **обязательно** с `https://` и `.git` в конце.  
+Вариант `github.com/emildg8/bot_reminder` без протокола на Wispbyte часто даёт ошибку:
+`fatal: repository '.' does not exist`.
+
+После ввода URL нажмите **Save**, затем **Clone**.
+
+### Startup command
+
+Первый запуск (установка зависимостей):
 
 ```bash
-apt-get update && apt-get install -y ffmpeg
-pip install -r requirements.txt
-python -m bot.main
+pip install -r requirements.txt && python -m bot.main
 ```
+
+С ffmpeg для кружочков:
+
+```bash
+apt-get update && apt-get install -y ffmpeg && pip install -r requirements.txt && python -m bot.main
+```
+
+### Переменные окружения
+
+Минимум: `BOT_TOKEN`. Желательно: `GROQ_API_KEY` или `GEMINI_API_KEY`.
+
+### Если Clone всё равно не работает
+
+1. Очистите поля Username и Token, сохраните, Clone снова.
+2. Создайте новый PAT на GitHub только с правом **public_repo** (или **Contents: Read** для fine-grained) и вставьте в Token, Username = `emildg8`.
+3. Альтернатива: вручную загрузите файлы через File Manager Wispbyte (без Git), затем только `pip install` и startup.
 
 ## Примеры фраз
 
