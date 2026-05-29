@@ -1,10 +1,8 @@
 import re
 
 from aiogram import Router
-from aiogram.filters import Command
 from aiogram.types import Message
 
-from bot.config import settings
 from bot.db.repository import async_session, search_chat_reminders
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.reminder_display import format_reminder_list_line
