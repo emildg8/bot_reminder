@@ -43,22 +43,52 @@ def _parse_llm_json(content: str) -> ParsedReminder | None:
     except json.JSONDecodeError:
         return None
 
+    if not isinstance(data, dict):
+        return None
+
     daily_time = None
     if data.get("daily_time"):
-        parts = str(data["daily_time"]).split(":")
-        daily_time = time(int(parts[0]), int(parts[1]))
+        try:
+            parts = str(data["daily_time"]).split(":")
+            daily_time = time(int(parts[0]), int(parts[1]))
+        except Exception:
+            return None
 
     run_at = None
     if data.get("run_at"):
-        run_at = datetime.fromisoformat(str(data["run_at"]).replace("Z", "+00:00"))
+        try:
+            run_at = datetime.fromisoformat(str(data["run_at"]).replace("Z", "+00:00"))
+        except Exception:
+            return None
 
-    return ParsedReminder(
-        text=data.get("text", "").strip(),
-        kind=data["kind"],
+    kind = data.get("kind")
+    if kind not in ("once", "interval", "daily"):
+        return None
+
+    interval_seconds = data.get("interval_seconds")
+    if interval_seconds is not None:
+        try:
+            interval_seconds = int(interval_seconds)
+        except Exception:
+            return None
+
+    parsed = ParsedReminder(
+        text=str(data.get("text", "")).strip(),
+        kind=kind,
         run_at=run_at,
-        interval_seconds=data.get("interval_seconds"),
+        interval_seconds=interval_seconds,
         daily_time=daily_time,
     )
+
+    if not parsed.text:
+        return None
+    if parsed.kind == "once" and parsed.run_at is None:
+        return None
+    if parsed.kind == "interval" and (parsed.interval_seconds is None or parsed.interval_seconds <= 0):
+        return None
+    if parsed.kind == "daily" and parsed.daily_time is None:
+        return None
+    return parsed
 
 
 async def _try_llm(
@@ -91,6 +121,12 @@ async def _try_llm(
 
 
 async def parse_reminder(text: str, timezone: str) -> ParsedReminder | None:
+    # 1) Сначала пробуем дешёвый и предсказуемый парсинг правилами.
+    parsed = parse_with_rules(text, timezone)
+    if parsed:
+        logger.info("Parsed via rules")
+        return parsed
+
     providers: list[tuple[str, AsyncOpenAI, str]] = []
 
     if settings.groq_api_key:
@@ -118,11 +154,6 @@ async def parse_reminder(text: str, timezone: str) -> ParsedReminder | None:
         if parsed:
             logger.info("Parsed via free LLM (%s)", name)
             return parsed
-
-    parsed = parse_with_rules(text, timezone)
-    if parsed:
-        logger.info("Parsed via rules")
-        return parsed
 
     if settings.openai_api_key:
         client = _build_client("https://api.openai.com/v1", settings.openai_api_key)
