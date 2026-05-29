@@ -6,6 +6,7 @@ from aiogram.types import Message
 
 from bot.db.repository import async_session, get_or_create_user
 from bot.keyboards.inline import confirm_reminder_keyboard
+from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
 from bot.services.drafts import store_draft
 from bot.services.media import (
     download_telegram_file,
@@ -36,7 +37,10 @@ async def _process_text_and_reply(message: Message, text: str, source_label: str
             "Не понял время. Напиши, например:\n"
             "• через 30 минут выпить таблетки\n"
             "• каждый день в 9:00 зарядка\n"
-            "• каждые 2 часа встать"
+            "• каждые 2 часа встать\n"
+            "• по будням в 09:00 зарядка\n\n"
+            "Справка: /help",
+            reply_markup=main_menu_keyboard(),
         )
         return
 
@@ -50,7 +54,7 @@ async def _process_text_and_reply(message: Message, text: str, source_label: str
     )
 
 
-@router.message(F.text & ~F.text.startswith("/"))
+@router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_text(message: Message) -> None:
     await _process_text_and_reply(message, message.text.strip())
 

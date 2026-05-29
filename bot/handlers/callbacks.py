@@ -14,6 +14,7 @@ from bot.db.repository import (
     get_reminder,
     update_reminder_next_run,
 )
+from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.scheduler import schedule_reminder, scheduler
@@ -58,6 +59,7 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
     schedule_reminder(bot, reminder.id, next_run)
     when = next_run.astimezone(ZoneInfo(user.timezone)).strftime("%d.%m.%Y %H:%M")
     await callback.message.edit_text(f"✅ Напоминание создано (#{reminder.id}). Первый раз: {when}")
+    await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
     await callback.answer()
 
 

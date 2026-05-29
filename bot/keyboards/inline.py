@@ -69,3 +69,19 @@ def list_reminder_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{reminder_id}")]
         ]
     )
+
+
+def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="➕ Создать", callback_data="menu:create"),
+                InlineKeyboardButton(text="📋 Список", callback_data="menu:list"),
+            ],
+            [
+                InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
+                InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
+            ],
+            [InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples")],
+        ]
+    )

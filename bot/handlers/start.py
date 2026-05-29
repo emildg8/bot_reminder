@@ -4,13 +4,13 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, update_user_timezone
-from bot.keyboards.inline import timezone_keyboard, timezone_offset_keyboard
+from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
+from bot.keyboards.reply import main_menu_keyboard
 
 router = Router()
 
+
 def _offset_to_tz(offset_hours: int) -> str:
-    # zoneinfo uses inverted sign in Etc/GMT zones:
-    # UTC+3 == Etc/GMT-3
     if offset_hours == 0:
         return "Etc/UTC"
     sign = "-" if offset_hours > 0 else "+"
@@ -28,19 +28,21 @@ async def cmd_start(message: Message) -> None:
 
     await message.answer(
         "Привет! Я бот-напоминалка.\n\n"
-        "Напиши, скажи голосом или отправь кружочек, например:\n"
-        "• через час выпить таблетки\n"
-        "• каждые 30 минут встать\n"
-        "• каждый день в 9:00 зарядка\n\n"
-        f"Твоя timezone: {user.timezone}\n"
-        "Можешь изменить её кнопками ниже или командой /timezone",
-        reply_markup=timezone_keyboard(),
+        "Создай напоминание текстом, голосом или кружочком.\n"
+        "Или выбери действие кнопками ниже.\n\n"
+        f"Часовой пояс: <b>{user.timezone}</b>",
+        reply_markup=main_menu_keyboard(),
+    )
+    await message.answer(
+        "Быстрые действия:",
+        reply_markup=main_menu_inline_keyboard(),
     )
 
 
 @router.message(lambda m: m.text and m.text.startswith("/timezone"))
 async def cmd_timezone(message: Message) -> None:
-    await message.answer("Выбери timezone:", reply_markup=timezone_keyboard())
+    await message.answer("Выбери часовой пояс:", reply_markup=timezone_keyboard())
+
 
 @router.callback_query(lambda c: c.data and c.data.startswith("tz_menu:"))
 async def tz_menu(callback: CallbackQuery) -> None:
@@ -48,7 +50,7 @@ async def tz_menu(callback: CallbackQuery) -> None:
     if target == "offset":
         await callback.message.edit_text("Выбери UTC offset:", reply_markup=timezone_offset_keyboard())
     else:
-        await callback.message.edit_text("Выбери timezone:", reply_markup=timezone_keyboard())
+        await callback.message.edit_text("Выбери часовой пояс:", reply_markup=timezone_keyboard())
     await callback.answer()
 
 
@@ -64,8 +66,8 @@ async def set_timezone_offset(callback: CallbackQuery) -> None:
         )
         await update_user_timezone(session, user, timezone)
 
-    await callback.message.edit_text(f"Timezone установлена: {timezone}")
-    await callback.answer()
+    await callback.message.edit_text(f"Часовой пояс установлен: {timezone}")
+    await callback.answer("Сохранено")
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("tz:"))
@@ -79,5 +81,5 @@ async def set_timezone(callback: CallbackQuery) -> None:
         )
         await update_user_timezone(session, user, timezone)
 
-    await callback.message.edit_text(f"Timezone установлена: {timezone}")
-    await callback.answer()
+    await callback.message.edit_text(f"Часовой пояс установлен: {timezone}")
+    await callback.answer("Сохранено")

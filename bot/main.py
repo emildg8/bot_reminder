@@ -8,8 +8,9 @@ from aiogram.enums import ParseMode
 
 from bot.config import settings
 from bot.db.repository import init_db
-from bot.handlers import admin, callbacks, create, health, list_cmd, start
+from bot.handlers import admin, callbacks, create, health, list_cmd, menu, start
 from bot.logging_setup import setup_logging
+from bot.services.bot_menu import setup_bot_commands
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ async def main() -> None:
     )
     dp = Dispatcher()
     dp.include_router(start.router)
+    dp.include_router(menu.router)
     dp.include_router(list_cmd.router)
     dp.include_router(health.router)
     dp.include_router(admin.router)
@@ -54,6 +56,7 @@ async def main() -> None:
 
     scheduler.start()
     await restore_scheduled_reminders(bot)
+    await setup_bot_commands(bot)
 
     logger.info("Bot started")
     try:
