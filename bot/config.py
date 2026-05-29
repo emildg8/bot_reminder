@@ -1,9 +1,23 @@
 from pathlib import Path
+from typing import Any
 
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _parse_admin_ids(value: Any) -> list[int]:
+    if value is None or value == "" or value == []:
+        return []
+    if isinstance(value, int):
+        return [value]
+    if isinstance(value, str):
+        parts = [p.strip() for p in value.split(",") if p.strip()]
+        return [int(p) for p in parts]
+    if isinstance(value, (list, tuple)):
+        return [int(x) for x in value]
+    raise ValueError(f"Invalid admin_telegram_ids: {value!r}")
 
 
 class Settings(BaseSettings):
@@ -32,6 +46,11 @@ class Settings(BaseSettings):
     log_backup_count: int = 2
 
     admin_telegram_ids: list[int] = Field(default_factory=list)
+
+    @field_validator("admin_telegram_ids", mode="before")
+    @classmethod
+    def parse_admin_telegram_ids(cls, value: Any) -> list[int]:
+        return _parse_admin_ids(value)
 
     groq_model: str = "llama-3.1-8b-instant"
     gemini_model: str = "gemini-2.0-flash"
