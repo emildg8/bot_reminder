@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     log_max_bytes: int = 2 * 1024 * 1024
     log_backup_count: int = 2
 
-    admin_telegram_ids: list[int] = Field(default_factory=list)
+    admin_telegram_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod
