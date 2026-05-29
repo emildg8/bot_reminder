@@ -44,6 +44,9 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
         reminder = await create_reminder(
             session,
             user_id=user.id,
+            chat_id=callback.message.chat.id,
+            created_by_telegram_id=callback.from_user.id,
+            timezone=user.timezone,
             text=parsed.text,
             kind=parsed.kind,
             next_run_at=next_run,
@@ -86,12 +89,11 @@ async def snooze_reminder(callback: CallbackQuery, bot: Bot) -> None:
             await session.commit()
             await session.refresh(reminder)
 
-        user = await _get_reminder_owner(session, reminder)
-        if user is None or user.telegram_id != callback.from_user.id:
+        if reminder.created_by_telegram_id != callback.from_user.id:
             await callback.answer("Нет доступа.", show_alert=True)
             return
 
-        tz = ZoneInfo(user.timezone)
+        tz = ZoneInfo(reminder.timezone)
         next_run = datetime.now(tz) + timedelta(minutes=minutes)
         await update_reminder_next_run(session, reminder, next_run)
 
@@ -112,8 +114,7 @@ async def done_reminder(callback: CallbackQuery) -> None:
             await callback.answer("Напоминание не найдено.", show_alert=True)
             return
 
-        user = await _get_reminder_owner(session, reminder)
-        if user is None or user.telegram_id != callback.from_user.id:
+        if reminder.created_by_telegram_id != callback.from_user.id:
             await callback.answer("Нет доступа.", show_alert=True)
             return
 
@@ -137,8 +138,7 @@ async def delete_reminder(callback: CallbackQuery) -> None:
             await callback.answer("Напоминание не найдено.", show_alert=True)
             return
 
-        user = await _get_reminder_owner(session, reminder)
-        if user is None or user.telegram_id != callback.from_user.id:
+        if reminder.created_by_telegram_id != callback.from_user.id:
             await callback.answer("Нет доступа.", show_alert=True)
             return
 

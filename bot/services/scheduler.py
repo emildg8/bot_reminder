@@ -4,10 +4,8 @@ from datetime import datetime
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
-from sqlalchemy import select
-
-from bot.db.models import Reminder, User
-from bot.db.repository import async_session, deactivate_reminder, get_reminder, update_reminder_next_run
+from bot.db.models import Reminder
+from bot.db.repository import async_session, get_reminder, update_reminder_next_run
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder
 
@@ -22,16 +20,13 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
         if reminder is None or not reminder.is_active:
             return
 
-        result = await session.execute(select(User).where(User.id == reminder.user_id))
-        user = result.scalar_one()
-
         await bot.send_message(
-            chat_id=user.telegram_id,
+            chat_id=reminder.chat_id,
             text=f"⏰ Напоминание: {reminder.text}",
             reply_markup=reminder_actions_keyboard(reminder.id),
         )
 
-        next_run = advance_reminder(reminder, user.timezone)
+        next_run = advance_reminder(reminder, reminder.timezone)
         job_id = f"reminder_{reminder_id}"
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
