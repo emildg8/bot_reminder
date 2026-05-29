@@ -1,6 +1,6 @@
 from datetime import datetime, time
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from bot.config import settings
@@ -13,6 +13,15 @@ async_session = async_sessionmaker(engine, expire_on_commit=False)
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # lightweight migration for existing SQLite DBs
+        try:
+            result = await conn.execute(text("PRAGMA table_info(reminders)"))
+            cols = {row[1] for row in result.fetchall()}
+            if "weekdays_mask" not in cols:
+                await conn.execute(text("ALTER TABLE reminders ADD COLUMN weekdays_mask INTEGER"))
+        except Exception:
+            # if the table doesn't exist yet or PRAGMA fails, create_all will handle it
+            pass
 
 
 async def get_or_create_user(session: AsyncSession, telegram_id: int, timezone: str) -> User:
@@ -41,6 +50,7 @@ async def create_reminder(
     next_run_at: datetime | None = None,
     interval_seconds: int | None = None,
     daily_time: time | None = None,
+    weekdays_mask: int | None = None,
 ) -> Reminder:
     reminder = Reminder(
         user_id=user_id,
@@ -49,6 +59,7 @@ async def create_reminder(
         next_run_at=next_run_at,
         interval_seconds=interval_seconds,
         daily_time=daily_time,
+        weekdays_mask=weekdays_mask,
     )
     session.add(reminder)
     await session.commit()

@@ -13,6 +13,7 @@ class ReminderKind(str, Enum):
     ONCE = "once"
     INTERVAL = "interval"
     DAILY = "daily"
+    WEEKLY = "weekly"
 
 
 class User(Base):
@@ -36,6 +37,7 @@ class Reminder(Base):
     next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     interval_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     daily_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    weekdays_mask: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

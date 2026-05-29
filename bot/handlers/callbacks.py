@@ -15,7 +15,7 @@ from bot.db.repository import (
     update_reminder_next_run,
 )
 from bot.services.drafts import discard_draft, pop_draft
-from bot.services.reminder_utils import compute_next_run
+from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.scheduler import schedule_reminder, scheduler
 
 router = Router()
@@ -49,6 +49,7 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
             next_run_at=next_run,
             interval_seconds=parsed.interval_seconds,
             daily_time=parsed.daily_time,
+            weekdays_mask=weekdays_to_mask(parsed.weekdays) if parsed.weekdays else None,
         )
 
     schedule_reminder(bot, reminder.id, next_run)

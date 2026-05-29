@@ -20,7 +20,7 @@ def _format_list_item(reminder, timezone: str) -> str:
     else:
         when = "—"
 
-    kind_labels = {"once": "разово", "interval": "интервал", "daily": "ежедневно"}
+    kind_labels = {"once": "разово", "interval": "интервал", "daily": "ежедневно", "weekly": "по дням недели"}
     kind = kind_labels.get(reminder.kind, reminder.kind)
     return f"#{reminder.id} [{kind}] {when} — {reminder.text}"
 

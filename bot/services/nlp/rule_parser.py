@@ -14,6 +14,14 @@ DAILY_PATTERN = re.compile(
     r"каждый\s+день\s+(?:в\s+)?(\d{1,2})[:.](\d{2})",
     re.IGNORECASE,
 )
+WEEKDAYS_PATTERN = re.compile(
+    r"(?:по\s+)?будням\s+(?:в\s+)?(\d{1,2})[:.](\d{2})",
+    re.IGNORECASE,
+)
+WEEKEND_PATTERN = re.compile(
+    r"(?:по\s+)?выходным\s+(?:в\s+)?(\d{1,2})[:.](\d{2})",
+    re.IGNORECASE,
+)
 IN_PATTERN = re.compile(
     r"через\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
     re.IGNORECASE,
@@ -89,6 +97,28 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             run_at=next_run,
         )
 
+    if match := WEEKDAYS_PATTERN.search(cleaned):
+        hour, minute = int(match.group(1)), int(match.group(2))
+        task_text = WEEKDAYS_PATTERN.sub("", cleaned).strip(" ,.")
+        daily = time(hour, minute)
+        return ParsedReminder(
+            text=task_text or "Напоминание",
+            kind="weekly",
+            daily_time=daily,
+            weekdays=[0, 1, 2, 3, 4],
+        )
+
+    if match := WEEKEND_PATTERN.search(cleaned):
+        hour, minute = int(match.group(1)), int(match.group(2))
+        task_text = WEEKEND_PATTERN.sub("", cleaned).strip(" ,.")
+        daily = time(hour, minute)
+        return ParsedReminder(
+            text=task_text or "Напоминание",
+            kind="weekly",
+            daily_time=daily,
+            weekdays=[5, 6],
+        )
+
     parsed_date = dateparser.parse(
         cleaned,
         languages=["ru", "en"],
@@ -102,7 +132,14 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
         return None
 
     task_text = cleaned
-    for pattern in (IN_PATTERN, DAILY_PATTERN, INTERVAL_PATTERN, EVERY_HOUR_PATTERN):
+    for pattern in (
+        IN_PATTERN,
+        DAILY_PATTERN,
+        WEEKDAYS_PATTERN,
+        WEEKEND_PATTERN,
+        INTERVAL_PATTERN,
+        EVERY_HOUR_PATTERN,
+    ):
         task_text = pattern.sub("", task_text).strip(" ,.")
 
     if parsed_date <= now:

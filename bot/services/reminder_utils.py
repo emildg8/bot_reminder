@@ -5,6 +5,18 @@ from bot.db.models import Reminder, ReminderKind
 from bot.services.nlp.schemas import ParsedReminder
 
 
+def weekdays_to_mask(weekdays: list[int]) -> int:
+    mask = 0
+    for d in weekdays:
+        if 0 <= d <= 6:
+            mask |= 1 << d
+    return mask
+
+
+def mask_to_weekdays(mask: int) -> list[int]:
+    return [d for d in range(7) if mask & (1 << d)]
+
+
 def compute_next_run(parsed: ParsedReminder, timezone: str) -> datetime:
     tz = ZoneInfo(timezone)
     now = datetime.now(tz)
@@ -39,6 +51,11 @@ def compute_next_run(parsed: ParsedReminder, timezone: str) -> datetime:
             candidate += timedelta(days=1)
         return candidate
 
+    if parsed.kind == "weekly":
+        if parsed.daily_time is None or not parsed.weekdays:
+            raise ValueError("weekly reminder requires daily_time and weekdays")
+        return _next_weekly_run(now, parsed.daily_time, set(parsed.weekdays))
+
     raise ValueError(f"Unknown kind: {parsed.kind}")
 
 
@@ -67,6 +84,10 @@ def advance_reminder(reminder: Reminder, timezone: str) -> datetime | None:
             candidate += timedelta(days=1)
         return candidate
 
+    if reminder.kind == ReminderKind.WEEKLY.value and reminder.daily_time and reminder.weekdays_mask:
+        weekdays = set(mask_to_weekdays(reminder.weekdays_mask))
+        return _next_weekly_run(now, reminder.daily_time, weekdays)
+
     return None
 
 
@@ -91,4 +112,31 @@ def format_reminder_summary(parsed: ParsedReminder, timezone: str) -> str:
         when = parsed.daily_time.strftime("%H:%M")
         return f"Каждый день в {when}: {parsed.text}"
 
+    if parsed.kind == "weekly" and parsed.daily_time and parsed.weekdays:
+        when = parsed.daily_time.strftime("%H:%M")
+        wd = set(parsed.weekdays)
+        if wd == {0, 1, 2, 3, 4}:
+            days = "по будням"
+        elif wd == {5, 6}:
+            days = "по выходным"
+        else:
+            names = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+            days = " ".join(names[d] for d in sorted(wd))
+        return f"{days} в {when}: {parsed.text}"
+
     return parsed.text
+
+
+def _next_weekly_run(now: datetime, daily_time: time, allowed_weekdays: set[int]) -> datetime:
+    base = now.replace(
+        hour=daily_time.hour,
+        minute=daily_time.minute,
+        second=0,
+        microsecond=0,
+    )
+    for offset_days in range(0, 8):
+        candidate = base + timedelta(days=offset_days)
+        if candidate.weekday() in allowed_weekdays and candidate > now:
+            return candidate
+    # fallback: next week same day
+    return base + timedelta(days=7)
