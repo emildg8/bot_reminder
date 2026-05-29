@@ -9,10 +9,24 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from bot.config import settings
 from bot.db.repository import init_db
-from bot.handlers import admin, callbacks, create, edit, group, health, list_cmd, manage, menu, start
+from bot.handlers import (
+    admin,
+    callbacks,
+    create,
+    edit,
+    group,
+    health,
+    list_callbacks,
+    list_cmd,
+    manage,
+    menu,
+    search,
+    start,
+)
 from bot.logging_setup import setup_logging
+from bot.services.backup import backup_database
 from bot.services.bot_avatar import ensure_bot_avatar
-from bot.services.bot_menu import setup_bot_commands
+from bot.services.bot_menu import setup_bot_commands, setup_bot_profile
 from bot.services.drafts import prune_expired
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
 from bot.version import __version__
@@ -64,6 +78,8 @@ async def main() -> None:
     dp.include_router(menu.router)
     dp.include_router(manage.router)
     dp.include_router(list_cmd.router)
+    dp.include_router(list_callbacks.router)
+    dp.include_router(search.router)
     dp.include_router(health.router)
     dp.include_router(admin.router)
     dp.include_router(callbacks.router)
@@ -77,8 +93,15 @@ async def main() -> None:
         id="draft_cleanup",
         replace_existing=True,
     )
+    scheduler.add_job(
+        backup_database,
+        trigger=IntervalTrigger(hours=settings.db_backup_interval_hours),
+        id="db_backup",
+        replace_existing=True,
+    )
     await restore_scheduled_reminders(bot)
     await setup_bot_commands(bot)
+    await setup_bot_profile(bot)
 
     try:
         await ensure_bot_avatar(bot)

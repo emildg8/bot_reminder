@@ -3,6 +3,9 @@
 install:
 	pip install -r requirements.txt
 
+backup:
+	python scripts/backup_db.py
+
 install-dev:
 	pip install -r requirements-dev.txt
 

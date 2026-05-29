@@ -15,9 +15,11 @@ from bot.db.repository import (
 )
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft
+from bot.services.duplicates import find_duplicate_reminder
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.scheduler import schedule_reminder, scheduler
+from bot.services.timezone_ctx import get_effective_timezone
 
 router = Router()
 
@@ -73,13 +75,31 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
             await callback.answer()
             return
 
-        next_run = compute_next_run(entry.parsed, user.timezone)
+        tz = await get_effective_timezone(
+            session, callback.message.chat.id, callback.from_user.id
+        )
+        next_run = compute_next_run(entry.parsed, tz)
+
+        duplicate = await find_duplicate_reminder(
+            session,
+            callback.message.chat.id,
+            entry.parsed.text,
+            entry.parsed.kind,
+            created_by=callback.from_user.id,
+        )
+        if duplicate:
+            await callback.answer(
+                f"Похожее напоминание уже есть (#{duplicate.id}). Используй /edit {duplicate.id}",
+                show_alert=True,
+            )
+            return
+
         reminder = await create_reminder(
             session,
             user_id=user.id,
             chat_id=callback.message.chat.id,
             created_by_telegram_id=callback.from_user.id,
-            timezone=user.timezone,
+            timezone=tz,
             text=entry.parsed.text,
             kind=entry.parsed.kind,
             next_run_at=next_run,
@@ -90,7 +110,7 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
         )
 
     schedule_reminder(bot, reminder.id, next_run)
-    when = next_run.astimezone(ZoneInfo(user.timezone)).strftime("%d.%m.%Y %H:%M")
+    when = next_run.astimezone(ZoneInfo(tz)).strftime("%d.%m.%Y %H:%M")
     await callback.message.edit_text(f"✅ Напоминание создано (#{reminder.id}). Первый раз: {when}")
     await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
     await callback.answer()

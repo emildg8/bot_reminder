@@ -7,7 +7,7 @@ from apscheduler.triggers.date import DateTrigger
 from sqlalchemy import select
 
 from bot.db.models import Reminder
-from bot.db.repository import async_session, get_reminder, update_reminder_next_run
+from bot.db.repository import async_session, get_reminder, is_chat_paused
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder
 from bot.services.telegram_format import format_reminder_message, is_group_chat
@@ -21,6 +21,10 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
     async with async_session() as session:
         reminder = await get_reminder(session, reminder_id)
         if reminder is None or not reminder.is_active:
+            return
+
+        if await is_chat_paused(session, reminder.chat_id):
+            logger.info("Chat %s paused, skip reminder %s", reminder.chat_id, reminder_id)
             return
 
         mention_username: str | None = None

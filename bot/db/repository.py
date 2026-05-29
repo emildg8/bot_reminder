@@ -4,7 +4,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from bot.config import settings
-from bot.db.models import Base, Reminder, User
+from bot.db.models import Base, ChatSettings, Reminder, User
 
 engine = create_async_engine(settings.database_url, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
@@ -13,7 +13,6 @@ async_session = async_sessionmaker(engine, expire_on_commit=False)
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # lightweight migration for existing SQLite DBs
         try:
             result = await conn.execute(text("PRAGMA table_info(reminders)"))
             cols = {row[1] for row in result.fetchall()}
@@ -28,7 +27,15 @@ async def init_db() -> None:
             if "mention_telegram_id" not in cols:
                 await conn.execute(text("ALTER TABLE reminders ADD COLUMN mention_telegram_id BIGINT"))
 
-            # Backfill for old rows (private chats): chat_id/user_id mapping.
+            user_cols = {
+                row[1]
+                for row in (await conn.execute(text("PRAGMA table_info(users)"))).fetchall()
+            }
+            if "timezone_confirmed" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN timezone_confirmed BOOLEAN DEFAULT 1")
+                )
+
             await conn.execute(
                 text(
                     """
@@ -57,7 +64,6 @@ async def init_db() -> None:
                 )
             )
         except Exception:
-            # if the table doesn't exist yet or PRAGMA fails, create_all will handle it
             pass
 
 
@@ -65,18 +71,59 @@ async def get_or_create_user(session: AsyncSession, telegram_id: int, timezone: 
     result = await session.execute(select(User).where(User.telegram_id == telegram_id))
     user = result.scalar_one_or_none()
     if user is None:
-        user = User(telegram_id=telegram_id, timezone=timezone)
+        user = User(telegram_id=telegram_id, timezone=timezone, timezone_confirmed=False)
         session.add(user)
         await session.commit()
         await session.refresh(user)
     return user
 
 
-async def update_user_timezone(session: AsyncSession, user: User, timezone: str) -> User:
+async def confirm_user_timezone(session: AsyncSession, user: User, timezone: str) -> User:
     user.timezone = timezone
+    user.timezone_confirmed = True
     await session.commit()
     await session.refresh(user)
     return user
+
+
+async def update_user_timezone(session: AsyncSession, user: User, timezone: str) -> User:
+    user.timezone = timezone
+    user.timezone_confirmed = True
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def get_or_create_chat(session: AsyncSession, chat_id: int, timezone: str) -> ChatSettings:
+    result = await session.execute(select(ChatSettings).where(ChatSettings.chat_id == chat_id))
+    chat = result.scalar_one_or_none()
+    if chat is None:
+        chat = ChatSettings(chat_id=chat_id, timezone=timezone)
+        session.add(chat)
+        await session.commit()
+        await session.refresh(chat)
+    return chat
+
+
+async def update_chat_timezone(session: AsyncSession, chat: ChatSettings, timezone: str) -> ChatSettings:
+    chat.timezone = timezone
+    await session.commit()
+    await session.refresh(chat)
+    return chat
+
+
+async def set_chat_paused(session: AsyncSession, chat_id: int, paused: bool) -> ChatSettings:
+    chat = await get_or_create_chat(session, chat_id, settings.default_timezone)
+    chat.is_paused = paused
+    await session.commit()
+    await session.refresh(chat)
+    return chat
+
+
+async def is_chat_paused(session: AsyncSession, chat_id: int) -> bool:
+    result = await session.execute(select(ChatSettings).where(ChatSettings.chat_id == chat_id))
+    chat = result.scalar_one_or_none()
+    return bool(chat and chat.is_paused)
 
 
 async def create_reminder(
@@ -117,15 +164,6 @@ async def get_reminder(session: AsyncSession, reminder_id: int) -> Reminder | No
     return result.scalar_one_or_none()
 
 
-async def get_active_reminders(session: AsyncSession, user_id: int) -> list[Reminder]:
-    result = await session.execute(
-        select(Reminder)
-        .where(Reminder.user_id == user_id, Reminder.is_active.is_(True))
-        .order_by(Reminder.created_at.desc())
-    )
-    return list(result.scalars().all())
-
-
 async def get_active_chat_reminders(session: AsyncSession, chat_id: int) -> list[Reminder]:
     result = await session.execute(
         select(Reminder)
@@ -133,6 +171,26 @@ async def get_active_chat_reminders(session: AsyncSession, chat_id: int) -> list
         .order_by(Reminder.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+async def search_chat_reminders(
+    session: AsyncSession,
+    chat_id: int,
+    query: str,
+    *,
+    limit: int = 20,
+) -> list[Reminder]:
+    pattern = f"%{query.strip().lower()}%"
+    result = await session.execute(
+        select(Reminder)
+        .where(
+            Reminder.chat_id == chat_id,
+            Reminder.is_active.is_(True),
+        )
+        .order_by(Reminder.created_at.desc())
+    )
+    reminders = [r for r in result.scalars().all() if query.lower() in r.text.lower()]
+    return reminders[:limit]
 
 
 async def get_all_active_reminders(session: AsyncSession) -> list[Reminder]:

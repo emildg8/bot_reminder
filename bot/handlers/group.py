@@ -19,7 +19,8 @@ async def on_bot_added(event: ChatMemberUpdated) -> None:
         "Напиши фразу, например:\n"
         "• через 30 минут созвон\n"
         "• по будням в 09:00 стендап\n\n"
-        "Команды: /list /help /menu",
+        "Часовой пояс группы: /timezone\n"
+        "Команды: /list /search /pause /help /menu",
         reply_markup=main_menu_keyboard(),
     )
     await event.bot.send_message(

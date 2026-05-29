@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     log_max_bytes: int = 2 * 1024 * 1024
     log_backup_count: int = 2
 
+    db_backup_keep: int = 7
+    db_backup_interval_hours: int = 24
+
+    bot_description: str = (
+        "Напоминалка: текст, голос или кружочек → напоминание в нужное время.\n"
+        "Разовые, ежедневные, по будням, интервалы. Работает в личке и группах."
+    )
+    bot_short_description: str = "Напоминания текстом, голосом и по расписанию"
+
     admin_telegram_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
 
     @field_validator("admin_telegram_ids", mode="before")

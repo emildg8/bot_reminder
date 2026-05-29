@@ -90,6 +90,32 @@ async def clear_confirm(callback: CallbackQuery, bot: Bot) -> None:
     await callback.answer()
 
 
+@router.message(Command("pause"))
+async def cmd_pause(message: Message, bot: Bot) -> None:
+    from bot.services.chat_pause import pause_chat_reminders
+
+    count = await pause_chat_reminders(bot, message.chat.id)
+    if count == 0:
+        await message.answer("Активных напоминаний нет.")
+        return
+    await message.answer(
+        f"⏸ Напоминания на паузе ({count} шт.).\n"
+        "Срабатывания остановлены. Возобновить: /resume",
+        reply_markup=main_menu_keyboard(),
+    )
+
+
+@router.message(Command("resume"))
+async def cmd_resume(message: Message, bot: Bot) -> None:
+    from bot.services.chat_pause import resume_chat_reminders
+
+    count = await resume_chat_reminders(bot, message.chat.id)
+    await message.answer(
+        f"▶️ Напоминания возобновлены ({count} в расписании).",
+        reply_markup=main_menu_keyboard(),
+    )
+
+
 @router.message(Command("import"))
 async def cmd_import(message: Message, bot: Bot) -> None:
     document = message.document

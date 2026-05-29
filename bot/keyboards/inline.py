@@ -68,10 +68,14 @@ def reminder_actions_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
     )
 
 
-def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMarkup | None:
-    """Кнопки управления только для напоминаний текущего пользователя."""
+def list_page_keyboard(
+    page_reminders,
+    viewer_telegram_id: int,
+    page: int,
+    total_pages: int,
+) -> InlineKeyboardMarkup | None:
     rows: list[list[InlineKeyboardButton]] = []
-    for reminder in reminders:
+    for reminder in page_reminders:
         if reminder.created_by_telegram_id != viewer_telegram_id:
             continue
         rows.append(
@@ -80,9 +84,25 @@ def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMa
                 InlineKeyboardButton(text=f"#{reminder.id} 🗑", callback_data=f"delete:{reminder.id}"),
             ]
         )
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav.append(InlineKeyboardButton(text="◀️", callback_data=f"list:page:{page - 1}"))
+    if total_pages > 1:
+        nav.append(InlineKeyboardButton(text=f"{page + 1}/{total_pages}", callback_data="list:noop"))
+    if page < total_pages - 1:
+        nav.append(InlineKeyboardButton(text="▶️", callback_data=f"list:page:{page + 1}"))
+    if nav:
+        rows.append(nav)
+
     if not rows:
         return None
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMarkup | None:
+    """Legacy wrapper — первая страница."""
+    return list_page_keyboard(reminders[:8], viewer_telegram_id, 0, max(1, (len(reminders) + 7) // 8))
 
 
 def clear_confirm_keyboard() -> InlineKeyboardMarkup:

@@ -4,7 +4,9 @@ from pathlib import Path
 from aiogram import Bot, F, Router
 from aiogram.types import Message
 
-from bot.db.repository import async_session, get_or_create_user
+from bot.db.repository import async_session
+from bot.services.stt_errors import format_stt_error
+from bot.services.timezone_ctx import get_effective_timezone
 from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
@@ -23,12 +25,13 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 
-async def _get_user_timezone(telegram_id: int) -> str:
+async def _get_parse_timezone(message: Message) -> str:
     from bot.config import settings
 
     async with async_session() as session:
-        user = await get_or_create_user(session, telegram_id, settings.default_timezone)
-        return user.timezone
+        return await get_effective_timezone(
+            session, message.chat.id, message.from_user.id
+        )
 
 
 async def _process_text_and_reply(
@@ -49,7 +52,7 @@ async def _process_text_and_reply(
     mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
     phrase = (clean_text or text).strip()
 
-    timezone = await _get_user_timezone(message.from_user.id)
+    timezone = await _get_parse_timezone(message)
     parsed = await parse_reminder(phrase, timezone)
 
     if parsed is None:
@@ -119,7 +122,7 @@ async def _handle_audio_message(message: Message, bot: Bot, file_id: str, suffix
         await _process_text_and_reply(message, text, bot, source_label="voice")
     except Exception as exc:
         logger.exception("STT failed")
-        await status.edit_text(f"Ошибка распознавания: {exc}")
+        await status.edit_text(format_stt_error(exc))
     finally:
         for path in (audio_path, video_path):
             if path and path.exists():

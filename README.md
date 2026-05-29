@@ -16,7 +16,9 @@
 - **Редактирование**: `/edit 3 через 1 час новый текст` или кнопка ✏️ в `/list`
 - `/export` и `/import` JSON (включая упоминания, отчёт об ошибках)
 - Логи в файл с ротацией (~6 МБ)
-- CI на GitHub Actions, Docker, авто-уведомление админов при старте/падении
+- CI на GitHub Actions, Docker, pre-commit, release workflow
+- Автобэкап SQLite (`data/backups/`, каждые 24 ч)
+- Защита от дубликатов, пагинация `/list`, TZ группы
 
 ## Команды
 
@@ -24,7 +26,8 @@
 |---------|----------|
 | `/start` | Главное меню |
 | `/list` | Список напоминаний |
-| `/edit` | Изменить напоминание |
+| `/search` | Поиск по тексту |
+| `/pause` / `/resume` | Пауза / возобновление |
 | `/menu` | Показать кнопки |
 | `/timezone` | Часовой пояс |
 | `/clear` | Удалить все в чате |
@@ -53,6 +56,7 @@ python -m bot.main
 make install-dev   # или: pip install -r requirements-dev.txt
 make test          # pytest
 make lint          # ruff
+make backup        # бэкап БД вручную
 make run           # запуск бота
 ```
 
