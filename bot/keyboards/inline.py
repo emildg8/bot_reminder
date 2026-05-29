@@ -14,6 +14,25 @@ def timezone_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=label, callback_data=f"tz:{value}")]
         for value, label in TIMEZONE_OPTIONS
     ]
+    rows.append([InlineKeyboardButton(text="UTC offset…", callback_data="tz_menu:offset")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def timezone_offset_keyboard() -> InlineKeyboardMarkup:
+    # UTC offsets from -12..+14
+    offsets = list(range(-12, 15))
+    rows: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for off in offsets:
+        sign = "+" if off >= 0 else ""
+        label = f"UTC{sign}{off}"
+        row.append(InlineKeyboardButton(text=label, callback_data=f"tz_off:{off}"))
+        if len(row) == 4:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(text="⬅ Назад", callback_data="tz_menu:zones")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
