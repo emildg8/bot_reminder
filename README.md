@@ -52,6 +52,17 @@ python -m bot.main
 1. Локальный **faster-whisper** (модель скачивается при первом использовании)
 2. Опционально **Yandex SpeechKit** (если `USE_YANDEX_STT=true`)
 
+## Логи
+
+Пишутся в файл с ротацией (~6 МБ всего):
+
+- `data/logs/bot.log` — текущий
+- `data/logs/bot.log.1`, `bot.log.2` — архив
+
+На Wispbyte: **Files** → `data/logs/` → скачать `bot.log` после падения (консоль панели логи не хранит).
+
+Настройка в `.env`: `LOG_MAX_BYTES` (размер одного файла), `LOG_BACKUP_COUNT` (число архивов).
+
 ## Docker
 
 ```bash

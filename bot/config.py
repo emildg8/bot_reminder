@@ -27,6 +27,9 @@ class Settings(BaseSettings):
 
     default_timezone: str = "Europe/Moscow"
 
+    log_max_bytes: int = 2 * 1024 * 1024
+    log_backup_count: int = 2
+
     groq_model: str = "llama-3.1-8b-instant"
     gemini_model: str = "gemini-2.0-flash"
     openai_model: str = "gpt-4o-mini"
