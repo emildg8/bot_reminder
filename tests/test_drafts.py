@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 
 from bot.services.drafts import pop_draft, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.nlp.schemas import ParsedReminder

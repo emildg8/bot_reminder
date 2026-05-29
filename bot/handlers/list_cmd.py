@@ -2,7 +2,6 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from bot.keyboards.reply import main_menu_keyboard
 from bot.services.reminders_ui import send_active_reminders
 
 router = Router()

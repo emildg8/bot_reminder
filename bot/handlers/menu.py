@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard
+from bot.keyboards.inline import timezone_keyboard
 from bot.keyboards.reply import (
     BTN_CREATE,
     BTN_EXAMPLES,

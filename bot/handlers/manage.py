@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from io import BytesIO
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
