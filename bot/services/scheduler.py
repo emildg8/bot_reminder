@@ -32,11 +32,13 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
         )
 
         next_run = advance_reminder(reminder, user.timezone)
+        job_id = f"reminder_{reminder_id}"
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
+
         if next_run is None:
-            await deactivate_reminder(session, reminder)
-            job_id = f"reminder_{reminder_id}"
-            if scheduler.get_job(job_id):
-                scheduler.remove_job(job_id)
+            # once: остаётся активным до «Готово»/«Удалить», чтобы работал snooze
+            pass
         else:
             await update_reminder_next_run(session, reminder, next_run)
             schedule_reminder(bot, reminder.id, next_run)

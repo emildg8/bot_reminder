@@ -73,9 +73,17 @@ async def snooze_reminder(callback: CallbackQuery, bot: Bot) -> None:
 
     async with async_session() as session:
         reminder = await get_reminder(session, reminder_id)
-        if reminder is None or not reminder.is_active:
+        if reminder is None:
             await callback.answer("Напоминание не найдено.", show_alert=True)
             return
+
+        if not reminder.is_active:
+            if reminder.kind != "once":
+                await callback.answer("Напоминание не найдено.", show_alert=True)
+                return
+            reminder.is_active = True
+            await session.commit()
+            await session.refresh(reminder)
 
         user = await _get_reminder_owner(session, reminder)
         if user is None or user.telegram_id != callback.from_user.id:
