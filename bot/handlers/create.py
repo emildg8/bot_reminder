@@ -26,8 +26,6 @@ router = Router()
 
 
 async def _get_parse_timezone(message: Message) -> str:
-    from bot.config import settings
-
     async with async_session() as session:
         return await get_effective_timezone(
             session, message.chat.id, message.from_user.id

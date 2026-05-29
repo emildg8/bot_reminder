@@ -180,7 +180,7 @@ async def search_chat_reminders(
     *,
     limit: int = 20,
 ) -> list[Reminder]:
-    pattern = f"%{query.strip().lower()}%"
+    query = query.strip().lower()
     result = await session.execute(
         select(Reminder)
         .where(
@@ -189,7 +189,7 @@ async def search_chat_reminders(
         )
         .order_by(Reminder.created_at.desc())
     )
-    reminders = [r for r in result.scalars().all() if query.lower() in r.text.lower()]
+    reminders = [r for r in result.scalars().all() if query in r.text.lower()]
     return reminders[:limit]
 
 
