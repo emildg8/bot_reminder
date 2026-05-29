@@ -71,6 +71,17 @@ def list_reminder_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
     )
 
 
+def clear_confirm_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🗑 Да, удалить все", callback_data="clear:yes"),
+                InlineKeyboardButton(text="Отмена", callback_data="clear:no"),
+            ]
+        ]
+    )
+
+
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

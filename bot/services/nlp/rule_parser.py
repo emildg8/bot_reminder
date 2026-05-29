@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import dateparser
 
 from bot.services.nlp.schemas import ParsedReminder
+from bot.services.nlp.weekday_parse import find_custom_weekly
 
 INTERVAL_PATTERN = re.compile(
     r"кажды(?:е|й)\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
@@ -117,6 +118,16 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             kind="weekly",
             daily_time=daily,
             weekdays=[5, 6],
+        )
+
+    if custom := find_custom_weekly(cleaned):
+        weekdays, hour, minute, task_text = custom
+        daily = time(hour, minute)
+        return ParsedReminder(
+            text=task_text or "Напоминание",
+            kind="weekly",
+            daily_time=daily,
+            weekdays=weekdays,
         )
 
     parsed_date = dateparser.parse(

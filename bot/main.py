@@ -8,7 +8,7 @@ from aiogram.enums import ParseMode
 
 from bot.config import settings
 from bot.db.repository import init_db
-from bot.handlers import admin, callbacks, create, health, list_cmd, menu, start
+from bot.handlers import admin, callbacks, create, group, health, list_cmd, manage, menu, start
 from bot.logging_setup import setup_logging
 from bot.services.bot_menu import setup_bot_commands
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
@@ -47,7 +47,9 @@ async def main() -> None:
     )
     dp = Dispatcher()
     dp.include_router(start.router)
+    dp.include_router(group.router)
     dp.include_router(menu.router)
+    dp.include_router(manage.router)
     dp.include_router(list_cmd.router)
     dp.include_router(health.router)
     dp.include_router(admin.router)

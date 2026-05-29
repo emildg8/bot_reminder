@@ -148,3 +148,15 @@ async def update_reminder_next_run(session: AsyncSession, reminder: Reminder, ne
 async def deactivate_reminder(session: AsyncSession, reminder: Reminder) -> None:
     reminder.is_active = False
     await session.commit()
+
+
+async def deactivate_all_chat_reminders(session: AsyncSession, chat_id: int) -> int:
+    result = await session.execute(
+        select(Reminder).where(Reminder.chat_id == chat_id, Reminder.is_active.is_(True))
+    )
+    reminders = list(result.scalars().all())
+    for reminder in reminders:
+        reminder.is_active = False
+    if reminders:
+        await session.commit()
+    return len(reminders)
