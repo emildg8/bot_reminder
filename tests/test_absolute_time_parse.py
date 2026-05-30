@@ -1,5 +1,5 @@
 from bot.services.nlp.absolute_time_parse import (
-    normalize_time_dots,
+    normalize_phrase,
     parse_absolute_datetime,
     try_dateparser_search,
 )
@@ -33,8 +33,39 @@ def test_poslezavtra():
     assert parsed.run_at.hour == 10
 
 
+def test_normalize_bare_hour():
+    assert "2:00" in normalize_phrase("завтра в 2 создать бота")
+
+
+def test_napomnyu_zavtra_v_2():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("Напомню завтра в 2 создать бота", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.text.lower() == "создать бота"
+    assert parsed.run_at.hour == 2
+    assert parsed.run_at.minute == 0
+
+
+def test_napomnyu_with_comma():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("Напомню, завтра в 2:00 создать бота", "Europe/Moscow")
+    assert parsed is not None
+    assert "бот" in parsed.text.lower()
+    assert parsed.run_at.hour == 2
+
+
 def test_normalize_dots():
-    assert "14:00" in normalize_time_dots("завтра в 14.00")
+    assert "14:00" in normalize_phrase("завтра в 14.00")
+
+
+def test_dateparser_search_zavtra_v_2():
+    result = try_dateparser_search("Напомню завтра в 2 создать бота", "Europe/Moscow")
+    assert result is not None
+    assert result.run_at.hour == 2
+    assert result.run_at.minute == 0
+    assert "бот" in result.text.lower()
 
 
 def test_v_time_then_day():

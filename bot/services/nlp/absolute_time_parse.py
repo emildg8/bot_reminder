@@ -48,14 +48,32 @@ DAY_OFFSETS = {
     "после завтра": 2,
 }
 
+_REMINDER_VERB = r"(?:напомни(?:ть|м)?|напомню|напомним|напоминание|remind(?:\s+me)?)"
+
 NOISE_PREFIX = re.compile(
-    r"^(?:бот|bot|напомни(?:ть|м)?|напоминание|remind(?:\s+me)?)\s+",
+    rf"^(?:бот|bot|{_REMINDER_VERB})\s*[,]?\s*",
+    re.IGNORECASE,
+)
+
+# «завтра в 2» / «в 14» без минут → «в 2:00» / «в 14:00»
+BARE_HOUR = re.compile(r"(\b(?:в\s+))(\d{1,2})(?![:.]\d)(\b)", re.IGNORECASE)
+
+DAY_ONLY_WORD = re.compile(
+    r"^(?:сегодня|завтра|послезавтра|после\s+завтра)$",
     re.IGNORECASE,
 )
 
 
 def normalize_time_dots(text: str) -> str:
     return TIME_DOT_PATTERN.sub(r"\1:\2", text)
+
+
+def normalize_bare_hours(text: str) -> str:
+    return BARE_HOUR.sub(r"\1\2:00\3", text)
+
+
+def normalize_phrase(text: str) -> str:
+    return normalize_bare_hours(normalize_time_dots(text.strip()))
 
 
 def _day_offset(day_token: str) -> int:
@@ -80,7 +98,7 @@ def _extract_task(full: str, match: re.Match) -> str:
 
 
 def parse_absolute_datetime(text: str, timezone: str) -> ParsedReminder | None:
-    normalized = normalize_time_dots(text.strip())
+    normalized = normalize_phrase(text)
     if not normalized:
         return None
 
@@ -122,7 +140,7 @@ def try_dateparser_search(text: str, timezone: str) -> ParsedReminder | None:
     except ImportError:
         return None
 
-    normalized = normalize_time_dots(text.strip())
+    normalized = normalize_phrase(text)
     settings = {
         "TIMEZONE": timezone,
         "RETURN_AS_TIMEZONE_AWARE": True,
@@ -134,6 +152,8 @@ def try_dateparser_search(text: str, timezone: str) -> ParsedReminder | None:
 
     # Берём фрагмент с наиболее конкретным временем (не только дата)
     phrase, run_at = found[-1]
+    if DAY_ONLY_WORD.match(phrase.strip()) and BARE_HOUR.search(normalized):
+        return None
     if run_at.tzinfo is None:
         run_at = run_at.replace(tzinfo=ZoneInfo(timezone))
     else:

@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from bot.services.nlp.absolute_time_parse import (
-    normalize_time_dots,
+    normalize_phrase,
     parse_absolute_datetime,
     try_dateparser_search,
 )
@@ -52,8 +52,9 @@ DAILY_ALT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 EVERY_HOUR_PATTERN = re.compile(r"каждый\s+час", re.IGNORECASE)
+_REMINDER_VERB = r"(?:напомни(?:ть|м)?|напомню|напомним|напоминание|remind(?:\s+me)?)"
 REMINDER_PREFIX = re.compile(
-    r"^(?:напомни(?:ть)?|напоминание|remind(?:\s+me)?)\s*(?:что|о|about|to)?\s*",
+    rf"^{_REMINDER_VERB}\s*(?:[,]|\s*(?:что|о|about|to))?\s*",
     re.IGNORECASE,
 )
 
@@ -82,7 +83,7 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
 
     tz = ZoneInfo(timezone)
     now = datetime.now(tz)
-    cleaned = normalize_time_dots(_strip_prefix(raw))
+    cleaned = normalize_phrase(_strip_prefix(raw))
 
     if match := EVERY_HOUR_PATTERN.search(cleaned):
         task_text = EVERY_HOUR_PATTERN.sub("", cleaned).strip(" ,.")
@@ -263,8 +264,26 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
     if parsed_date <= now:
         parsed_date = parsed_date + timedelta(days=1)
 
+    task = cleaned
+    try:
+        from dateparser.search import search_dates
+
+        found = search_dates(cleaned, languages=["ru", "en"], settings={
+            "TIMEZONE": timezone,
+            "RETURN_AS_TIMEZONE_AWARE": True,
+            "PREFER_DATES_FROM": "future",
+        })
+        if found:
+            phrase, _ = found[-1]
+            task = cleaned.replace(phrase, "").strip(" ,.—–-")
+            task = REMINDER_PREFIX.sub("", task).strip()
+    except ImportError:
+        pass
+
+    task = re.sub(r"\s+", " ", task).strip() or "Напоминание"
+
     return ParsedReminder(
-        text=cleaned.strip() or "Напоминание",
+        text=task,
         kind="once",
         run_at=parsed_date,
     )
