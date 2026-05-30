@@ -12,7 +12,7 @@ from bot.keyboards.inline import confirm_reminder_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
 from bot.services.drafts import store_draft
 from bot.services.reminder_display import format_parsed_summary_html
-from bot.texts.messages import PARSE_FAIL, format_confirm_card
+from bot.texts.messages import format_confirm_card, format_parse_fail
 from bot.services.media import (
     download_telegram_file,
     extract_audio_from_video,
@@ -26,11 +26,9 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 
-async def _get_parse_timezone(message: Message) -> str:
+async def _get_parse_timezone(chat_id: int, user_id: int) -> str:
     async with async_session() as session:
-        return await get_effective_timezone(
-            session, message.chat.id, message.from_user.id
-        )
+        return await get_effective_timezone(session, chat_id, user_id)
 
 
 async def _process_text_and_reply(
@@ -38,8 +36,13 @@ async def _process_text_and_reply(
     text: str,
     bot: Bot,
     source_label: str = "",
+    *,
+    actor_user_id: int | None = None,
+    use_phrase_text: bool = False,
 ) -> None:
-    if source_label:
+    user_id = actor_user_id or message.from_user.id
+
+    if use_phrase_text or source_label:
         mention_id, mention_username, clean_text = None, None, text
         u, cleaned = extract_leading_username(text)
         if u:
@@ -51,11 +54,14 @@ async def _process_text_and_reply(
     mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
     phrase = (clean_text or text).strip()
 
-    timezone = await _get_parse_timezone(message)
+    timezone = await _get_parse_timezone(message.chat.id, user_id)
     parsed = await parse_reminder(phrase, timezone)
 
     if parsed is None:
-        await message.answer(PARSE_FAIL, reply_markup=main_menu_keyboard())
+        await message.answer(
+            format_parse_fail(phrase),
+            reply_markup=main_menu_keyboard(),
+        )
         return
 
     summary = format_parsed_summary_html(parsed, timezone)
@@ -71,7 +77,7 @@ async def _process_text_and_reply(
 
     mention_provided = bool(mention_username or mention_id)
     draft_id = store_draft(
-        message.from_user.id,
+        user_id,
         parsed,
         mention_telegram_id=mention_telegram_id,
         mention_provided=mention_provided,

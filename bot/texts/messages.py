@@ -1,9 +1,18 @@
 """Тексты интерфейса — единый тон и оформление."""
 
+import re
+
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
 BOT_NAME = "Напоминалка"
+
+_TIME_HINT = re.compile(
+    r"через|завтра|сегодня|послезавтра|кажд|будня|выходн|ежедневн|"
+    r"\d{1,2}[:.]\d{2}|"
+    r"(?<!\w)(?:час|минут|мин)(?!\w)",
+    re.IGNORECASE,
+)
 
 WELCOME_ONBOARDING = (
     f"👋 <b>Добро пожаловать в {BOT_NAME}!</b>\n\n"
@@ -44,6 +53,26 @@ PARSE_FAIL = (
     "• <code>по будням в 09:00 стендап</code>\n\n"
     "💡 Нажми «Примеры» или /help"
 )
+
+PARSE_FAIL_TASK_ONLY = (
+    "🤔 <b>Не вижу время</b>\n\n"
+    "Добавь <b>когда</b> напомнить — одной фразой:\n"
+    "• <code>через 30 минут {task}</code>\n"
+    "• <code>через час {task}</code>\n"
+    "• <code>завтра в 14:00 {task}</code>\n\n"
+    "💡 Или нажми «Примеры»"
+)
+
+
+def looks_like_task_only(text: str) -> bool:
+    return bool(text.strip()) and not _TIME_HINT.search(text)
+
+
+def format_parse_fail(phrase: str) -> str:
+    task = " ".join(phrase.strip().split()[:6]) or "задача"
+    if looks_like_task_only(phrase):
+        return PARSE_FAIL_TASK_ONLY.format(task=task)
+    return PARSE_FAIL
 
 CONFIRM_CREATE_HEADER = "📌 <b>Проверь напоминание</b>"
 CONFIRM_EDIT_HEADER = "✏️ <b>Изменить напоминание</b>"

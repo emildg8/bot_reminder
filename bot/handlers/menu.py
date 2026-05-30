@@ -117,4 +117,10 @@ async def example_picked(callback: CallbackQuery, bot) -> None:
         return
     _, phrase = EXAMPLE_PHRASES[idx]
     await callback.answer()
-    await _process_text_and_reply(callback.message, phrase, bot)
+    await _process_text_and_reply(
+        callback.message,
+        phrase,
+        bot,
+        actor_user_id=callback.from_user.id,
+        use_phrase_text=True,
+    )
