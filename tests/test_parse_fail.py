@@ -19,6 +19,7 @@ def test_phrase_from_task_preset():
     assert "завтра" in phrase_from_task_preset("почистить зубы", "tom14")
 
 
-def test_format_parse_fail_with_time_hint():
-    msg = format_parse_fail("встреча с клиентом")
-    assert "Не понял время" in msg
+def test_parse_fail_generic_constant():
+    from bot.texts.messages import PARSE_FAIL
+
+    assert "Не понял время" in PARSE_FAIL
