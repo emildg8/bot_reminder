@@ -11,7 +11,7 @@ from bot.db.repository import async_session, get_reminder, search_chat_reminders
 from bot.keyboards.inline import search_page_keyboard
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.reminder_display import format_reminder_list_line
-from bot.services.reminders_ui import LIST_PAGE_SIZE, _paginate
+from bot.services.reminders_ui import _paginate
 
 SEARCH_CACHE_TTL = timedelta(minutes=10)
 
@@ -64,6 +64,17 @@ def _format_search_body(query: str, total: int, page: int, total_pages: int, lin
     if total_pages > 1:
         header += f" · стр. {page + 1}/{total_pages}"
     return header + "\n\n" + "\n".join(lines)
+
+
+def prune_expired_search_cache() -> int:
+    now = datetime.now(timezone.utc)
+    removed = 0
+    for uid in list(_search_cache.keys()):
+        entry = _search_cache.get(uid)
+        if entry and now - entry.created_at > SEARCH_CACHE_TTL:
+            _search_cache.pop(uid, None)
+            removed += 1
+    return removed
 
 
 async def send_search_results(message: Message, query: str, page: int = 0) -> None:

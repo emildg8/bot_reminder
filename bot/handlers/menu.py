@@ -2,8 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from bot.db.repository import async_session, get_active_chat_reminders, is_chat_paused
-from bot.db.repository import async_session, get_reminder
+from bot.db.repository import async_session, get_active_chat_reminders, get_reminder, is_chat_paused
 from bot.handlers.create import _process_text_and_reply
 from bot.handlers.edit import _parse_and_confirm_edit
 from bot.keyboards.inline import examples_keyboard, timezone_keyboard

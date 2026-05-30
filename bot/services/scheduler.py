@@ -1,3 +1,7 @@
+"""Планировщик напоминаний — отправка и восстановление после рестарта."""
+
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timedelta
 
@@ -6,8 +10,14 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
 from sqlalchemy import select
 
-from bot.db.models import Reminder
-from bot.db.repository import async_session, get_reminder, is_chat_paused, update_reminder_next_run
+from bot.db.models import Reminder, ReminderKind
+from bot.db.repository import (
+    async_session,
+    clear_reminder_next_run,
+    get_reminder,
+    is_chat_paused,
+    update_reminder_next_run,
+)
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder
 from bot.services.telegram_format import format_reminder_message, is_group_chat
@@ -16,8 +26,22 @@ logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler()
 
+RESTORE_JITTER_SECONDS = 3
+RESTORE_JITTER_CAP_SECONDS = 120
+SEND_RETRY_MINUTES = 2
+PAUSE_RETRY_MINUTES = 5
+
 
 async def send_reminder(bot: Bot, reminder_id: int) -> None:
+    try:
+        await _send_reminder_impl(bot, reminder_id)
+    except Exception as exc:
+        logger.exception("Unhandled error sending reminder %s: %s", reminder_id, exc)
+        retry_at = datetime.now().astimezone() + timedelta(minutes=SEND_RETRY_MINUTES)
+        schedule_reminder(bot, reminder_id, retry_at)
+
+
+async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
     async with async_session() as session:
         reminder = await get_reminder(session, reminder_id)
         if reminder is None or not reminder.is_active:
@@ -25,7 +49,8 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
 
         if await is_chat_paused(session, reminder.chat_id):
             logger.info("Chat %s paused, reschedule reminder %s", reminder.chat_id, reminder_id)
-            retry_at = datetime.now().astimezone() + timedelta(minutes=5)
+            retry_at = datetime.now().astimezone() + timedelta(minutes=PAUSE_RETRY_MINUTES)
+            await update_reminder_next_run(session, reminder, retry_at)
             schedule_reminder(bot, reminder.id, retry_at)
             try:
                 await bot.send_message(
@@ -65,6 +90,15 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
         if in_group:
             group_hint = "\n\n<i>Управление — в личке с ботом.</i>"
 
+        is_once = reminder.kind == ReminderKind.ONCE.value
+        job_id = f"reminder_{reminder_id}"
+
+        # once: сначала убираем next_run_at — после рестарта не будет повторной отправки
+        if is_once:
+            await clear_reminder_next_run(session, reminder)
+            if scheduler.get_job(job_id):
+                scheduler.remove_job(job_id)
+
         try:
             await bot.send_message(
                 chat_id=reminder.chat_id,
@@ -86,23 +120,21 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
                         dm_exc,
                     )
         except Exception as exc:
-            # Network / Telegram errors: retry позже, не двигая расписание навсегда.
             logger.exception("Failed to send reminder %s: %s", reminder_id, exc)
-            retry_at = datetime.now().astimezone() + timedelta(minutes=2)
+            retry_at = datetime.now().astimezone() + timedelta(minutes=SEND_RETRY_MINUTES)
+            await update_reminder_next_run(session, reminder, retry_at)
             schedule_reminder(bot, reminder.id, retry_at)
             return
 
         next_run = advance_reminder(reminder, reminder.timezone)
-        job_id = f"reminder_{reminder_id}"
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
 
         if next_run is None:
-            # once: остаётся активным до «Готово»/«Удалить», чтобы работал snooze
-            pass
-        else:
-            await update_reminder_next_run(session, reminder, next_run)
-            schedule_reminder(bot, reminder.id, next_run)
+            return
+
+        await update_reminder_next_run(session, reminder, next_run)
+        schedule_reminder(bot, reminder.id, next_run)
 
 
 def schedule_reminder(bot: Bot, reminder_id: int, run_at: datetime) -> None:
@@ -118,8 +150,16 @@ def schedule_reminder(bot: Bot, reminder_id: int, run_at: datetime) -> None:
         args=[bot, reminder_id],
         replace_existing=True,
         misfire_grace_time=3600,
+        max_instances=1,
+        coalesce=True,
     )
     logger.info("Scheduled reminder %s at %s", reminder_id, run_at.isoformat())
+
+
+def compute_restore_run_at(now: datetime, overdue_index: int) -> datetime:
+    """Разносит просроченные напоминания при старте, чтобы не получить 429 от Telegram."""
+    delay = min(overdue_index * RESTORE_JITTER_SECONDS, RESTORE_JITTER_CAP_SECONDS)
+    return now + timedelta(seconds=delay)
 
 
 async def restore_scheduled_reminders(bot: Bot) -> None:
@@ -130,15 +170,37 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
         reminders = list(result.scalars().all())
 
     now = datetime.now().astimezone()
+    overdue_index = 0
+    future_count = 0
+
     for reminder in reminders:
         run_at = reminder.next_run_at
         if run_at is None:
             continue
         if run_at.tzinfo is None:
             run_at = run_at.replace(tzinfo=now.tzinfo)
+
         if run_at <= now:
-            await send_reminder(bot, reminder.id)
+            restore_at = compute_restore_run_at(now, overdue_index)
+            schedule_reminder(bot, reminder.id, restore_at)
+            overdue_index += 1
+            logger.info(
+                "Overdue reminder %s (%s), restore at %s",
+                reminder.id,
+                reminder.kind,
+                restore_at.isoformat(),
+            )
         else:
             schedule_reminder(bot, reminder.id, run_at)
+            future_count += 1
 
-    logger.info("Restored %s scheduled reminders", len(reminders))
+    logger.info(
+        "Restored %s reminders (%s future, %s overdue with jitter)",
+        len(reminders),
+        future_count,
+        overdue_index,
+    )
+
+
+def count_scheduled_reminder_jobs() -> int:
+    return len([j for j in scheduler.get_jobs() if j.id.startswith("reminder_")])

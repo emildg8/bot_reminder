@@ -51,8 +51,15 @@ def get_pending_task(user_id: int) -> PendingTask | None:
     return entry
 
 
-def _prune() -> None:
+def prune_expired_pending_tasks() -> int:
     now = datetime.now(timezone.utc)
+    removed = 0
     for uid, entry in list(_pending.items()):
         if now - entry.created_at > TASK_PENDING_TTL:
             _pending.pop(uid, None)
+            removed += 1
+    return removed
+
+
+def _prune() -> None:
+    prune_expired_pending_tasks()

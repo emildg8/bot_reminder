@@ -1,6 +1,8 @@
+import logging
 from datetime import datetime, time
 
 from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from bot.config import settings
@@ -8,6 +10,13 @@ from bot.db.models import Base, ChatSettings, Reminder, User
 
 engine = create_async_engine(settings.database_url, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+
+async def dispose_engine() -> None:
+    await engine.dispose()
+
+
+logger = logging.getLogger(__name__)
 
 
 async def init_db() -> None:
@@ -63,19 +72,26 @@ async def init_db() -> None:
                     """
                 )
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.exception("Database migration failed")
+            raise exc from exc
 
 
 async def get_or_create_user(session: AsyncSession, telegram_id: int, timezone: str) -> User:
     result = await session.execute(select(User).where(User.telegram_id == telegram_id))
     user = result.scalar_one_or_none()
-    if user is None:
-        user = User(telegram_id=telegram_id, timezone=timezone, timezone_confirmed=False)
-        session.add(user)
+    if user is not None:
+        return user
+    user = User(telegram_id=telegram_id, timezone=timezone, timezone_confirmed=False)
+    session.add(user)
+    try:
         await session.commit()
         await session.refresh(user)
-    return user
+        return user
+    except IntegrityError:
+        await session.rollback()
+        result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+        return result.scalar_one()
 
 
 async def confirm_user_timezone(session: AsyncSession, user: User, timezone: str) -> User:
@@ -97,12 +113,18 @@ async def update_user_timezone(session: AsyncSession, user: User, timezone: str)
 async def get_or_create_chat(session: AsyncSession, chat_id: int, timezone: str) -> ChatSettings:
     result = await session.execute(select(ChatSettings).where(ChatSettings.chat_id == chat_id))
     chat = result.scalar_one_or_none()
-    if chat is None:
-        chat = ChatSettings(chat_id=chat_id, timezone=timezone)
-        session.add(chat)
+    if chat is not None:
+        return chat
+    chat = ChatSettings(chat_id=chat_id, timezone=timezone)
+    session.add(chat)
+    try:
         await session.commit()
         await session.refresh(chat)
-    return chat
+        return chat
+    except IntegrityError:
+        await session.rollback()
+        result = await session.execute(select(ChatSettings).where(ChatSettings.chat_id == chat_id))
+        return result.scalar_one()
 
 
 async def update_chat_timezone(session: AsyncSession, chat: ChatSettings, timezone: str) -> ChatSettings:
@@ -200,11 +222,17 @@ async def get_all_active_reminders(session: AsyncSession) -> list[Reminder]:
     return list(result.scalars().all())
 
 
-async def update_reminder_next_run(session: AsyncSession, reminder: Reminder, next_run_at: datetime) -> Reminder:
+async def update_reminder_next_run(
+    session: AsyncSession, reminder: Reminder, next_run_at: datetime | None
+) -> Reminder:
     reminder.next_run_at = next_run_at
     await session.commit()
     await session.refresh(reminder)
     return reminder
+
+
+async def clear_reminder_next_run(session: AsyncSession, reminder: Reminder) -> Reminder:
+    return await update_reminder_next_run(session, reminder, None)
 
 
 async def deactivate_reminder(session: AsyncSession, reminder: Reminder) -> None:
