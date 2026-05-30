@@ -77,6 +77,7 @@ async def transcribe_audio(audio_path: Path, language: str = "ru") -> str:
         try:
             text = await GroqWhisperSTT().transcribe(str(audio_path), language=language)
             if text:
+                logger.info("STT via Groq (%d chars)", len(text))
                 return text
         except Exception as exc:
             logger.warning("Groq STT failed: %s", exc)
@@ -92,6 +93,7 @@ async def transcribe_audio(audio_path: Path, language: str = "ru") -> str:
         try:
             text = await WhisperLocalSTT().transcribe(str(stt_path), language=language)
             if text:
+                logger.info("STT via Whisper local (%d chars)", len(text))
                 return text
         except Exception as exc:
             logger.warning("Whisper STT failed: %s", exc)
@@ -99,6 +101,7 @@ async def transcribe_audio(audio_path: Path, language: str = "ru") -> str:
         if settings.use_yandex_stt and settings.yandex_api_key and settings.yandex_folder_id:
             text = await YandexSTT().transcribe(str(stt_path), language=language)
             if text:
+                logger.info("STT via Yandex (%d chars)", len(text))
                 return text
     finally:
         if wav_path and wav_path != audio_path and wav_path.exists():

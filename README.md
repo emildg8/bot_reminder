@@ -1,10 +1,12 @@
-# Telegram-бот напоминалка · v3.1
+# Telegram-бот напоминалка · v3.2
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Работает в личке и в группах.
 
+> **v3.2.0 — умное распознавание голоса.** Словесные часы, «два часа дня», «завтра утром», STT-cleanup.
+>
 > **v3.1.0 — голос и кружочки.** Groq Whisper STT, лимиты длины, ffmpeg в `start.sh`.
 >
 > **v3.0.0 — стабильный релиз.** Дневник, история, статистика, авто-деплой, полностью русский интерфейс.

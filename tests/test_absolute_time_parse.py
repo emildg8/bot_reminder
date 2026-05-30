@@ -70,6 +70,36 @@ def test_nochyu():
     assert "позвонить" in parsed.text.lower()
 
 
+def test_zavtra_utrom():
+    parsed = parse_absolute_datetime("завтра утром зарядка", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 9
+    assert "зарядка" in parsed.text.lower()
+
+
+def test_zavtra_dnem():
+    parsed = parse_absolute_datetime("завтра днём созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 14
+
+
+def test_polovina_dnya():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("завтра в полтора дня обед", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 13
+    assert parsed.run_at.minute == 30
+
+
+def test_chetyrnadtsat_nol_nol():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("завтра четырнадцать ноль ноль созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 14
+
+
 def test_stt_dva_chasa_dnya_slovami():
     from bot.services.nlp.rule_parser import parse_with_rules
 

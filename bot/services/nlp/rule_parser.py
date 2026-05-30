@@ -52,7 +52,10 @@ DAILY_ALT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 EVERY_HOUR_PATTERN = re.compile(r"каждый\s+час", re.IGNORECASE)
-_REMINDER_VERB = r"(?:напомни(?:ть|м)?|напомню|напомним|напоминание|remind(?:\s+me)?)"
+_REMINDER_VERB = (
+    r"(?:напомни(?:ть|м)?(?:\s+мне)?|напомню(?:\s+мне)?|"
+    r"напомним|напоминание|remind(?:\s+me)?)"
+)
 REMINDER_PREFIX = re.compile(
     rf"^{_REMINDER_VERB}\s*(?:[,]|\s*(?:что|о|about|to))?\s*",
     re.IGNORECASE,

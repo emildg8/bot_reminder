@@ -64,10 +64,30 @@ HOUR_WORDS: dict[str, int] = {
     "десять": 10,
     "одиннадцать": 11,
     "двенадцать": 12,
+    "тринадцать": 13,
+    "четырнадцать": 14,
+    "пятнадцать": 15,
+    "шестнадцать": 16,
+    "семнадцать": 17,
+    "восемнадцать": 18,
+    "девятнадцать": 19,
+    "двадцать": 20,
+}
+
+PART_DEFAULT_HOUR = {
+    "утра": 9,
+    "утром": 9,
+    "дня": 14,
+    "днем": 14,
+    "вечера": 20,
+    "вечером": 20,
+    "ночи": 22,
+    "ночью": 22,
 }
 
 PART_OF_DAY_ALIASES = {
     "днем": "дня",
+    "днём": "дня",
     "утром": "утра",
     "вечером": "вечера",
     "ночью": "ночи",
@@ -78,7 +98,7 @@ HOUR_WORD_PATTERN = "|".join(
 )
 HOUR_TOKEN_NC = rf"(?:\d{{1,2}}|{HOUR_WORD_PATTERN})"
 HOUR_TOKEN = rf"(?P<h>{HOUR_TOKEN_NC})"
-PART_OF_DAY = r"дня|днем|утра|утром|вечера|вечером|ночи|ночью"
+PART_OF_DAY = r"дня|днем|днём|утра|утром|вечера|вечером|ночи|ночью"
 
 TIME_IN_TASK = re.compile(
     rf"\b(?:\d{{1,2}}[:.]\d{{2}}|"
@@ -87,7 +107,10 @@ TIME_IN_TASK = re.compile(
     re.IGNORECASE,
 )
 
-_REMINDER_VERB = r"(?:напомни(?:ть|м)?|напомню|напомним|напоминание|remind(?:\s+me)?)"
+_REMINDER_VERB = (
+    r"(?:напомни(?:ть|м)?(?:\s+мне)?|напомню(?:\s+мне)?|"
+    r"напомним|напоминание|remind(?:\s+me)?)"
+)
 
 NOISE_PREFIX = re.compile(
     rf"^(?:бот|bot|{_REMINDER_VERB})\s*[,]?\s*",
@@ -111,9 +134,37 @@ DAY_ONLY_WORD = re.compile(
     re.IGNORECASE,
 )
 
+# «завтра утром» / «завтра днём» без часа
+DAY_PART_PERIOD = re.compile(
+    rf"(?P<day>сегодня|завтра|послезавтра|после\s+завтра)"
+    rf"\s+(?:в\s+)?(?P<part>{PART_OF_DAY})\b",
+    re.IGNORECASE,
+)
+
 
 def normalize_time_dots(text: str) -> str:
     return TIME_DOT_PATTERN.sub(r"\1:\2", text)
+
+
+def normalize_spaced_time(text: str) -> str:
+    text = re.sub(r"\b(\d{1,2})\s+(\d{2})\b", r"\1:\2", text)
+    text = re.sub(r"\b(\d{1,2})[-–—](\d{2})\b", r"\1:\2", text)
+    return text
+
+
+def normalize_spoken_zero_time(text: str) -> str:
+    def repl(match: re.Match) -> str:
+        hour_value = _parse_hour_token(match.group(1))
+        if hour_value is None:
+            return match.group(0)
+        return f"{hour_value:02d}:00"
+
+    return re.sub(
+        rf"\b({HOUR_WORD_PATTERN}|\d{{1,2}})\s+ноль\s+ноль\b",
+        repl,
+        text,
+        flags=re.IGNORECASE,
+    )
 
 
 def _parse_hour_token(token: str) -> int | None:
@@ -151,6 +202,8 @@ def normalize_part_of_day(text: str) -> str:
         return f"в {hour:02d}:00"
 
     text = HOUR_PART_OF_DAY.sub(repl, text)
+    text = re.sub(r"\b(?:в\s+)?полтора\s+дня\b", "в 13:30", text, flags=re.IGNORECASE)
+    text = re.sub(r"\b(?:в\s+)?полдня\b", "в 13:00", text, flags=re.IGNORECASE)
     text = re.sub(r"\bв\s+полдень\b", "в 12:00", text, flags=re.IGNORECASE)
     text = re.sub(r"\bполдень\b", "12:00", text, flags=re.IGNORECASE)
     text = re.sub(r"\bв\s+полночь\b", "в 00:00", text, flags=re.IGNORECASE)
@@ -170,7 +223,11 @@ def normalize_bare_hours(text: str) -> str:
 
 
 def normalize_phrase(text: str) -> str:
-    return normalize_bare_hours(normalize_part_of_day(normalize_time_dots(text.strip())))
+    text = normalize_time_dots(text.strip())
+    text = normalize_spaced_time(text)
+    text = normalize_spoken_zero_time(text)
+    text = normalize_part_of_day(text)
+    return normalize_bare_hours(text)
 
 
 def _day_offset(day_token: str) -> int:
@@ -211,6 +268,14 @@ def parse_absolute_datetime(text: str, timezone: str) -> ParsedReminder | None:
             run_at = _build_run_at(now, _day_offset(day), hour, minute)
             task = _extract_task(normalized, match)
             return ParsedReminder(text=task, kind="once", run_at=run_at)
+
+    if match := DAY_PART_PERIOD.search(normalized):
+        day = match.group("day")
+        part_key = _normalize_part_token(match.group("part"))
+        hour = PART_DEFAULT_HOUR.get(part_key, DEFAULT_DAY_HOUR)
+        run_at = _build_run_at(now, _day_offset(day), hour, 0)
+        task = _extract_task(normalized, match)
+        return ParsedReminder(text=task, kind="once", run_at=run_at)
 
     for pattern in (DAY_ONLY_PREFIX, DAY_ONLY_SUFFIX):
         if match := pattern.match(normalized):
