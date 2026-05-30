@@ -47,3 +47,23 @@ def test_each_monday_no_time():
     assert weekdays == [0]
     assert hour == 9
     assert "отчёт" in task.lower()
+
+
+def test_each_tuesday_bare_hour():
+    result = find_custom_weekly("каждый вторник в 10:00 отчет")
+    assert result is not None
+    weekdays, hour, minute, task = result
+    assert weekdays == [1]
+    assert hour == 10
+    assert minute == 0
+    assert task.lower() == "отчет"
+
+
+def test_each_tuesday_full_name_not_truncated():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("каждый вторник в 10 отчет", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "weekly"
+    assert parsed.daily_time.hour == 10
+    assert parsed.text.lower() == "отчет"

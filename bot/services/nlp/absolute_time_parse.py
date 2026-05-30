@@ -41,7 +41,41 @@ AT_TIME_ONLY = re.compile(
     re.IGNORECASE,
 )
 
-DAY_OFFSETS = {
+ORDINAL_GENITIVE: dict[str, int] = {
+    "первого": 1,
+    "первому": 1,
+    "второго": 2,
+    "второму": 2,
+    "третьего": 3,
+    "третьему": 3,
+    "четвертого": 4,
+    "четвертому": 4,
+    "пятого": 5,
+    "пятому": 5,
+    "шестого": 6,
+    "шестому": 6,
+    "седьмого": 7,
+    "седьмому": 7,
+    "восьмого": 8,
+    "восьмому": 8,
+    "девятого": 9,
+    "девятому": 9,
+    "десятого": 10,
+    "десятому": 10,
+    "одиннадцатого": 11,
+    "одиннадцатому": 11,
+    "двенадцатого": 12,
+    "двенадцатому": 12,
+}
+
+_ORDINAL_WORD = "|".join(sorted(ORDINAL_GENITIVE.keys(), key=len, reverse=True))
+
+HALF_HOUR_ORDINAL = re.compile(
+    rf"(?:\bв\s+)?(?:половин(?:е|а|у)\s+)(?P<ord>{_ORDINAL_WORD})(?:\s+(?:дня|днем|днём))?\b",
+    re.IGNORECASE,
+)
+
+DAY_OFFSETS: dict[str, int] = {
     "сегодня": 0,
     "завтра": 1,
     "послезавтра": 2,
@@ -93,9 +127,7 @@ PART_OF_DAY_ALIASES = {
     "ночью": "ночи",
 }
 
-HOUR_WORD_PATTERN = "|".join(
-    sorted(HOUR_WORDS.keys(), key=len, reverse=True)
-)
+HOUR_WORD_PATTERN = "|".join(sorted(HOUR_WORDS.keys(), key=len, reverse=True))
 HOUR_TOKEN_NC = rf"(?:\d{{1,2}}|{HOUR_WORD_PATTERN})"
 HOUR_TOKEN = rf"(?P<h>{HOUR_TOKEN_NC})"
 PART_OF_DAY = r"дня|днем|днём|утра|утром|вечера|вечером|ночи|ночью"
@@ -165,6 +197,22 @@ def normalize_spoken_zero_time(text: str) -> str:
         text,
         flags=re.IGNORECASE,
     )
+
+
+def normalize_half_ordinal(text: str) -> str:
+    """«в половине четвертого» → «в 03:30», с «дня» → «в 15:30»."""
+
+    def repl(match: re.Match) -> str:
+        ord_word = match.group("ord").lower()
+        ordinal = ORDINAL_GENITIVE.get(ord_word)
+        if ordinal is None:
+            return match.group(0)
+        hour = ordinal - 1
+        if re.search(r"(?:дня|днем|днём)", match.group(0), re.IGNORECASE) and 1 <= ordinal <= 11:
+            hour += 12
+        return f"в {hour:02d}:30"
+
+    return HALF_HOUR_ORDINAL.sub(repl, text)
 
 
 def normalize_k_time(text: str) -> str:
@@ -243,6 +291,7 @@ def normalize_phrase(text: str) -> str:
     text = normalize_spaced_time(text)
     text = normalize_spoken_zero_time(text)
     text = normalize_k_time(text)
+    text = normalize_half_ordinal(text)
     text = normalize_part_of_day(text)
     return normalize_bare_hours(text)
 

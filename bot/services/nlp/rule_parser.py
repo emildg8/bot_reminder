@@ -41,6 +41,11 @@ IN_RANGE_PATTERN = re.compile(
     r"через\s+(\d+)\s*[-–—]\s*(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней)\b",
     re.IGNORECASE,
 )
+IN_WORD_RANGE = re.compile(
+    rf"через\s+(?P<a>{HOUR_WORD_PATTERN}|\d+)\s*[-–—]\s*"
+    rf"(?P<b>{HOUR_WORD_PATTERN}|\d+)\s*(?:час(?:а|ов)?)\b",
+    re.IGNORECASE,
+)
 IN_COUPLE_PATTERN = re.compile(
     r"через\s+пару\s+(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
     re.IGNORECASE,
@@ -158,6 +163,17 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             kind="once",
             run_at=now + timedelta(seconds=seconds),
         )
+
+    if match := IN_WORD_RANGE.search(cleaned):
+        a = _parse_count_token(match.group("a"))
+        b = _parse_count_token(match.group("b"))
+        if a and b:
+            hours = max(a, b)
+            return ParsedReminder(
+                text=_task_without_pattern(cleaned, IN_WORD_RANGE),
+                kind="once",
+                run_at=now + timedelta(hours=hours),
+            )
 
     if match := IN_ONE_AND_HALF_HOUR.search(cleaned):
         return ParsedReminder(
@@ -325,11 +341,15 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
     try:
         from dateparser.search import search_dates
 
-        found = search_dates(cleaned, languages=["ru", "en"], settings={
-            "TIMEZONE": timezone,
-            "RETURN_AS_TIMEZONE_AWARE": True,
-            "PREFER_DATES_FROM": "future",
-        })
+        found = search_dates(
+            cleaned,
+            languages=["ru", "en"],
+            settings={
+                "TIMEZONE": timezone,
+                "RETURN_AS_TIMEZONE_AWARE": True,
+                "PREFER_DATES_FROM": "future",
+            },
+        )
         if found:
             phrase, _ = found[-1]
             task = cleaned.replace(phrase, "").strip(" ,.—–-")

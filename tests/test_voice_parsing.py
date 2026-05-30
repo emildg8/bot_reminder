@@ -31,3 +31,11 @@ def test_stt_typo_zapomni():
 def test_stt_too_short():
     assert is_stt_text_too_short("созвон")
     assert not is_stt_text_too_short("через час созвон")
+
+
+def test_cherez_tri_chetyre_chasa():
+    parsed = parse_with_rules("через три-четыре часа созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert parsed.text == "созвон"
+    assert parsed.run_at is not None

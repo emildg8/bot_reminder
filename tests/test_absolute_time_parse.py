@@ -209,3 +209,23 @@ def test_dateparser_search_optional():
     if result is not None:
         assert result.kind == "once"
         assert "встреча" in result.text.lower()
+
+
+def test_polovina_chetvertogo():
+    parsed = parse_absolute_datetime("завтра в половине четвертого созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 3
+    assert parsed.run_at.minute == 30
+    assert parsed.text.lower() == "созвон"
+
+
+def test_polovina_chetvertogo_dnya():
+    parsed = parse_absolute_datetime("завтра в половине четвертого дня созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 15
+    assert parsed.run_at.minute == 30
+    assert "созвон" in parsed.text.lower()
+
+
+def test_normalize_polovina_chetvertogo():
+    assert "03:30" in normalize_phrase("завтра в половине четвертого")
