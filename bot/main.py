@@ -30,6 +30,7 @@ from bot.handlers import (
 )
 from bot.logging_setup import setup_logging
 from bot.services.backup import backup_database
+from bot.services.media import is_ffmpeg_available
 from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.bot_menu import setup_bot_commands, setup_bot_profile
 from bot.services.auto_update import (
@@ -134,6 +135,10 @@ async def main() -> None:
     loop.set_exception_handler(asyncio_handler)
 
     logger.info("Starting bot v%s (pid %s)", __version__, os.getpid())
+    if not is_ffmpeg_available():
+        logger.warning("ffmpeg not found — локальный Whisper и кружочки без Groq могут не работать")
+    else:
+        logger.info("ffmpeg: available")
     logger.info("Log file: %s", log_file)
     deploy_sha = record_deploy_sha_from_git()
     if deploy_sha:

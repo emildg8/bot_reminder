@@ -15,17 +15,17 @@ from bot.services.pending_tasks import store_pending_task
 from bot.services.reminder_display import format_parsed_summary_html
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
-from bot.services.media import (
-    download_telegram_file,
-    extract_audio_from_video,
-    transcribe_audio,
-)
+from bot.services.media import download_telegram_file, transcribe_audio
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+MAX_VOICE_SECONDS = 120
+MAX_VIDEO_NOTE_SECONDS = 60
+MIN_AUDIO_SECONDS = 1
 
 
 async def _get_parse_timezone(chat_id: int, user_id: int) -> str:
@@ -74,7 +74,12 @@ async def _process_text_and_reply(
         return
 
     summary = format_parsed_summary_html(parsed, timezone)
-    prefix = f"🎤 Распознано: {text}\n\n" if source_label else ""
+    if source_label == "voice":
+        prefix = f"🎤 Распознано: {text}\n\n"
+    elif source_label == "video_note":
+        prefix = f"🔵 Из кружочка: {text}\n\n"
+    else:
+        prefix = ""
     if mention_username and not mention_telegram_id:
         prefix += (
             f"⚠️ Не удалось найти @{mention_username} — "
@@ -121,39 +126,70 @@ async def handle_text(message: Message, bot: Bot) -> None:
     await _route_user_phrase(message, message.text.strip(), bot)
 
 
-async def _handle_audio_message(message: Message, bot: Bot, file_id: str, suffix: str, is_video: bool) -> None:
+async def _handle_audio_message(
+    message: Message,
+    bot: Bot,
+    file_id: str,
+    *,
+    suffix: str,
+    source_label: str,
+    max_seconds: int,
+    duration: int | None,
+) -> None:
+    if duration is not None:
+        if duration < MIN_AUDIO_SECONDS:
+            await message.answer("Слишком короткое сообщение. Скажи фразу с задачей и временем.")
+            return
+        if duration > max_seconds:
+            await message.answer(
+                f"Слишком длинно ({duration} с). "
+                f"Короче {max_seconds} с — одной фразой с задачей и временем."
+            )
+            return
+
     status = await message.answer("🎧 Распознаю...")
-    audio_path: Path | None = None
-    video_path: Path | None = None
+    raw_path: Path | None = None
 
     try:
-        if is_video:
-            video_path = await download_telegram_file(bot, file_id, suffix=".mp4")
-            audio_path = await extract_audio_from_video(video_path)
-        else:
-            audio_path = await download_telegram_file(bot, file_id, suffix=suffix)
-
-        text = await transcribe_audio(audio_path)
+        raw_path = await download_telegram_file(bot, file_id, suffix=suffix)
+        text = await transcribe_audio(raw_path)
         if not text:
             await status.edit_text("Не удалось распознать речь. Попробуй ещё раз.")
             return
 
         await status.delete()
-        await _route_user_phrase(message, text, bot, source_label="voice")
+        await _route_user_phrase(message, text, bot, source_label=source_label)
     except Exception as exc:
         logger.exception("STT failed")
         await status.edit_text(format_stt_error(exc))
     finally:
-        for path in (audio_path, video_path):
-            if path and path.exists():
-                path.unlink(missing_ok=True)
+        if raw_path and raw_path.exists():
+            raw_path.unlink(missing_ok=True)
 
 
 @router.message(F.voice)
 async def handle_voice(message: Message, bot: Bot) -> None:
-    await _handle_audio_message(message, bot, message.voice.file_id, suffix=".ogg", is_video=False)
+    voice = message.voice
+    await _handle_audio_message(
+        message,
+        bot,
+        voice.file_id,
+        suffix=".ogg",
+        source_label="voice",
+        max_seconds=MAX_VOICE_SECONDS,
+        duration=voice.duration,
+    )
 
 
 @router.message(F.video_note)
 async def handle_video_note(message: Message, bot: Bot) -> None:
-    await _handle_audio_message(message, bot, message.video_note.file_id, suffix=".mp4", is_video=True)
+    note = message.video_note
+    await _handle_audio_message(
+        message,
+        bot,
+        note.file_id,
+        suffix=".mp4",
+        source_label="video_note",
+        max_seconds=MAX_VIDEO_NOTE_SECONDS,
+        duration=note.duration,
+    )

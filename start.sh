@@ -20,6 +20,11 @@ fi
 echo "==> pip install"
 pip install -r requirements.txt -q
 
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "==> Installing ffmpeg (voice / video notes)"
+  apt-get update -qq && apt-get install -y -qq ffmpeg 2>/dev/null || echo "ffmpeg install skipped — use Groq STT or Docker"
+fi
+
 echo "==> Record deploy sha"
 python scripts/record_deploy.py || true
 

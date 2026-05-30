@@ -7,6 +7,7 @@ from bot.config import settings
 from bot.db.models import Reminder, User
 from bot.db.repository import async_session, get_all_active_reminders
 from bot.services.bot_avatar import ensure_bot_avatar
+from bot.services.media import describe_stt_backends, is_ffmpeg_available
 from bot.services.runtime import format_uptime, uptime_seconds
 from bot.services.scheduler import scheduler
 from bot.version import __version__
@@ -31,6 +32,8 @@ async def cmd_sysinfo(message: Message) -> None:
         reminders_active = len(await get_all_active_reminders(session))
 
     scheduled_jobs = len([j for j in scheduler.get_jobs() if j.id.startswith("reminder_")])
+    ffmpeg_ok = is_ffmpeg_available()
+    stt_chain = describe_stt_backends()
 
     await message.answer(
         "🛠 <b>Системная статистика</b>\n\n"
@@ -39,7 +42,9 @@ async def cmd_sysinfo(message: Message) -> None:
         f"Пользователей: <b>{users_count}</b>\n"
         f"Напоминаний всего: <b>{reminders_total}</b>\n"
         f"Активных: <b>{reminders_active}</b>\n"
-        f"Задач в планировщике: <b>{scheduled_jobs}</b>"
+        f"Задач в планировщике: <b>{scheduled_jobs}</b>\n\n"
+        f"ffmpeg: <b>{'да' if ffmpeg_ok else 'нет'}</b>\n"
+        f"STT: <code>{stt_chain}</code>"
     )
 
 

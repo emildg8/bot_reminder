@@ -1,10 +1,12 @@
-# Telegram-бот напоминалка · v3.0
+# Telegram-бот напоминалка · v3.1
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Работает в личке и в группах.
 
+> **v3.1.0 — голос и кружочки.** Groq Whisper STT, лимиты длины, ffmpeg в `start.sh`.
+>
 > **v3.0.0 — стабильный релиз.** Дневник, история, статистика, авто-деплой, полностью русский интерфейс.
 >
 > **v2.6.2** — исправлена аватарка: квадратный crop 640×640, авто-перезагрузка при смене файла.
@@ -61,7 +63,7 @@ copy .env.example .env          # Linux/macOS: cp .env.example .env
 python -m bot.main
 ```
 
-Нужен **ffmpeg** для кружочков.
+Нужен **ffmpeg** для локального Whisper; с **GROQ_API_KEY** голос и кружочки работают через облако без ffmpeg.
 
 ## Разработка
 

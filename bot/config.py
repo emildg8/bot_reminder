@@ -70,6 +70,7 @@ class Settings(BaseSettings):
         return _parse_admin_ids(value)
 
     groq_model: str = "llama-3.1-8b-instant"
+    groq_whisper_model: str = "whisper-large-v3-turbo"
     gemini_model: str = "gemini-2.0-flash"
     openai_model: str = "gpt-4o-mini"
 
