@@ -9,6 +9,12 @@ from bot.services.stt.base import STTProvider
 
 logger = logging.getLogger(__name__)
 
+WHISPER_PROMPT = (
+    "Напоминание на русском языке. "
+    "Завтра в два часа дня созвон. Через час выпить таблетки. "
+    "Через два часа. Каждый день в девять утра."
+)
+
 
 def _transcribe_sync(audio_path: str, language: str) -> str:
     url = "https://api.groq.com/openai/v1/audio/transcriptions"
@@ -21,6 +27,7 @@ def _transcribe_sync(audio_path: str, language: str) -> str:
             "model": settings.groq_whisper_model,
             "language": language,
             "response_format": "json",
+            "prompt": WHISPER_PROMPT,
         }
         with httpx.Client(timeout=120.0) as client:
             response = client.post(url, headers=headers, files=files, data=data)

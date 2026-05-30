@@ -19,7 +19,7 @@ from bot.services.media import download_telegram_file, transcribe_audio
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
-from bot.services.nlp.speech_cleanup import cleanup_stt_text
+from bot.services.nlp.speech_cleanup import cleanup_stt_text, is_stt_text_too_short
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -160,6 +160,13 @@ async def _handle_audio_message(
 
         if source_label in ("voice", "video_note"):
             text = cleanup_stt_text(text)
+            if is_stt_text_too_short(text):
+                await status.edit_text(
+                    "Распознал слишком мало текста.\n"
+                    "Скажи одной фразой: <b>когда</b> и <b>что</b>, "
+                    "например «завтра в два часа дня созвон»."
+                )
+                return
 
         await status.delete()
         await _route_user_phrase(message, text, bot, source_label=source_label)
@@ -169,6 +176,23 @@ async def _handle_audio_message(
     finally:
         if raw_path and raw_path.exists():
             raw_path.unlink(missing_ok=True)
+
+
+@router.message(F.audio)
+async def handle_audio(message: Message, bot: Bot) -> None:
+    audio = message.audio
+    suffix = ".mp3"
+    if audio.file_name and "." in audio.file_name:
+        suffix = Path(audio.file_name).suffix or suffix
+    await _handle_audio_message(
+        message,
+        bot,
+        audio.file_id,
+        suffix=suffix,
+        source_label="voice",
+        max_seconds=MAX_VOICE_SECONDS,
+        duration=audio.duration,
+    )
 
 
 @router.message(F.voice)

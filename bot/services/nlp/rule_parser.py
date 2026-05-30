@@ -3,8 +3,10 @@ from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from bot.services.nlp.absolute_time_parse import (
+    HOUR_WORD_PATTERN,
     normalize_phrase,
     parse_absolute_datetime,
+    parse_number_token,
     try_dateparser_search,
 )
 from bot.services.nlp.schemas import ParsedReminder
@@ -13,6 +15,10 @@ from bot.services.nlp.weekday_parse import find_custom_weekly
 INTERVAL_HALF_HOUR = re.compile(r"кажды(?:е|й)\s+полчаса\b", re.IGNORECASE)
 INTERVAL_PATTERN = re.compile(
     r"кажды(?:е|й)\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
+    re.IGNORECASE,
+)
+INTERVAL_WORD_PATTERN = re.compile(
+    rf"кажды(?:е|й)\s+(?P<n>{HOUR_WORD_PATTERN}|\d+)\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
     re.IGNORECASE,
 )
 DAILY_PATTERN = re.compile(
@@ -43,6 +49,14 @@ IN_FEW_HOURS = re.compile(r"через\s+(?:несколько|неск\.?)\s+ч
 IN_HALF_HOUR = re.compile(r"через\s+полчаса\b", re.IGNORECASE)
 IN_HOUR_WORD = re.compile(r"через\s+(?:один\s+|1\s+)?час\b", re.IGNORECASE)
 IN_ONE_AND_HALF_HOUR = re.compile(r"через\s+полтора\s+часа\b", re.IGNORECASE)
+IN_WORD_HOURS = re.compile(
+    rf"через\s+(?P<n>{HOUR_WORD_PATTERN}|\d+)\s*(?:час(?:а|ов)?)\b",
+    re.IGNORECASE,
+)
+IN_WORD_MINUTES = re.compile(
+    rf"через\s+(?P<n>{HOUR_WORD_PATTERN}|\d+)\s*(?:минут(?:у|ы)?|мин)\b",
+    re.IGNORECASE,
+)
 IN_WEEK = re.compile(
     r"через\s+(?:(\d+)\s+)?(?:недел(?:ю|и|ь)|нед)\b",
     re.IGNORECASE,
@@ -73,6 +87,10 @@ def _parse_duration(value: int, unit: str) -> int:
     if unit.startswith("д"):
         return value * 86400
     return value * 60
+
+
+def _parse_count_token(token: str) -> int | None:
+    return parse_number_token(token)
 
 
 def _task_without_pattern(cleaned: str, pattern: re.Pattern) -> str:
@@ -148,6 +166,24 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             run_at=now + timedelta(minutes=90),
         )
 
+    if match := IN_WORD_HOURS.search(cleaned):
+        hours = _parse_count_token(match.group("n"))
+        if hours and hours > 0:
+            return ParsedReminder(
+                text=_task_without_pattern(cleaned, IN_WORD_HOURS),
+                kind="once",
+                run_at=now + timedelta(hours=hours),
+            )
+
+    if match := IN_WORD_MINUTES.search(cleaned):
+        minutes = _parse_count_token(match.group("n"))
+        if minutes and minutes > 0:
+            return ParsedReminder(
+                text=_task_without_pattern(cleaned, IN_WORD_MINUTES),
+                kind="once",
+                run_at=now + timedelta(minutes=minutes),
+            )
+
     if match := IN_HOUR_WORD.search(cleaned):
         return ParsedReminder(
             text=_task_without_pattern(cleaned, IN_HOUR_WORD),
@@ -171,6 +207,24 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             kind="once",
             run_at=now + timedelta(seconds=seconds),
         )
+
+    if match := INTERVAL_WORD_PATTERN.search(cleaned):
+        count = _parse_count_token(match.group("n"))
+        unit = match.group(0).lower()
+        if count and count > 0:
+            if "мин" in unit or "минут" in unit:
+                seconds = count * 60
+            else:
+                seconds = count * 3600
+            task_text = INTERVAL_WORD_PATTERN.sub("", cleaned).strip(" ,.")
+            if not task_text:
+                task_text = cleaned
+            return ParsedReminder(
+                text=task_text or "Напоминание",
+                kind="interval",
+                interval_seconds=seconds,
+                run_at=now + timedelta(seconds=seconds),
+            )
 
     if match := INTERVAL_PATTERN.search(cleaned):
         seconds = _parse_duration(int(match.group(1)), match.group(2))

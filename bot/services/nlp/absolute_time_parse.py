@@ -230,6 +230,9 @@ def normalize_phrase(text: str) -> str:
     return normalize_bare_hours(text)
 
 
+parse_number_token = _parse_hour_token
+
+
 def _day_offset(day_token: str) -> int:
     key = day_token.lower().replace("  ", " ").strip()
     return DAY_OFFSETS.get(key, 0)
