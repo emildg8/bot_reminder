@@ -14,6 +14,7 @@ from bot.db.repository import (
     update_reminder_next_run,
 )
 from bot.keyboards.inline import duplicate_confirm_keyboard
+from bot.keyboards.inline import delete_confirm_keyboard
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
@@ -212,6 +213,32 @@ async def done_reminder(callback: CallbackQuery) -> None:
         scheduler.remove_job(job_id)
 
     await callback.message.edit_text("✅ Готово. Напоминание закрыто.")
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("del_confirm:"))
+async def delete_confirm(callback: CallbackQuery) -> None:
+    reminder_id = int(callback.data.split(":", 1)[1])
+
+    async with async_session() as session:
+        reminder = await get_reminder(session, reminder_id)
+        if reminder is None:
+            await callback.answer("Напоминание не найдено.", show_alert=True)
+            return
+        if reminder.created_by_telegram_id != callback.from_user.id:
+            await callback.answer("Нет доступа.", show_alert=True)
+            return
+
+    await callback.message.edit_text(
+        f"🗑 Удалить напоминание #{reminder_id}?\n📝 {reminder.text}",
+        reply_markup=delete_confirm_keyboard(reminder_id),
+    )
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("del_cancel:"))
+async def delete_cancel(callback: CallbackQuery) -> None:
+    await callback.message.edit_text("Отменено.")
     await callback.answer()
 
 

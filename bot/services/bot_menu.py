@@ -10,6 +10,7 @@ async def setup_bot_commands(bot: Bot) -> None:
         BotCommand(command="list", description="Список напоминаний"),
         BotCommand(command="status", description="Статус чата"),
         BotCommand(command="search", description="Поиск по тексту"),
+        BotCommand(command="cancel", description="Отменить режим"),
         BotCommand(command="edit", description="Изменить напоминание"),
         BotCommand(command="pause", description="Пауза напоминаний"),
         BotCommand(command="resume", description="Возобновить"),

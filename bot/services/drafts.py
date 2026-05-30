@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 DRAFT_TTL = timedelta(hours=1)
 EDIT_PENDING_TTL = timedelta(hours=2)
+SEARCH_PENDING_TTL = timedelta(minutes=10)
 
 
 @dataclass
@@ -23,6 +24,7 @@ class DraftEntry:
 
 _draft_entries: dict[str, DraftEntry] = {}
 _edit_pending: dict[int, tuple[int, datetime]] = {}
+_search_pending: dict[int, datetime] = {}
 
 
 def store_draft(
@@ -87,6 +89,23 @@ def clear_edit_pending(user_id: int) -> None:
     _edit_pending.pop(user_id, None)
 
 
+def set_search_pending(user_id: int) -> None:
+    _search_pending[user_id] = datetime.now(timezone.utc)
+
+
+def pop_search_pending(user_id: int) -> bool:
+    created_at = _search_pending.pop(user_id, None)
+    if created_at is None:
+        return False
+    if datetime.now(timezone.utc) - created_at > SEARCH_PENDING_TTL:
+        return False
+    return True
+
+
+def clear_search_pending(user_id: int) -> None:
+    _search_pending.pop(user_id, None)
+
+
 def prune_expired() -> int:
     """Удаляет устаревшие черновики и режим редактирования. Возвращает число удалённых."""
     now = datetime.now(timezone.utc)
@@ -100,6 +119,11 @@ def prune_expired() -> int:
     for user_id, (_, created_at) in list(_edit_pending.items()):
         if now - created_at > EDIT_PENDING_TTL:
             _edit_pending.pop(user_id, None)
+            removed += 1
+
+    for user_id, created_at in list(_search_pending.items()):
+        if now - created_at > SEARCH_PENDING_TTL:
+            _search_pending.pop(user_id, None)
             removed += 1
 
     if removed:

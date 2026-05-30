@@ -75,7 +75,8 @@ async def _start_edit_flow(
         f"✏️ Редактирование #{reminder_id}.\n"
         "Отправь новую фразу, например:\n"
         "<code>через 1 час новый текст</code>\n"
-        "<code>@user через 1 час задача</code>",
+        "<code>@user через 1 час задача</code>\n\n"
+        "Отмена: /cancel",
         reply_markup=main_menu_keyboard(),
     )
 

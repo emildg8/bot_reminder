@@ -24,7 +24,9 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
             return
 
         if await is_chat_paused(session, reminder.chat_id):
-            logger.info("Chat %s paused, skip reminder %s", reminder.chat_id, reminder_id)
+            logger.info("Chat %s paused, reschedule reminder %s", reminder.chat_id, reminder_id)
+            retry_at = datetime.now().astimezone() + timedelta(minutes=5)
+            schedule_reminder(bot, reminder.id, retry_at)
             return
 
         mention_username: str | None = None

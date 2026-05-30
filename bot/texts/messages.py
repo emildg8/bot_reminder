@@ -8,9 +8,11 @@ from bot.version import __version__
 BOT_NAME = "Напоминалка"
 
 _TIME_HINT = re.compile(
-    r"через|завтра|сегодня|послезавтра|кажд|будня|выходн|ежедневн|"
+    r"через\s+(?:\d+|полчаса|полтора|час|мин)|"
+    r"(?:завтра|сегодня|послезавтра)\s+(?:в\s+)?\d{1,2}[:.]\d{2}|"
     r"\d{1,2}[:.]\d{2}|"
-    r"(?<!\w)(?:час|минут|мин)(?!\w)",
+    r"кажд|будня|выходн|ежедневн|"
+    r"(?<!\w)(?:недел)(?!\w)",
     re.IGNORECASE,
 )
 
@@ -107,7 +109,7 @@ HELP_TEXT = f"""\
 • пн ср пт в 10:00 тренировка
 
 <b>Команды</b>
-/start · /list · /search · /edit
+/start · /list · /search · /edit · /cancel
 /pause · /resume · /timezone · /status
 /export · /import · /clear · /help
 

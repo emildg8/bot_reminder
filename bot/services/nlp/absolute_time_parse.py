@@ -24,9 +24,18 @@ TIME_THEN_DAY = re.compile(
     re.IGNORECASE,
 )
 
-# сегодня/завтра без времени → 09:00 default? Skip - require time
+# завтра созвон / созвон завтра (без времени → 9:00)
+DAY_ONLY_PREFIX = re.compile(
+    r"^(?P<day>сегодня|завтра|послезавтра|после\s+завтра)\s+(?P<task>.+)$",
+    re.IGNORECASE,
+)
+DAY_ONLY_SUFFIX = re.compile(
+    r"^(?P<task>.+?)\s+(?P<day>сегодня|завтра|послезавтра|после\s+завтра)$",
+    re.IGNORECASE,
+)
 
-# в 14:00 (без дня — сегодня или завтра)
+DEFAULT_DAY_HOUR = 9
+DEFAULT_DAY_MINUTE = 0
 AT_TIME_ONLY = re.compile(
     r"\b(?:в\s+)(?P<h>\d{1,2})[:.](?P<m>\d{2})\b",
     re.IGNORECASE,
@@ -86,6 +95,14 @@ def parse_absolute_datetime(text: str, timezone: str) -> ParsedReminder | None:
                 continue
             run_at = _build_run_at(now, _day_offset(day), hour, minute)
             task = _extract_task(normalized, match)
+            return ParsedReminder(text=task, kind="once", run_at=run_at)
+
+    for pattern in (DAY_ONLY_PREFIX, DAY_ONLY_SUFFIX):
+        if match := pattern.match(normalized):
+            day = match.group("day")
+            task = NOISE_PREFIX.sub("", match.group("task")).strip()
+            task = re.sub(r"\s+", " ", task) or "Напоминание"
+            run_at = _build_run_at(now, _day_offset(day), DEFAULT_DAY_HOUR, DEFAULT_DAY_MINUTE)
             return ParsedReminder(text=task, kind="once", run_at=run_at)
 
     if match := AT_TIME_ONLY.search(normalized):

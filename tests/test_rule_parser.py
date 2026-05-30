@@ -60,3 +60,16 @@ def test_ezhednevno():
     parsed = parse_with_rules("ежедневно в 9:00 зарядка", "Europe/Moscow")
     assert parsed is not None
     assert parsed.kind == "daily"
+
+
+def test_cherez_nedelyu():
+    parsed = parse_with_rules("через неделю отчёт", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert "отчёт" in parsed.text.lower()
+
+
+def test_cherez_2_nedeli():
+    parsed = parse_with_rules("через 2 недели созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"

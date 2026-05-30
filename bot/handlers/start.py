@@ -71,7 +71,14 @@ async def tz_menu(callback: CallbackQuery) -> None:
 
 
 async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
+    from bot.services.chat_permissions import can_manage_group_reminders
+
     chat_id = callback.message.chat.id
+    if is_group_chat(chat_id):
+        if not await can_manage_group_reminders(callback.bot, chat_id, callback.from_user.id):
+            await callback.answer("Только администраторы могут менять TZ группы.", show_alert=True)
+            return
+
     tz_label = format_timezone_label(timezone)
     async with async_session() as session:
         if is_group_chat(chat_id):

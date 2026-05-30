@@ -10,9 +10,10 @@ from bot.services.timezone_ctx import get_effective_timezone
 from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
-from bot.services.drafts import store_draft
+from bot.services.drafts import pop_search_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
 from bot.services.reminder_display import format_parsed_summary_html
+from bot.services.search_ui import send_search_results
 from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 from bot.services.media import (
     download_telegram_file,
@@ -103,6 +104,9 @@ async def _process_text_and_reply(
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_text(message: Message, bot: Bot) -> None:
     text = message.text.strip()
+    if pop_search_pending(message.from_user.id):
+        await send_search_results(message, text)
+        return
     if await process_edit_phrase(message, text, bot):
         return
     await _process_text_and_reply(message, text, bot)

@@ -44,8 +44,16 @@ def test_v_time_then_day():
     assert "созвон" in parsed.text.lower()
 
 
-def test_at_time_only():
-    parsed = parse_absolute_datetime("в 14:00 созвон", "Europe/Moscow")
+def test_zavtra_bez_vremeni():
+    parsed = parse_absolute_datetime("завтра созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert "созвон" in parsed.text.lower()
+    assert parsed.run_at.hour == 9
+
+
+def test_sozvon_zavtra():
+    parsed = parse_absolute_datetime("созвон завтра", "Europe/Moscow")
     assert parsed is not None
     assert "созвон" in parsed.text.lower()
 

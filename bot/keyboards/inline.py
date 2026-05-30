@@ -83,7 +83,7 @@ def list_page_keyboard(
         rows.append(
             [
                 InlineKeyboardButton(text=f"#{reminder.id} ✏️", callback_data=f"edit:{reminder.id}"),
-                InlineKeyboardButton(text=f"#{reminder.id} 🗑", callback_data=f"delete:{reminder.id}"),
+                InlineKeyboardButton(text=f"#{reminder.id} 🗑", callback_data=f"del_confirm:{reminder.id}"),
             ]
         )
 
@@ -105,6 +105,17 @@ def list_page_keyboard(
 def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMarkup | None:
     """Legacy wrapper — первая страница."""
     return list_page_keyboard(reminders[:8], viewer_telegram_id, 0, max(1, (len(reminders) + 7) // 8))
+
+
+def delete_confirm_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🗑 Да, удалить", callback_data=f"delete:{reminder_id}"),
+                InlineKeyboardButton(text="Отмена", callback_data=f"del_cancel:{reminder_id}"),
+            ]
+        ]
+    )
 
 
 def task_time_keyboard() -> InlineKeyboardMarkup:
@@ -172,11 +183,14 @@ def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📋 Список", callback_data="menu:list"),
             ],
             [
+                InlineKeyboardButton(text="🔍 Поиск", callback_data="menu:search"),
                 InlineKeyboardButton(text="📊 Статус", callback_data="menu:status"),
-                InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
             ],
             [
+                InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
                 InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
+            ],
+            [
                 InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
             ],
         ]

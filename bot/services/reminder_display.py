@@ -1,5 +1,6 @@
 """Форматирование напоминаний для списка и UI."""
 
+from datetime import datetime
 from html import escape
 
 from zoneinfo import ZoneInfo
@@ -53,6 +54,11 @@ def format_weekdays_label(weekdays: list[int] | None = None, mask: int | None = 
 
 def format_reminder_schedule(reminder: Reminder, timezone: str) -> str:
     tz = ZoneInfo(timezone)
+    now = datetime.now(tz)
+    if reminder.kind == "once" and reminder.next_run_at:
+        nxt = reminder.next_run_at.astimezone(tz)
+        if nxt <= now:
+            return f"✅ сработало {nxt.strftime('%d.%m %H:%M')}"
     if reminder.kind == "interval" and reminder.interval_seconds:
         if reminder.next_run_at:
             nxt = reminder.next_run_at.astimezone(tz).strftime("%d.%m %H:%M")
