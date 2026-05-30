@@ -31,6 +31,7 @@ from bot.services.backup import backup_database
 from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.bot_menu import setup_bot_commands, setup_bot_profile
 from bot.services.cleanup import prune_all_caches
+from bot.services.heartbeat import write_heartbeat
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
 from bot.version import __version__
 
@@ -64,6 +65,10 @@ async def _notify_admins(bot: Bot, text: str) -> None:
 
 async def _run_backup_job() -> None:
     await asyncio.to_thread(backup_database)
+
+
+def _heartbeat_job() -> None:
+    write_heartbeat(scheduler_running=scheduler.running)
 
 
 async def main() -> None:
@@ -114,6 +119,13 @@ async def main() -> None:
     dp.include_router(create.router)
 
     scheduler.start()
+    write_heartbeat(scheduler_running=True)
+    scheduler.add_job(
+        _heartbeat_job,
+        trigger=IntervalTrigger(seconds=30),
+        id="heartbeat",
+        replace_existing=True,
+    )
     scheduler.add_job(
         prune_all_caches,
         trigger=IntervalTrigger(minutes=15),

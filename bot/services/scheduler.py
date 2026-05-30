@@ -92,12 +92,19 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
 
         is_once = reminder.kind == ReminderKind.ONCE.value
         job_id = f"reminder_{reminder_id}"
+        planned_next: datetime | None = None
 
-        # once: сначала убираем next_run_at — после рестарта не будет повторной отправки
         if is_once:
+            # once: сначала убираем next_run_at — после рестарта не будет повторной отправки
             await clear_reminder_next_run(session, reminder)
-            if scheduler.get_job(job_id):
-                scheduler.remove_job(job_id)
+        else:
+            # recurring: сразу фиксируем следующий запуск — падение после send не дублирует текущий
+            planned_next = advance_reminder(reminder, reminder.timezone)
+            if planned_next is not None:
+                await update_reminder_next_run(session, reminder, planned_next)
+
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
 
         try:
             await bot.send_message(
@@ -126,15 +133,8 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             schedule_reminder(bot, reminder.id, retry_at)
             return
 
-        next_run = advance_reminder(reminder, reminder.timezone)
-        if scheduler.get_job(job_id):
-            scheduler.remove_job(job_id)
-
-        if next_run is None:
-            return
-
-        await update_reminder_next_run(session, reminder, next_run)
-        schedule_reminder(bot, reminder.id, next_run)
+        if planned_next is not None:
+            schedule_reminder(bot, reminder.id, planned_next)
 
 
 def schedule_reminder(bot: Bot, reminder_id: int, run_at: datetime) -> None:

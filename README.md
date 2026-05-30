@@ -1,9 +1,11 @@
-# Telegram-бот напоминалка · v2.4
+# Telegram-бот напоминалка · v2.5
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Работает в личке и в группах.
 
+> **v2.5.0** — optimistic advance для recurring, Docker healthcheck (heartbeat + pid + scheduler).
+>
 > **v2.4.0** — стабильность: no duplicate once after restart, graceful shutdown, safe backup, scheduler recovery.
 
 ## Возможности
