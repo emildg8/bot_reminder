@@ -70,6 +70,25 @@ def test_nochyu():
     assert "позвонить" in parsed.text.lower()
 
 
+def test_stt_dva_chasa_dnya_slovami():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("Напомни завтра два часа дня посмотреть фильм", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.text.lower() == "посмотреть фильм"
+    assert parsed.run_at.hour == 14
+    assert parsed.run_at.minute == 0
+
+
+def test_stt_v_dva_slovom():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("завтра в два часа дня посмотреть фильм", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 14
+    assert "фильм" in parsed.text.lower()
+
+
 def test_napomnyu_zavtra_v_2():
     from bot.services.nlp.rule_parser import parse_with_rules
 

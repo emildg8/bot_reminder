@@ -19,6 +19,7 @@ from bot.services.media import download_telegram_file, transcribe_audio
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
+from bot.services.nlp.speech_cleanup import cleanup_stt_text
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -156,6 +157,9 @@ async def _handle_audio_message(
         if not text:
             await status.edit_text("Не удалось распознать речь. Попробуй ещё раз.")
             return
+
+        if source_label in ("voice", "video_note"):
+            text = cleanup_stt_text(text)
 
         await status.delete()
         await _route_user_phrase(message, text, bot, source_label=source_label)

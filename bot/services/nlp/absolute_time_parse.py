@@ -48,6 +48,45 @@ DAY_OFFSETS = {
     "после завтра": 2,
 }
 
+HOUR_WORDS: dict[str, int] = {
+    "один": 1,
+    "одна": 1,
+    "одну": 1,
+    "два": 2,
+    "две": 2,
+    "три": 3,
+    "четыре": 4,
+    "пять": 5,
+    "шесть": 6,
+    "семь": 7,
+    "восемь": 8,
+    "девять": 9,
+    "десять": 10,
+    "одиннадцать": 11,
+    "двенадцать": 12,
+}
+
+PART_OF_DAY_ALIASES = {
+    "днем": "дня",
+    "утром": "утра",
+    "вечером": "вечера",
+    "ночью": "ночи",
+}
+
+HOUR_WORD_PATTERN = "|".join(
+    sorted(HOUR_WORDS.keys(), key=len, reverse=True)
+)
+HOUR_TOKEN_NC = rf"(?:\d{{1,2}}|{HOUR_WORD_PATTERN})"
+HOUR_TOKEN = rf"(?P<h>{HOUR_TOKEN_NC})"
+PART_OF_DAY = r"дня|днем|утра|утром|вечера|вечером|ночи|ночью"
+
+TIME_IN_TASK = re.compile(
+    rf"\b(?:\d{{1,2}}[:.]\d{{2}}|"
+    rf"{HOUR_TOKEN_NC}\s*(?:час(?:а|ов)?\s+)?(?:{PART_OF_DAY})|"
+    rf"полдень|полночь)\b",
+    re.IGNORECASE,
+)
+
 _REMINDER_VERB = r"(?:напомни(?:ть|м)?|напомню|напомним|напоминание|remind(?:\s+me)?)"
 
 NOISE_PREFIX = re.compile(
@@ -55,14 +94,17 @@ NOISE_PREFIX = re.compile(
     re.IGNORECASE,
 )
 
-# «в 2 часа дня» / «в 8 вечера» / «в 3 часа ночи»
+# «в 2 часа дня» / «два часа дня» / «в 8 вечера» (STT часто пишет словами)
 HOUR_PART_OF_DAY = re.compile(
-    r"\b(?:в\s+)?(?P<h>\d{1,2})\s*(?:час(?:а|ов)?\s+)?(?P<part>дня|утра|вечера|ночи)\b",
+    rf"\b(?:в\s+)?{HOUR_TOKEN}\s*(?:час(?:а|ов)?\s+)?(?P<part>{PART_OF_DAY})\b",
     re.IGNORECASE,
 )
 
-# «завтра в 2» / «в 14» без минут → «в 2:00» / «в 14:00»
-BARE_HOUR = re.compile(r"(\b(?:в\s+))(\d{1,2})(?![:.]\d)(\b)", re.IGNORECASE)
+# «в два» / «в 14» без минут → «в 14:00»
+BARE_HOUR = re.compile(
+    rf"(\b(?:в\s+))({HOUR_WORD_PATTERN}|\d{{1,2}})(?![:.]\d)(\b)",
+    re.IGNORECASE,
+)
 
 DAY_ONLY_WORD = re.compile(
     r"^(?:сегодня|завтра|послезавтра|после\s+завтра)$",
@@ -74,8 +116,21 @@ def normalize_time_dots(text: str) -> str:
     return TIME_DOT_PATTERN.sub(r"\1:\2", text)
 
 
+def _parse_hour_token(token: str) -> int | None:
+    token = token.lower().strip()
+    if token.isdigit():
+        hour = int(token)
+        return hour if 0 <= hour <= 23 else None
+    return HOUR_WORDS.get(token)
+
+
+def _normalize_part_token(part: str) -> str:
+    key = part.lower()
+    return PART_OF_DAY_ALIASES.get(key, key)
+
+
 def _hour_from_part_of_day(hour: int, part: str) -> int:
-    part = part.lower()
+    part = _normalize_part_token(part)
     if part in ("дня", "вечера"):
         if 1 <= hour <= 11:
             return hour + 12
@@ -89,7 +144,10 @@ def _hour_from_part_of_day(hour: int, part: str) -> int:
 
 def normalize_part_of_day(text: str) -> str:
     def repl(match: re.Match) -> str:
-        hour = _hour_from_part_of_day(int(match.group("h")), match.group("part"))
+        hour_value = _parse_hour_token(match.group("h"))
+        if hour_value is None:
+            return match.group(0)
+        hour = _hour_from_part_of_day(hour_value, match.group("part"))
         return f"в {hour:02d}:00"
 
     text = HOUR_PART_OF_DAY.sub(repl, text)
@@ -97,11 +155,18 @@ def normalize_part_of_day(text: str) -> str:
     text = re.sub(r"\bполдень\b", "12:00", text, flags=re.IGNORECASE)
     text = re.sub(r"\bв\s+полночь\b", "в 00:00", text, flags=re.IGNORECASE)
     text = re.sub(r"\bполночь\b", "00:00", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bв\s+обед\b", "в 13:00", text, flags=re.IGNORECASE)
     return text
 
 
 def normalize_bare_hours(text: str) -> str:
-    return BARE_HOUR.sub(r"\1\2:00\3", text)
+    def repl(match: re.Match) -> str:
+        hour_value = _parse_hour_token(match.group(2))
+        if hour_value is None:
+            return match.group(0)
+        return f"{match.group(1)}{hour_value}:00{match.group(3)}"
+
+    return BARE_HOUR.sub(repl, text)
 
 
 def normalize_phrase(text: str) -> str:
@@ -149,8 +214,11 @@ def parse_absolute_datetime(text: str, timezone: str) -> ParsedReminder | None:
 
     for pattern in (DAY_ONLY_PREFIX, DAY_ONLY_SUFFIX):
         if match := pattern.match(normalized):
+            task_raw = match.group("task")
+            if TIME_IN_TASK.search(task_raw):
+                continue
             day = match.group("day")
-            task = NOISE_PREFIX.sub("", match.group("task")).strip()
+            task = NOISE_PREFIX.sub("", task_raw).strip()
             task = re.sub(r"\s+", " ", task) or "Напоминание"
             run_at = _build_run_at(now, _day_offset(day), DEFAULT_DAY_HOUR, DEFAULT_DAY_MINUTE)
             return ParsedReminder(text=task, kind="once", run_at=run_at)
