@@ -36,6 +36,13 @@ EACH_WEEKDAY_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+IN_WEEKDAY_PATTERN = re.compile(
+    r"\b(?:в\s+)?"
+    r"(пн|вт|ср|чт|пт|сб|вс|понедельник\w*|вторник\w*|сред\w*|четверг\w*|пятниц\w*|суббот\w*|воскресен\w*)"
+    r"\s+(?:в\s+)?(\d{1,2})[:.](\d{2})\b",
+    re.IGNORECASE,
+)
+
 
 def parse_weekday_tokens(text: str) -> list[int]:
     normalized = text.lower()
@@ -66,16 +73,25 @@ def find_custom_weekly(text: str) -> tuple[list[int], int, int, str] | None:
         return weekdays, hour, minute, task_text
 
     time_match = TIME_PATTERN.search(text)
-    if not time_match:
-        return None
+    if time_match:
+        before = text[: time_match.start()]
+        weekdays = parse_weekday_tokens(before)
+        if weekdays:
+            hour, minute = int(time_match.group(1)), int(time_match.group(2))
+            task_text = text[time_match.end() :].strip(" ,.")
+            if not task_text:
+                task_text = re.sub(r"(?:по\s+)?", "", before).strip(" ,.")
+            return weekdays, hour, minute, task_text
 
-    before = text[: time_match.start()]
-    weekdays = parse_weekday_tokens(before)
-    if len(weekdays) < 2:
-        return None
+    if match := IN_WEEKDAY_PATTERN.search(text):
+        day_token = match.group(1).lower()
+        hour, minute = int(match.group(2)), int(match.group(3))
+        weekdays = parse_weekday_tokens(day_token)
+        if not weekdays:
+            return None
+        task_text = IN_WEEKDAY_PATTERN.sub("", text).strip(" ,.")
+        if not task_text:
+            task_text = text[match.end() :].strip(" ,.")
+        return weekdays, hour, minute, task_text
 
-    hour, minute = int(time_match.group(1)), int(time_match.group(2))
-    task_text = text[time_match.end() :].strip(" ,.")
-    if not task_text:
-        task_text = re.sub(r"(?:по\s+)?", "", before).strip(" ,.")
-    return weekdays, hour, minute, task_text
+    return None

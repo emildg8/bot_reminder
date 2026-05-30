@@ -27,7 +27,14 @@ WEEKEND_PATTERN = re.compile(
     re.IGNORECASE,
 )
 IN_PATTERN = re.compile(
-    r"через\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
+    r"через\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней)\b",
+    re.IGNORECASE,
+)
+IN_HALF_HOUR = re.compile(r"через\s+полчаса\b", re.IGNORECASE)
+IN_HOUR_WORD = re.compile(r"через\s+(?:один\s+|1\s+)?час\b", re.IGNORECASE)
+IN_ONE_AND_HALF_HOUR = re.compile(r"через\s+полтора\s+часа\b", re.IGNORECASE)
+DAILY_ALT_PATTERN = re.compile(
+    r"ежедневно\s+(?:в\s+)?(\d{1,2})[:.](\d{2})",
     re.IGNORECASE,
 )
 EVERY_HOUR_PATTERN = re.compile(r"каждый\s+час", re.IGNORECASE)
@@ -45,7 +52,13 @@ def _parse_duration(value: int, unit: str) -> int:
     unit = unit.lower()
     if unit.startswith("ч"):
         return value * 3600
+    if unit.startswith("д"):
+        return value * 86400
     return value * 60
+
+
+def _task_without_pattern(cleaned: str, pattern: re.Pattern) -> str:
+    return pattern.sub("", cleaned).strip(" ,.") or "Напоминание"
 
 
 def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
@@ -68,11 +81,32 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             run_at=now + timedelta(hours=1),
         )
 
+    if match := IN_HALF_HOUR.search(cleaned):
+        return ParsedReminder(
+            text=_task_without_pattern(cleaned, IN_HALF_HOUR),
+            kind="once",
+            run_at=now + timedelta(minutes=30),
+        )
+
+    if match := IN_ONE_AND_HALF_HOUR.search(cleaned):
+        return ParsedReminder(
+            text=_task_without_pattern(cleaned, IN_ONE_AND_HALF_HOUR),
+            kind="once",
+            run_at=now + timedelta(minutes=90),
+        )
+
+    if match := IN_HOUR_WORD.search(cleaned):
+        return ParsedReminder(
+            text=_task_without_pattern(cleaned, IN_HOUR_WORD),
+            kind="once",
+            run_at=now + timedelta(hours=1),
+        )
+
     if match := IN_PATTERN.search(cleaned):
         seconds = _parse_duration(int(match.group(1)), match.group(2))
-        task_text = IN_PATTERN.sub("", cleaned).strip(" ,.")
+        task_text = _task_without_pattern(cleaned, IN_PATTERN)
         return ParsedReminder(
-            text=task_text or "Напоминание",
+            text=task_text,
             kind="once",
             run_at=now + timedelta(seconds=seconds),
         )
@@ -92,6 +126,18 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
     if match := DAILY_PATTERN.search(cleaned):
         hour, minute = int(match.group(1)), int(match.group(2))
         task_text = DAILY_PATTERN.sub("", cleaned).strip(" ,.")
+        daily = time(hour, minute)
+        next_run = _next_daily_run(now, daily)
+        return ParsedReminder(
+            text=task_text or "Ежедневное напоминание",
+            kind="daily",
+            daily_time=daily,
+            run_at=next_run,
+        )
+
+    if match := DAILY_ALT_PATTERN.search(cleaned):
+        hour, minute = int(match.group(1)), int(match.group(2))
+        task_text = DAILY_ALT_PATTERN.sub("", cleaned).strip(" ,.")
         daily = time(hour, minute)
         next_run = _next_daily_run(now, daily)
         return ParsedReminder(
@@ -161,7 +207,7 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
         parsed_date = parsed_date + timedelta(days=1)
 
     return ParsedReminder(
-        text=cleaned,
+        text=cleaned.strip() or "Напоминание",
         kind="once",
         run_at=parsed_date,
     )

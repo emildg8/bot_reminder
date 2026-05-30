@@ -17,6 +17,7 @@ from bot.db.repository import (
 )
 from bot.keyboards.inline import clear_confirm_keyboard
 from bot.keyboards.reply import main_menu_keyboard
+from bot.services.chat_permissions import can_manage_group_reminders
 from bot.services.export_import import parse_import_item
 from bot.services.reminder_display import reminder_to_export_dict
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
@@ -55,7 +56,14 @@ async def cmd_export(message: Message) -> None:
 
 
 @router.message(Command("clear"))
-async def cmd_clear(message: Message) -> None:
+async def cmd_clear(message: Message, bot: Bot) -> None:
+    if not await can_manage_group_reminders(bot, message.chat.id, message.from_user.id):
+        await message.answer(
+            "В группе удалять все напоминания могут только администраторы чата.",
+            reply_markup=main_menu_keyboard(),
+        )
+        return
+
     async with async_session() as session:
         count = len(await get_active_chat_reminders(session, message.chat.id))
 
@@ -77,6 +85,12 @@ async def clear_cancel(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "clear:yes")
 async def clear_confirm(callback: CallbackQuery, bot: Bot) -> None:
+    if not await can_manage_group_reminders(
+        bot, callback.message.chat.id, callback.from_user.id
+    ):
+        await callback.answer("Только для администраторов чата.", show_alert=True)
+        return
+
     async with async_session() as session:
         reminders = await get_active_chat_reminders(session, callback.message.chat.id)
         count = await deactivate_all_chat_reminders(session, callback.message.chat.id)
@@ -94,6 +108,13 @@ async def clear_confirm(callback: CallbackQuery, bot: Bot) -> None:
 async def cmd_pause(message: Message, bot: Bot) -> None:
     from bot.services.chat_pause import pause_chat_reminders
 
+    if not await can_manage_group_reminders(bot, message.chat.id, message.from_user.id):
+        await message.answer(
+            "В группе ставить на паузу могут только администраторы чата.",
+            reply_markup=main_menu_keyboard(),
+        )
+        return
+
     count = await pause_chat_reminders(bot, message.chat.id)
     if count == 0:
         await message.answer("Активных напоминаний нет.")
@@ -108,6 +129,13 @@ async def cmd_pause(message: Message, bot: Bot) -> None:
 @router.message(Command("resume"))
 async def cmd_resume(message: Message, bot: Bot) -> None:
     from bot.services.chat_pause import resume_chat_reminders
+
+    if not await can_manage_group_reminders(bot, message.chat.id, message.from_user.id):
+        await message.answer(
+            "В группе возобновлять могут только администраторы чата.",
+            reply_markup=main_menu_keyboard(),
+        )
+        return
 
     count = await resume_chat_reminders(bot, message.chat.id)
     await message.answer(

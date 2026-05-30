@@ -22,3 +22,19 @@ def test_pn_sr_pt():
     assert weekdays == [0, 2, 4]
     assert hour == 10
     assert "тренировка" in task.lower()
+
+
+def test_single_friday():
+    result = find_custom_weekly("пт в 10:00 тренировка")
+    assert result is not None
+    weekdays, hour, minute, task = result
+    assert weekdays == [4]
+    assert hour == 10
+
+
+def test_in_friday():
+    result = find_custom_weekly("в пятницу в 10:00 созвон")
+    assert result is not None
+    weekdays, hour, minute, task = result
+    assert weekdays == [4]
+    assert "созвон" in task.lower()

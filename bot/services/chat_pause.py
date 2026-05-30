@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
-from aiogram import Bot
+from datetime import datetime
 
-from bot.db.repository import async_session, get_active_chat_reminders, set_chat_paused
+from aiogram import Bot
+from zoneinfo import ZoneInfo
+
+from bot.db.repository import (
+    async_session,
+    get_active_chat_reminders,
+    get_reminder,
+    set_chat_paused,
+    update_reminder_next_run,
+)
+from bot.services.reminder_utils import resolve_next_run_on_resume
 from bot.services.scheduler import schedule_reminder, scheduler
 
 
@@ -28,7 +38,18 @@ async def resume_chat_reminders(bot: Bot, chat_id: int) -> int:
 
     count = 0
     for reminder in reminders:
-        if reminder.next_run_at:
-            schedule_reminder(bot, reminder.id, reminder.next_run_at)
-            count += 1
+        tz = ZoneInfo(reminder.timezone)
+        now = datetime.now(tz)
+        next_run = resolve_next_run_on_resume(reminder, now)
+        if next_run is None:
+            continue
+
+        if next_run != reminder.next_run_at:
+            async with async_session() as session:
+                db_reminder = await get_reminder(session, reminder.id)
+                if db_reminder is not None:
+                    await update_reminder_next_run(session, db_reminder, next_run)
+
+        schedule_reminder(bot, reminder.id, next_run)
+        count += 1
     return count

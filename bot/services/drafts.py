@@ -45,6 +45,16 @@ def store_draft(
     return draft_id
 
 
+def get_draft(draft_id: str, user_id: int) -> DraftEntry | None:
+    entry = _draft_entries.get(draft_id)
+    if entry is None or entry.user_id != user_id:
+        return None
+    if datetime.now(timezone.utc) - entry.created_at > DRAFT_TTL:
+        _draft_entries.pop(draft_id, None)
+        return None
+    return entry
+
+
 def pop_draft(draft_id: str, user_id: int) -> DraftEntry | None:
     entry = _draft_entries.pop(draft_id, None)
     if entry is None or entry.user_id != user_id:

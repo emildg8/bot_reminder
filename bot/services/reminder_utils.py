@@ -91,6 +91,31 @@ def advance_reminder(reminder: Reminder, timezone: str) -> datetime | None:
     return None
 
 
+def resolve_next_run_on_resume(reminder: Reminder, now: datetime) -> datetime | None:
+    """Пересчитать next_run после снятия паузы, если время уже прошло."""
+    next_run = reminder.next_run_at
+    if next_run is None:
+        return None
+
+    tz = ZoneInfo(reminder.timezone)
+    if next_run.tzinfo is None:
+        next_run = next_run.replace(tzinfo=tz)
+    else:
+        next_run = next_run.astimezone(tz)
+
+    if next_run > now:
+        return next_run
+
+    advanced = advance_reminder(reminder, reminder.timezone)
+    if advanced is not None:
+        return advanced
+
+    if reminder.kind == ReminderKind.ONCE.value:
+        return now + timedelta(minutes=1)
+
+    return None
+
+
 def format_reminder_summary(parsed: ParsedReminder, timezone: str) -> str:
     tz = ZoneInfo(timezone)
     next_run = compute_next_run(parsed, timezone).astimezone(tz)

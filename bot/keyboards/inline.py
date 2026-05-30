@@ -107,6 +107,26 @@ def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMa
     return list_page_keyboard(reminders[:8], viewer_telegram_id, 0, max(1, (len(reminders) + 7) // 8))
 
 
+def duplicate_confirm_keyboard(draft_id: str, duplicate_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Всё равно создать",
+                    callback_data=f"confirm_force:{draft_id}",
+                ),
+                InlineKeyboardButton(text="❌ Отмена", callback_data=f"cancel:{draft_id}"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"✏️ Редактировать #{duplicate_id}",
+                    callback_data=f"edit:{duplicate_id}",
+                ),
+            ],
+        ]
+    )
+
+
 def clear_confirm_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

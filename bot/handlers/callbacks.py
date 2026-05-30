@@ -13,8 +13,9 @@ from bot.db.repository import (
     get_reminder,
     update_reminder_next_run,
 )
+from bot.keyboards.inline import duplicate_confirm_keyboard
 from bot.keyboards.reply import main_menu_keyboard
-from bot.services.drafts import discard_draft, pop_draft
+from bot.services.drafts import discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
@@ -25,16 +26,13 @@ from bot.services.timezone_ctx import get_effective_timezone
 router = Router()
 
 
-@router.callback_query(lambda c: c.data and (c.data.startswith("confirm:") or c.data.startswith("confirm_edit:")))
-async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
-    is_edit = callback.data.startswith("confirm_edit:")
-    if is_edit:
-        _, reminder_id_str, draft_id = callback.data.split(":", 2)
-        reminder_id = int(reminder_id_str)
-    else:
-        draft_id = callback.data.split(":", 1)[1]
-        reminder_id = None
-
+async def _create_from_draft(
+    callback: CallbackQuery,
+    bot: Bot,
+    draft_id: str,
+    *,
+    skip_duplicate: bool = False,
+) -> None:
     entry = pop_draft(draft_id, callback.from_user.id)
     if entry is None:
         await callback.answer("Черновик не найден или устарел.", show_alert=True)
@@ -46,52 +44,33 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
             telegram_id=callback.from_user.id,
             timezone=settings.default_timezone,
         )
-
-        if is_edit and reminder_id is not None:
-            reminder = await get_reminder(session, reminder_id)
-            if reminder is None or not reminder.is_active:
-                await callback.answer("Напоминание не найдено.", show_alert=True)
-                return
-            if reminder.created_by_telegram_id != callback.from_user.id:
-                await callback.answer("Нет доступа.", show_alert=True)
-                return
-
-            job_id = f"reminder_{reminder_id}"
-            if scheduler.get_job(job_id):
-                scheduler.remove_job(job_id)
-
-            next_run = await apply_parsed_to_reminder(
-                session, reminder, entry.parsed, reminder.timezone or user.timezone
-            )
-            if entry.mention_provided:
-                reminder.mention_telegram_id = entry.mention_telegram_id
-                await session.commit()
-
-            schedule_reminder(bot, reminder_id, next_run)
-            when = next_run.astimezone(ZoneInfo(reminder.timezone)).strftime("%d.%m.%Y %H:%M")
-            await callback.message.edit_text(format_updated(reminder_id, when))
-            await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
-            await callback.answer()
-            return
-
         tz = await get_effective_timezone(
             session, callback.message.chat.id, callback.from_user.id
         )
         next_run = compute_next_run(entry.parsed, tz)
 
-        duplicate = await find_duplicate_reminder(
-            session,
-            callback.message.chat.id,
-            entry.parsed.text,
-            entry.parsed.kind,
-            created_by=callback.from_user.id,
-        )
-        if duplicate:
-            await callback.answer(
-                f"Похожее напоминание уже есть (#{duplicate.id}). Используй /edit {duplicate.id}",
-                show_alert=True,
+        if not skip_duplicate:
+            duplicate = await find_duplicate_reminder(
+                session,
+                callback.message.chat.id,
+                entry.parsed.text,
+                entry.parsed.kind,
+                created_by=callback.from_user.id,
             )
-            return
+            if duplicate:
+                new_draft_id = store_draft(
+                    callback.from_user.id,
+                    entry.parsed,
+                    mention_telegram_id=entry.mention_telegram_id,
+                    mention_provided=entry.mention_provided,
+                )
+                await callback.message.edit_text(
+                    f"⚠️ Похожее напоминание уже есть (#{duplicate.id}).\n"
+                    f"📝 {entry.parsed.text}",
+                    reply_markup=duplicate_confirm_keyboard(new_draft_id, duplicate.id),
+                )
+                await callback.answer()
+                return
 
         reminder = await create_reminder(
             session,
@@ -111,6 +90,60 @@ async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
     schedule_reminder(bot, reminder.id, next_run)
     when = next_run.astimezone(ZoneInfo(tz)).strftime("%d.%m.%Y %H:%M")
     await callback.message.edit_text(format_created(reminder.id, when, entry.parsed.text))
+    await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("confirm:"))
+async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
+    draft_id = callback.data.split(":", 1)[1]
+    await _create_from_draft(callback, bot, draft_id)
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("confirm_force:"))
+async def confirm_force_reminder(callback: CallbackQuery, bot: Bot) -> None:
+    draft_id = callback.data.split(":", 1)[1]
+    await _create_from_draft(callback, bot, draft_id, skip_duplicate=True)
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("confirm_edit:"))
+async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
+    _, reminder_id_str, draft_id = callback.data.split(":", 2)
+    reminder_id = int(reminder_id_str)
+
+    entry = pop_draft(draft_id, callback.from_user.id)
+    if entry is None:
+        await callback.answer("Черновик не найден или устарел.", show_alert=True)
+        return
+
+    async with async_session() as session:
+        user = await get_or_create_user(
+            session,
+            telegram_id=callback.from_user.id,
+            timezone=settings.default_timezone,
+        )
+        reminder = await get_reminder(session, reminder_id)
+        if reminder is None or not reminder.is_active:
+            await callback.answer("Напоминание не найдено.", show_alert=True)
+            return
+        if reminder.created_by_telegram_id != callback.from_user.id:
+            await callback.answer("Нет доступа.", show_alert=True)
+            return
+
+        job_id = f"reminder_{reminder_id}"
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
+
+        next_run = await apply_parsed_to_reminder(
+            session, reminder, entry.parsed, reminder.timezone or user.timezone
+        )
+        if entry.mention_provided:
+            reminder.mention_telegram_id = entry.mention_telegram_id
+            await session.commit()
+
+    schedule_reminder(bot, reminder_id, next_run)
+    when = next_run.astimezone(ZoneInfo(reminder.timezone)).strftime("%d.%m.%Y %H:%M")
+    await callback.message.edit_text(format_updated(reminder_id, when))
     await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
     await callback.answer()
 

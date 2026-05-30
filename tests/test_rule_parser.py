@@ -28,3 +28,35 @@ def test_zavtra_v_14_dot():
     assert parsed.kind == "once"
     assert "анекдот" in parsed.text.lower()
     assert parsed.run_at.hour == 14
+
+
+def test_cherez_chas():
+    parsed = parse_with_rules("через час созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert "созвон" in parsed.text.lower()
+
+
+def test_polchasa():
+    parsed = parse_with_rules("через полчаса таблетки", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+
+
+def test_cherez_2_dnya():
+    parsed = parse_with_rules("через 2 дня оплатить счёт", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+
+
+def test_weekends():
+    parsed = parse_with_rules("по выходным в 11:00 уборка", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "weekly"
+    assert parsed.weekdays == [5, 6]
+
+
+def test_ezhednevno():
+    parsed = parse_with_rules("ежедневно в 9:00 зарядка", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "daily"

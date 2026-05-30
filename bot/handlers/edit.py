@@ -12,7 +12,7 @@ from bot.services.mention_parse import extract_leading_username, extract_mention
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
 from bot.services.reminder_display import format_parsed_summary_html
-from bot.texts.messages import format_confirm_card
+from bot.texts.messages import PARSE_FAIL, format_confirm_card
 
 router = Router()
 
@@ -116,10 +116,7 @@ async def _parse_and_confirm_edit(
     parsed = await parse_reminder((clean_text or phrase).strip(), timezone)
     if parsed is None:
         set_edit_pending(user_id, reminder_id)
-        await message.answer(
-            "Не понял новое время. Попробуй ещё раз, например:\n"
-            "<code>через 30 минут новый текст</code>"
-        )
+        await message.answer(PARSE_FAIL, reply_markup=main_menu_keyboard())
         return
 
     clear_edit_pending(user_id)
