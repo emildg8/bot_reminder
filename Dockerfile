@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg git \
+    && apt-get install -y --no-install-recommends ffmpeg git curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -10,9 +10,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bot/ bot/
+COPY scripts/ scripts/
+COPY assets/ assets/
 COPY pytest.ini .
 
-RUN mkdir -p data/logs
+RUN mkdir -p data/logs data/backups
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1

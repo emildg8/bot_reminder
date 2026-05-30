@@ -57,20 +57,28 @@ def parse_weekday_tokens(text: str) -> list[int]:
     return sorted(set(weekdays))
 
 
+DEFAULT_WEEKLY_HOUR = 9
+DEFAULT_WEEKLY_MINUTE = 0
+
+
 def find_custom_weekly(text: str) -> tuple[list[int], int, int, str] | None:
     """Returns (weekdays, hour, minute, task_text) or None."""
     if match := EACH_WEEKDAY_PATTERN.search(text):
         day_token = match.group(1).lower()
         time_match = TIME_PATTERN.search(text, match.end())
-        if not time_match:
-            return None
-        hour, minute = int(time_match.group(1)), int(time_match.group(2))
         weekdays = parse_weekday_tokens(day_token)
         if not weekdays:
             return None
-        task_text = EACH_WEEKDAY_PATTERN.sub("", text)
-        task_text = TIME_PATTERN.sub("", task_text).strip(" ,.")
-        return weekdays, hour, minute, task_text
+        if time_match:
+            hour, minute = int(time_match.group(1)), int(time_match.group(2))
+            task_text = EACH_WEEKDAY_PATTERN.sub("", text)
+            task_text = TIME_PATTERN.sub("", task_text).strip(" ,.")
+        else:
+            hour, minute = DEFAULT_WEEKLY_HOUR, DEFAULT_WEEKLY_MINUTE
+            task_text = EACH_WEEKDAY_PATTERN.sub("", text).strip(" ,.")
+            if not task_text:
+                task_text = text[match.end() :].strip(" ,.")
+        return weekdays, hour, minute, task_text or "Напоминание"
 
     time_match = TIME_PATTERN.search(text)
     if time_match:

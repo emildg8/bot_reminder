@@ -101,15 +101,24 @@ async def _process_text_and_reply(
     )
 
 
-@router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
-async def handle_text(message: Message, bot: Bot) -> None:
-    text = message.text.strip()
+async def _route_user_phrase(
+    message: Message,
+    text: str,
+    bot: Bot,
+    *,
+    source_label: str = "",
+) -> None:
     if pop_search_pending(message.from_user.id):
         await send_search_results(message, text)
         return
     if await process_edit_phrase(message, text, bot):
         return
-    await _process_text_and_reply(message, text, bot)
+    await _process_text_and_reply(message, text, bot, source_label=source_label)
+
+
+@router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
+async def handle_text(message: Message, bot: Bot) -> None:
+    await _route_user_phrase(message, message.text.strip(), bot)
 
 
 async def _handle_audio_message(message: Message, bot: Bot, file_id: str, suffix: str, is_video: bool) -> None:
@@ -130,7 +139,7 @@ async def _handle_audio_message(message: Message, bot: Bot, file_id: str, suffix
             return
 
         await status.delete()
-        await _process_text_and_reply(message, text, bot, source_label="voice")
+        await _route_user_phrase(message, text, bot, source_label="voice")
     except Exception as exc:
         logger.exception("STT failed")
         await status.edit_text(format_stt_error(exc))

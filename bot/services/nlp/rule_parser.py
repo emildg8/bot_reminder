@@ -10,6 +10,7 @@ from bot.services.nlp.absolute_time_parse import (
 from bot.services.nlp.schemas import ParsedReminder
 from bot.services.nlp.weekday_parse import find_custom_weekly
 
+INTERVAL_HALF_HOUR = re.compile(r"кажды(?:е|й)\s+полчаса\b", re.IGNORECASE)
 INTERVAL_PATTERN = re.compile(
     r"кажды(?:е|й)\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
     re.IGNORECASE,
@@ -83,6 +84,15 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             kind="interval",
             interval_seconds=3600,
             run_at=now + timedelta(hours=1),
+        )
+
+    if match := INTERVAL_HALF_HOUR.search(cleaned):
+        task_text = _task_without_pattern(cleaned, INTERVAL_HALF_HOUR)
+        return ParsedReminder(
+            text=task_text,
+            kind="interval",
+            interval_seconds=1800,
+            run_at=now + timedelta(minutes=30),
         )
 
     if match := IN_HALF_HOUR.search(cleaned):

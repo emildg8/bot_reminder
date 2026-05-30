@@ -3,7 +3,9 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
 from bot.db.repository import async_session, get_active_chat_reminders, is_chat_paused
+from bot.db.repository import async_session, get_reminder
 from bot.handlers.create import _process_text_and_reply
+from bot.handlers.edit import _parse_and_confirm_edit
 from bot.keyboards.inline import examples_keyboard, timezone_keyboard
 from bot.keyboards.reply import (
     BTN_CREATE,
@@ -20,7 +22,7 @@ from bot.services.drafts import clear_edit_pending, clear_search_pending, set_se
 from bot.services.reminders_ui import send_active_reminders
 from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
 from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, HELP_TEXT, format_status, phrase_from_task_preset
-from bot.services.pending_tasks import get_pending_task, pop_pending_task
+from bot.services.pending_tasks import pop_pending_task
 from bot.version import __version__
 
 router = Router()
@@ -170,13 +172,28 @@ async def example_picked(callback: CallbackQuery, bot) -> None:
 @router.callback_query(F.data.startswith("qt:"))
 async def task_time_picked(callback: CallbackQuery, bot) -> None:
     code = callback.data.split(":", 1)[1]
-    task = get_pending_task(callback.from_user.id)
-    if not task:
+    pending = pop_pending_task(callback.from_user.id)
+    if not pending:
         await callback.answer("Задача устарела — отправь текст заново.", show_alert=True)
         return
-    pop_pending_task(callback.from_user.id)
-    phrase = phrase_from_task_preset(task, code)
+    phrase = phrase_from_task_preset(pending.text, code)
     await callback.answer()
+    if pending.edit_reminder_id is not None:
+        async with async_session() as session:
+            reminder = await get_reminder(session, pending.edit_reminder_id)
+            if reminder is None or not reminder.is_active:
+                await callback.message.answer("Напоминание не найдено.")
+                return
+            timezone = reminder.timezone
+        await _parse_and_confirm_edit(
+            callback.message,
+            pending.edit_reminder_id,
+            phrase,
+            timezone,
+            callback.from_user.id,
+            bot,
+        )
+        return
     await _process_text_and_reply(
         callback.message,
         phrase,

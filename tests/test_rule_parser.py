@@ -73,3 +73,10 @@ def test_cherez_2_nedeli():
     parsed = parse_with_rules("через 2 недели созвон", "Europe/Moscow")
     assert parsed is not None
     assert parsed.kind == "once"
+
+
+def test_kazhdye_polchasa():
+    parsed = parse_with_rules("каждые полчаса встать", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "interval"
+    assert parsed.interval_seconds == 1800

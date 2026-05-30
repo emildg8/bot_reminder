@@ -120,7 +120,7 @@ async def _parse_and_confirm_edit(
         set_edit_pending(user_id, reminder_id)
         phrase_text = (clean_text or phrase).strip()
         if looks_like_task_only(phrase_text):
-            store_pending_task(user_id, phrase_text)
+            store_pending_task(user_id, phrase_text, edit_reminder_id=reminder_id)
             await message.answer(format_parse_fail(phrase_text), reply_markup=task_time_keyboard())
         else:
             await message.answer(format_parse_fail(phrase_text), reply_markup=main_menu_keyboard())

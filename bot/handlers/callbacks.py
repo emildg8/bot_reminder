@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from aiogram import Bot, Router
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from zoneinfo import ZoneInfo
 
 from bot.config import settings
@@ -13,8 +13,7 @@ from bot.db.repository import (
     get_reminder,
     update_reminder_next_run,
 )
-from bot.keyboards.inline import duplicate_confirm_keyboard
-from bot.keyboards.inline import delete_confirm_keyboard
+from bot.keyboards.inline import delete_confirm_keyboard, duplicate_confirm_keyboard
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
@@ -238,7 +237,14 @@ async def delete_confirm(callback: CallbackQuery) -> None:
 
 @router.callback_query(lambda c: c.data and c.data.startswith("del_cancel:"))
 async def delete_cancel(callback: CallbackQuery) -> None:
-    await callback.message.edit_text("Отменено.")
+    await callback.message.edit_text(
+        "Отменено.",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="📋 К списку", callback_data="menu:list")],
+            ]
+        ),
+    )
     await callback.answer()
 
 

@@ -107,6 +107,38 @@ def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMa
     return list_page_keyboard(reminders[:8], viewer_telegram_id, 0, max(1, (len(reminders) + 7) // 8))
 
 
+def search_page_keyboard(
+    page_reminders,
+    viewer_telegram_id: int,
+    page: int,
+    total_pages: int,
+) -> InlineKeyboardMarkup | None:
+    rows: list[list[InlineKeyboardButton]] = []
+    for reminder in page_reminders:
+        if reminder.created_by_telegram_id != viewer_telegram_id:
+            continue
+        rows.append(
+            [
+                InlineKeyboardButton(text=f"#{reminder.id} ✏️", callback_data=f"edit:{reminder.id}"),
+                InlineKeyboardButton(text=f"#{reminder.id} 🗑", callback_data=f"del_confirm:{reminder.id}"),
+            ]
+        )
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav.append(InlineKeyboardButton(text="◀️", callback_data=f"search:page:{page - 1}"))
+    if total_pages > 1:
+        nav.append(InlineKeyboardButton(text=f"{page + 1}/{total_pages}", callback_data="search:noop"))
+    if page < total_pages - 1:
+        nav.append(InlineKeyboardButton(text="▶️", callback_data=f"search:page:{page + 1}"))
+    if nav:
+        rows.append(nav)
+
+    if not rows:
+        return None
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def delete_confirm_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

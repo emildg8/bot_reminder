@@ -38,3 +38,12 @@ def test_in_friday():
     weekdays, hour, minute, task = result
     assert weekdays == [4]
     assert "созвон" in task.lower()
+
+
+def test_each_monday_no_time():
+    result = find_custom_weekly("каждый понедельник отчёт")
+    assert result is not None
+    weekdays, hour, minute, task = result
+    assert weekdays == [0]
+    assert hour == 9
+    assert "отчёт" in task.lower()

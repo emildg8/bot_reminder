@@ -27,6 +27,14 @@ async def send_reminder(bot: Bot, reminder_id: int) -> None:
             logger.info("Chat %s paused, reschedule reminder %s", reminder.chat_id, reminder_id)
             retry_at = datetime.now().astimezone() + timedelta(minutes=5)
             schedule_reminder(bot, reminder.id, retry_at)
+            try:
+                await bot.send_message(
+                    reminder.created_by_telegram_id,
+                    f"⏸ Чат на паузе — напоминание #{reminder.id} «{reminder.text}» "
+                    f"перенесено на {retry_at.strftime('%H:%M')}.",
+                )
+            except Exception:
+                pass
             return
 
         mention_username: str | None = None

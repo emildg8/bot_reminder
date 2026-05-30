@@ -1,4 +1,4 @@
-.PHONY: install install-dev test lint run docker-up docker-down deploy
+.PHONY: install install-dev test lint run docker-up docker-down deploy backup restore
 
 install:
 	pip install -r requirements.txt
@@ -6,11 +6,14 @@ install:
 backup:
 	python scripts/backup_db.py
 
+restore:
+	python scripts/restore_db.py
+
 install-dev:
 	pip install -r requirements-dev.txt
 
 test:
-	BOT_TOKEN=0:test pytest -v
+	python -m pytest -v
 
 lint:
 	ruff check bot tests
