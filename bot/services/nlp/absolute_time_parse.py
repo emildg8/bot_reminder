@@ -110,7 +110,6 @@ def try_dateparser_search(text: str, timezone: str) -> ParsedReminder | None:
         "TIMEZONE": timezone,
         "RETURN_AS_TIMEZONE_AWARE": True,
         "PREFER_DATES_FROM": "future",
-        "LANGUAGE": "ru",
     }
     found = search_dates(normalized, languages=["ru", "en"], settings=settings)
     if not found:
