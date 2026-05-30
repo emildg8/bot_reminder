@@ -2,8 +2,11 @@ import re
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-import dateparser
-
+from bot.services.nlp.absolute_time_parse import (
+    normalize_time_dots,
+    parse_absolute_datetime,
+    try_dateparser_search,
+)
 from bot.services.nlp.schemas import ParsedReminder
 from bot.services.nlp.weekday_parse import find_custom_weekly
 
@@ -52,7 +55,7 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
 
     tz = ZoneInfo(timezone)
     now = datetime.now(tz)
-    cleaned = _strip_prefix(raw)
+    cleaned = normalize_time_dots(_strip_prefix(raw))
 
     if match := EVERY_HOUR_PATTERN.search(cleaned):
         task_text = EVERY_HOUR_PATTERN.sub("", cleaned).strip(" ,.")
@@ -130,6 +133,18 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             weekdays=weekdays,
         )
 
+    # «завтра в 14:00», «сегодня в 9.00» — до dateparser
+    if absolute := parse_absolute_datetime(cleaned, timezone):
+        return absolute
+
+    if searched := try_dateparser_search(cleaned, timezone):
+        return searched
+
+    try:
+        import dateparser
+    except ImportError:
+        return None
+
     parsed_date = dateparser.parse(
         cleaned,
         languages=["ru", "en"],
@@ -142,22 +157,11 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
     if parsed_date is None:
         return None
 
-    task_text = cleaned
-    for pattern in (
-        IN_PATTERN,
-        DAILY_PATTERN,
-        WEEKDAYS_PATTERN,
-        WEEKEND_PATTERN,
-        INTERVAL_PATTERN,
-        EVERY_HOUR_PATTERN,
-    ):
-        task_text = pattern.sub("", task_text).strip(" ,.")
-
     if parsed_date <= now:
         parsed_date = parsed_date + timedelta(days=1)
 
     return ParsedReminder(
-        text=task_text or cleaned,
+        text=cleaned,
         kind="once",
         run_at=parsed_date,
     )
