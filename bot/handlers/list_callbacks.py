@@ -10,7 +10,15 @@ router = Router()
 @router.callback_query(F.data.startswith("list:page:"))
 async def list_page(callback: CallbackQuery) -> None:
     page = int(callback.data.split(":")[-1])
-    await edit_list_message(callback, page)
+    await edit_list_message(callback, page, tab="active")
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("list:tab:"))
+async def list_tab(callback: CallbackQuery) -> None:
+    _, _, tab, *rest = callback.data.split(":")
+    page = int(rest[0]) if rest else 0
+    await edit_list_message(callback, page, tab=tab)
     await callback.answer()
 
 

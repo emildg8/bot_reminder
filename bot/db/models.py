@@ -16,6 +16,14 @@ class ReminderKind(str, Enum):
     WEEKLY = "weekly"
 
 
+class ReminderEventKind(str, Enum):
+    CREATED = "created"
+    FIRED = "fired"
+    SNOOZED = "snoozed"
+    DONE = "done"
+    DELETED = "deleted"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -23,6 +31,8 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
     timezone_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    snooze_presets: Mapped[str] = mapped_column(String(64), default="5,15,30,60,180,240")
+    snooze_step: Mapped[int] = mapped_column(Integer, default=15)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     reminders: Mapped[list["Reminder"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -57,3 +67,16 @@ class Reminder(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="reminders")
+
+
+class ReminderEvent(Base):
+    __tablename__ = "reminder_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reminder_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    user_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    reminder_text: Mapped[str] = mapped_column(String(512))
+    event_kind: Mapped[str] = mapped_column(String(16), index=True)
+    event_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    extra: Mapped[str | None] = mapped_column(String(128), nullable=True)

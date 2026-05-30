@@ -31,6 +31,15 @@ IN_PATTERN = re.compile(
     r"через\s+(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней)\b",
     re.IGNORECASE,
 )
+IN_RANGE_PATTERN = re.compile(
+    r"через\s+(\d+)\s*[-–—]\s*(\d+)\s*(минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней)\b",
+    re.IGNORECASE,
+)
+IN_COUPLE_PATTERN = re.compile(
+    r"через\s+пару\s+(минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b",
+    re.IGNORECASE,
+)
+IN_FEW_HOURS = re.compile(r"через\s+(?:несколько|неск\.?)\s+час(?:а|ов)?\b", re.IGNORECASE)
 IN_HALF_HOUR = re.compile(r"через\s+полчаса\b", re.IGNORECASE)
 IN_HOUR_WORD = re.compile(r"через\s+(?:один\s+|1\s+)?час\b", re.IGNORECASE)
 IN_ONE_AND_HALF_HOUR = re.compile(r"через\s+полтора\s+часа\b", re.IGNORECASE)
@@ -100,6 +109,32 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
             text=_task_without_pattern(cleaned, IN_HALF_HOUR),
             kind="once",
             run_at=now + timedelta(minutes=30),
+        )
+
+    if match := IN_COUPLE_PATTERN.search(cleaned):
+        unit = match.group(1).lower()
+        seconds = 7200 if unit.startswith("ч") else 120
+        return ParsedReminder(
+            text=_task_without_pattern(cleaned, IN_COUPLE_PATTERN),
+            kind="once",
+            run_at=now + timedelta(seconds=seconds),
+        )
+
+    if match := IN_FEW_HOURS.search(cleaned):
+        return ParsedReminder(
+            text=_task_without_pattern(cleaned, IN_FEW_HOURS),
+            kind="once",
+            run_at=now + timedelta(hours=3),
+        )
+
+    if match := IN_RANGE_PATTERN.search(cleaned):
+        low, high = int(match.group(1)), int(match.group(2))
+        value = max(low, high)
+        seconds = _parse_duration(value, match.group(3))
+        return ParsedReminder(
+            text=_task_without_pattern(cleaned, IN_RANGE_PATTERN),
+            kind="once",
+            run_at=now + timedelta(seconds=seconds),
         )
 
     if match := IN_ONE_AND_HALF_HOUR.search(cleaned):

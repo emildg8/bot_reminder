@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from bot.config import settings
-from bot.db.models import Base, ChatSettings, Reminder, User
+from bot.db.models import Base, ChatSettings, Reminder, ReminderEvent, User
 
 engine = create_async_engine(settings.database_url, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
@@ -43,6 +43,17 @@ async def init_db() -> None:
             if "timezone_confirmed" not in user_cols:
                 await conn.execute(
                     text("ALTER TABLE users ADD COLUMN timezone_confirmed BOOLEAN DEFAULT 1")
+                )
+            if "snooze_presets" not in user_cols:
+                await conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN snooze_presets VARCHAR(64) "
+                        "DEFAULT '5,15,30,60,180,240'"
+                    )
+                )
+            if "snooze_step" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN snooze_step INTEGER DEFAULT 15")
                 )
 
             await conn.execute(
@@ -238,6 +249,71 @@ async def clear_reminder_next_run(session: AsyncSession, reminder: Reminder) -> 
 async def deactivate_reminder(session: AsyncSession, reminder: Reminder) -> None:
     reminder.is_active = False
     await session.commit()
+
+
+async def get_user_by_telegram_id(session: AsyncSession, telegram_id: int) -> User | None:
+    result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+    return result.scalar_one_or_none()
+
+
+async def update_user_snooze_settings(
+    session: AsyncSession,
+    user: User,
+    *,
+    presets: str | None = None,
+    step: int | None = None,
+) -> User:
+    if presets is not None:
+        user.snooze_presets = presets
+    if step is not None:
+        user.snooze_step = step
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def get_history_events_for_day(
+    session: AsyncSession,
+    chat_id: int,
+    *,
+    start: datetime,
+    end: datetime,
+    user_telegram_id: int | None = None,
+    limit: int = 50,
+) -> list[ReminderEvent]:
+    query = (
+        select(ReminderEvent)
+        .where(
+            ReminderEvent.chat_id == chat_id,
+            ReminderEvent.event_at >= start,
+            ReminderEvent.event_at < end,
+        )
+        .order_by(ReminderEvent.event_at.desc())
+        .limit(limit)
+    )
+    if user_telegram_id is not None:
+        query = query.where(ReminderEvent.user_telegram_id == user_telegram_id)
+    result = await session.execute(query)
+    return list(result.scalars().all())
+
+
+async def get_inactive_chat_reminders(
+    session: AsyncSession,
+    chat_id: int,
+    *,
+    limit: int = 30,
+    user_telegram_id: int | None = None,
+) -> list[Reminder]:
+    query = (
+        select(Reminder)
+        .where(Reminder.chat_id == chat_id, Reminder.is_active.is_(False))
+        .order_by(Reminder.created_at.desc())
+        .limit(limit)
+    )
+    if user_telegram_id is not None:
+        query = query.where(Reminder.created_by_telegram_id == user_telegram_id)
+    result = await session.execute(query)
+    return list(result.scalars().all())
 
 
 async def deactivate_all_chat_reminders(session: AsyncSession, chat_id: int) -> int:

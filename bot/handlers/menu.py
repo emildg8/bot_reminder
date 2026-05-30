@@ -5,14 +5,17 @@ from aiogram.types import CallbackQuery, Message
 from bot.db.repository import async_session, get_active_chat_reminders, get_reminder, is_chat_paused
 from bot.handlers.create import _process_text_and_reply
 from bot.handlers.edit import _parse_and_confirm_edit
-from bot.keyboards.inline import examples_keyboard, timezone_keyboard
+from bot.handlers.diary import _send_journal, _send_stats
+from bot.keyboards.inline import examples_keyboard, more_menu_keyboard, timezone_keyboard
 from bot.keyboards.reply import (
     BTN_CREATE,
+    BTN_DIARY,
     BTN_EXAMPLES,
     BTN_HELP,
     BTN_LIST,
+    BTN_MORE,
     BTN_SEARCH,
-    BTN_STATUS,
+    BTN_STATS,
     BTN_TIMEZONE,
     MENU_BUTTON_TEXTS,
     main_menu_keyboard,
@@ -82,11 +85,15 @@ async def handle_menu_buttons(message: Message, bot) -> None:
 
     _clear_modes(message.from_user.id)
     if text == BTN_LIST:
-        await send_active_reminders(message)
+        await send_active_reminders(message, tab="active")
+    elif text == BTN_DIARY:
+        await _send_journal(message)
+    elif text == BTN_STATS:
+        await _send_stats(message)
+    elif text == BTN_MORE:
+        await message.answer("Дополнительно:", reply_markup=more_menu_keyboard())
     elif text == BTN_CREATE:
         await message.answer(CREATE_HINT, reply_markup=main_menu_keyboard())
-    elif text == BTN_STATUS:
-        await _send_status(message)
     elif text == BTN_TIMEZONE:
         label = "группы" if is_group_chat(message.chat.id) else "личный"
         await message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
@@ -107,6 +114,13 @@ async def menu_list(callback: CallbackQuery) -> None:
 async def menu_create(callback: CallbackQuery) -> None:
     _clear_modes(callback.from_user.id)
     await callback.message.answer(CREATE_HINT)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu:more")
+async def menu_more(callback: CallbackQuery) -> None:
+    _clear_modes(callback.from_user.id)
+    await callback.message.answer("Дополнительно:", reply_markup=more_menu_keyboard())
     await callback.answer()
 
 

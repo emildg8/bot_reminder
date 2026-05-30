@@ -15,6 +15,7 @@ from bot.handlers import (
     admin,
     callbacks,
     create,
+    diary,
     edit,
     group,
     health,
@@ -23,6 +24,7 @@ from bot.handlers import (
     manage,
     menu,
     search,
+    settings as settings_handler,
     start,
     status,
 )
@@ -146,6 +148,8 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(group.router)
     dp.include_router(menu.router)
+    dp.include_router(diary.router)
+    dp.include_router(settings_handler.router)
     dp.include_router(status.router)
     dp.include_router(manage.router)
     dp.include_router(list_cmd.router)

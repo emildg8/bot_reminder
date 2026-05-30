@@ -1,24 +1,40 @@
 from datetime import datetime, timedelta
 
-from aiogram import Bot, Router
+from aiogram import Bot, F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from zoneinfo import ZoneInfo
 
 from bot.config import settings
+from bot.db.models import ReminderEventKind
 from bot.db.repository import (
     async_session,
     create_reminder,
     deactivate_reminder,
     get_or_create_user,
     get_reminder,
+    get_user_by_telegram_id,
     update_reminder_next_run,
 )
-from bot.keyboards.inline import delete_confirm_keyboard, duplicate_confirm_keyboard
+from bot.keyboards.inline import (
+    delete_confirm_keyboard,
+    duplicate_confirm_keyboard,
+    reminder_actions_keyboard,
+    snooze_picker_keyboard,
+)
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
+from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
+from bot.services.snooze_picker import clear_picker, get_picker, set_picker
+from bot.services.user_prefs import (
+    clamp_snooze_minutes,
+    format_snooze_minutes,
+    get_default_snooze_minutes,
+    get_snooze_presets,
+    get_snooze_step,
+)
 from bot.texts.messages import format_created, format_updated
 from bot.services.scheduler import schedule_reminder, scheduler
 from bot.services.timezone_ctx import get_effective_timezone
@@ -85,6 +101,14 @@ async def _create_from_draft(
             daily_time=entry.parsed.daily_time,
             weekdays_mask=weekdays_to_mask(entry.parsed.weekdays) if entry.parsed.weekdays else None,
             mention_telegram_id=entry.mention_telegram_id,
+        )
+        await log_reminder_event(
+            session,
+            reminder=reminder,
+            chat_id=callback.message.chat.id,
+            user_telegram_id=callback.from_user.id,
+            text=entry.parsed.text,
+            kind=ReminderEventKind.CREATED,
         )
 
     schedule_reminder(bot, reminder.id, next_run)
@@ -157,11 +181,120 @@ async def cancel_draft(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("snooze:"))
-async def snooze_reminder(callback: CallbackQuery, bot: Bot) -> None:
+async def snooze_reminder_legacy(callback: CallbackQuery, bot: Bot) -> None:
+    """Старые сообщения с +5/+15/+30."""
+    _, reminder_id_str, minutes_str = callback.data.split(":")
+    await _apply_snooze(callback, bot, int(reminder_id_str), int(minutes_str))
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("szm:"))
+async def snooze_menu(callback: CallbackQuery) -> None:
+    reminder_id = int(callback.data.split(":", 1)[1])
+    async with async_session() as session:
+        reminder = await get_reminder(session, reminder_id)
+        if reminder is None or not reminder.is_active:
+            await callback.answer("Напоминание не найдено.", show_alert=True)
+            return
+        if reminder.created_by_telegram_id != callback.from_user.id:
+            await callback.answer("Нет доступа.", show_alert=True)
+            return
+        user = await get_user_by_telegram_id(session, callback.from_user.id)
+        default_mins = get_default_snooze_minutes(user)
+        presets = get_snooze_presets(user)
+
+    set_picker(callback.from_user.id, reminder_id, default_mins)
+    await callback.message.edit_text(
+        f"⏰ <b>Отложить</b>\n📝 {reminder.text}\n\nВыбери время или используй − / +:",
+        reply_markup=snooze_picker_keyboard(reminder_id, default_mins, presets),
+    )
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("szs:"))
+async def snooze_set_preset(callback: CallbackQuery) -> None:
     _, reminder_id_str, minutes_str = callback.data.split(":")
     reminder_id = int(reminder_id_str)
-    minutes = int(minutes_str)
+    minutes = clamp_snooze_minutes(int(minutes_str))
+    async with async_session() as session:
+        user = await get_user_by_telegram_id(session, callback.from_user.id)
+        presets = get_snooze_presets(user)
+    set_picker(callback.from_user.id, reminder_id, minutes)
+    await callback.message.edit_reply_markup(
+        reply_markup=snooze_picker_keyboard(reminder_id, minutes, presets),
+    )
+    await callback.answer(format_snooze_minutes(minutes))
 
+
+@router.callback_query(lambda c: c.data and c.data.startswith("sz+:"))
+async def snooze_inc(callback: CallbackQuery) -> None:
+    reminder_id = int(callback.data.split(":", 1)[1])
+    async with async_session() as session:
+        user = await get_user_by_telegram_id(session, callback.from_user.id)
+        step = get_snooze_step(user)
+        presets = get_snooze_presets(user)
+    state = get_picker(callback.from_user.id, reminder_id)
+    current = state.minutes if state else get_default_snooze_minutes(user)
+    minutes = clamp_snooze_minutes(current + step)
+    set_picker(callback.from_user.id, reminder_id, minutes)
+    await callback.message.edit_reply_markup(
+        reply_markup=snooze_picker_keyboard(reminder_id, minutes, presets),
+    )
+    await callback.answer(format_snooze_minutes(minutes))
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("sz-:"))
+async def snooze_dec(callback: CallbackQuery) -> None:
+    reminder_id = int(callback.data.split(":", 1)[1])
+    async with async_session() as session:
+        user = await get_user_by_telegram_id(session, callback.from_user.id)
+        step = get_snooze_step(user)
+        presets = get_snooze_presets(user)
+    state = get_picker(callback.from_user.id, reminder_id)
+    current = state.minutes if state else get_default_snooze_minutes(user)
+    minutes = clamp_snooze_minutes(current - step)
+    set_picker(callback.from_user.id, reminder_id, minutes)
+    await callback.message.edit_reply_markup(
+        reply_markup=snooze_picker_keyboard(reminder_id, minutes, presets),
+    )
+    await callback.answer(format_snooze_minutes(minutes))
+
+
+@router.callback_query(F.data == "sznoop")
+async def snooze_noop(callback: CallbackQuery) -> None:
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("sza:"))
+async def snooze_apply(callback: CallbackQuery, bot: Bot) -> None:
+    reminder_id = int(callback.data.split(":", 1)[1])
+    state = get_picker(callback.from_user.id, reminder_id)
+    if state is None:
+        await callback.answer("Выбери время заново.", show_alert=True)
+        return
+    await _apply_snooze(callback, bot, reminder_id, state.minutes)
+    clear_picker(callback.from_user.id)
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("szb:"))
+async def snooze_back(callback: CallbackQuery) -> None:
+    reminder_id = int(callback.data.split(":", 1)[1])
+    clear_picker(callback.from_user.id)
+    async with async_session() as session:
+        reminder = await get_reminder(session, reminder_id)
+    if reminder is None:
+        await callback.answer("Напоминание не найдено.", show_alert=True)
+        return
+    from bot.services.telegram_format import format_reminder_message
+
+    body = format_reminder_message(reminder.text, chat_id=reminder.chat_id)
+    await callback.message.edit_text(
+        body,
+        reply_markup=reminder_actions_keyboard(reminder_id),
+    )
+    await callback.answer()
+
+
+async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, minutes: int) -> None:
     async with async_session() as session:
         reminder = await get_reminder(session, reminder_id)
         if reminder is None:
@@ -183,10 +316,22 @@ async def snooze_reminder(callback: CallbackQuery, bot: Bot) -> None:
         tz = ZoneInfo(reminder.timezone)
         next_run = datetime.now(tz) + timedelta(minutes=minutes)
         await update_reminder_next_run(session, reminder, next_run)
+        await log_reminder_event(
+            session,
+            reminder=reminder,
+            chat_id=reminder.chat_id,
+            user_telegram_id=callback.from_user.id,
+            text=reminder.text,
+            kind=ReminderEventKind.SNOOZED,
+            extra={"minutes": minutes},
+        )
 
     schedule_reminder(bot, reminder_id, next_run)
+    when = next_run.strftime("%d.%m.%Y %H:%M")
     await callback.message.edit_text(
-        f"⏰ Отложено на {minutes} мин.\nНапоминание: {reminder.text}"
+        f"⏰ Отложено на <b>{format_snooze_minutes(minutes)}</b> (до {when})\n"
+        f"📝 {reminder.text}",
+        reply_markup=reminder_actions_keyboard(reminder_id),
     )
     await callback.answer()
 
@@ -206,6 +351,14 @@ async def done_reminder(callback: CallbackQuery) -> None:
             return
 
         await deactivate_reminder(session, reminder)
+        await log_reminder_event(
+            session,
+            reminder=reminder,
+            chat_id=reminder.chat_id,
+            user_telegram_id=callback.from_user.id,
+            text=reminder.text,
+            kind=ReminderEventKind.DONE,
+        )
 
     job_id = f"reminder_{reminder_id}"
     if scheduler.get_job(job_id):
@@ -263,6 +416,14 @@ async def delete_reminder(callback: CallbackQuery) -> None:
             return
 
         await deactivate_reminder(session, reminder)
+        await log_reminder_event(
+            session,
+            reminder=reminder,
+            chat_id=reminder.chat_id,
+            user_telegram_id=callback.from_user.id,
+            text=reminder.text,
+            kind=ReminderEventKind.DELETED,
+        )
 
     job_id = f"reminder_{reminder_id}"
     if scheduler.get_job(job_id):

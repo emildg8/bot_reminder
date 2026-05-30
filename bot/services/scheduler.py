@@ -10,7 +10,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
 from sqlalchemy import select
 
-from bot.db.models import Reminder, ReminderKind
+from bot.db.models import Reminder, ReminderEventKind, ReminderKind
+from bot.services.reminder_history import log_reminder_event
 from bot.db.repository import (
     async_session,
     clear_reminder_next_run,
@@ -132,6 +133,15 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             await update_reminder_next_run(session, reminder, retry_at)
             schedule_reminder(bot, reminder.id, retry_at)
             return
+
+        await log_reminder_event(
+            session,
+            reminder=reminder,
+            chat_id=reminder.chat_id,
+            user_telegram_id=reminder.created_by_telegram_id,
+            text=reminder.text,
+            kind=ReminderEventKind.FIRED,
+        )
 
         if planned_next is not None:
             schedule_reminder(bot, reminder.id, planned_next)

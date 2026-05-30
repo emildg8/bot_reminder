@@ -1,5 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from bot.services.user_prefs import format_snooze_minutes
 from bot.texts.messages import EXAMPLE_PHRASES, TASK_TIME_PRESETS
 
 TIMEZONE_OPTIONS = [
@@ -55,17 +56,88 @@ def reminder_actions_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="⏰ +5", callback_data=f"snooze:{reminder_id}:5"),
-                InlineKeyboardButton(text="⏰ +15", callback_data=f"snooze:{reminder_id}:15"),
-                InlineKeyboardButton(text="⏰ +30", callback_data=f"snooze:{reminder_id}:30"),
-            ],
-            [
-                InlineKeyboardButton(text="✏️ Изменить", callback_data=f"edit:{reminder_id}"),
+                InlineKeyboardButton(text="⏰ Отложить", callback_data=f"szm:{reminder_id}"),
                 InlineKeyboardButton(text="✅ Готово", callback_data=f"done:{reminder_id}"),
             ],
             [
+                InlineKeyboardButton(text="✏️ Изменить", callback_data=f"edit:{reminder_id}"),
                 InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{reminder_id}"),
             ],
+        ]
+    )
+
+
+def snooze_picker_keyboard(
+    reminder_id: int,
+    minutes: int,
+    presets: list[int],
+) -> InlineKeyboardMarkup:
+    quick_row: list[InlineKeyboardButton] = []
+    for preset in presets[:4]:
+        label = format_snooze_minutes(preset)
+        quick_row.append(
+            InlineKeyboardButton(text=label, callback_data=f"szs:{reminder_id}:{preset}")
+        )
+    rows: list[list[InlineKeyboardButton]] = [quick_row] if quick_row else []
+    if len(presets) > 4:
+        rows.append([
+            InlineKeyboardButton(text=format_snooze_minutes(p), callback_data=f"szs:{reminder_id}:{p}")
+            for p in presets[4:6]
+        ])
+    rows.append([
+        InlineKeyboardButton(text="−", callback_data=f"sz-:{reminder_id}"),
+        InlineKeyboardButton(text=format_snooze_minutes(minutes), callback_data="sznoop"),
+        InlineKeyboardButton(text="+", callback_data=f"sz+:{reminder_id}"),
+    ])
+    rows.append([
+        InlineKeyboardButton(text="✅ Применить", callback_data=f"sza:{reminder_id}"),
+        InlineKeyboardButton(text="⬅ Назад", callback_data=f"szb:{reminder_id}"),
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def more_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🔍 Поиск", callback_data="menu:search"),
+                InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
+            ],
+            [
+                InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
+                InlineKeyboardButton(text="⚙️ Snooze", callback_data="menu:settings"),
+            ],
+            [
+                InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
+            ],
+        ]
+    )
+
+
+def list_tabs_keyboard(active: bool, page: int = 0) -> InlineKeyboardMarkup:
+    active_label = "📋 Активные ✓" if active else "📋 Активные"
+    history_label = "📜 История ✓" if not active else "📜 История"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=active_label, callback_data=f"list:tab:active:{page}"),
+                InlineKeyboardButton(text=history_label, callback_data=f"list:tab:history:{page}"),
+            ]
+        ]
+    )
+
+
+def settings_snooze_keyboard(presets: list[int], step: int) -> InlineKeyboardMarkup:
+    preset_text = ", ".join(format_snooze_minutes(p) for p in presets)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"Шаг: {step} мин", callback_data="set:step")],
+            [InlineKeyboardButton(text=f"Пресеты: {preset_text}", callback_data="set:presets")],
+            [
+                InlineKeyboardButton(text="5·15·30·60", callback_data="set:pre:std"),
+                InlineKeyboardButton(text="5·15·30·1ч·3ч·4ч", callback_data="set:pre:long"),
+            ],
+            [InlineKeyboardButton(text="⬅ Меню", callback_data="menu:more")],
         ]
     )
 
@@ -215,15 +287,11 @@ def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📋 Список", callback_data="menu:list"),
             ],
             [
-                InlineKeyboardButton(text="🔍 Поиск", callback_data="menu:search"),
-                InlineKeyboardButton(text="📊 Статус", callback_data="menu:status"),
+                InlineKeyboardButton(text="📔 Дневник", callback_data="menu:diary"),
+                InlineKeyboardButton(text="📊 Статистика", callback_data="menu:stats"),
             ],
             [
-                InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
-                InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
-            ],
-            [
-                InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
+                InlineKeyboardButton(text="⋯ Ещё", callback_data="menu:more"),
             ],
         ]
     )
