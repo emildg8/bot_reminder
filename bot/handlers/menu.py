@@ -18,7 +18,8 @@ from bot.keyboards.reply import (
 from bot.services.drafts import clear_edit_pending
 from bot.services.reminders_ui import send_active_reminders
 from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
-from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, HELP_TEXT, format_status
+from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, HELP_TEXT, format_status, phrase_from_task_preset
+from bot.services.pending_tasks import get_pending_task, pop_pending_task
 from bot.version import __version__
 
 router = Router()
@@ -116,6 +117,25 @@ async def example_picked(callback: CallbackQuery, bot) -> None:
         await callback.answer("Пример не найден", show_alert=True)
         return
     _, phrase = EXAMPLE_PHRASES[idx]
+    await callback.answer()
+    await _process_text_and_reply(
+        callback.message,
+        phrase,
+        bot,
+        actor_user_id=callback.from_user.id,
+        use_phrase_text=True,
+    )
+
+
+@router.callback_query(F.data.startswith("qt:"))
+async def task_time_picked(callback: CallbackQuery, bot) -> None:
+    code = callback.data.split(":", 1)[1]
+    task = get_pending_task(callback.from_user.id)
+    if not task:
+        await callback.answer("Задача устарела — отправь текст заново.", show_alert=True)
+        return
+    pop_pending_task(callback.from_user.id)
+    phrase = phrase_from_task_preset(task, code)
     await callback.answer()
     await _process_text_and_reply(
         callback.message,

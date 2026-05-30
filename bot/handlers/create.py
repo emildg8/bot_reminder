@@ -8,11 +8,12 @@ from bot.db.repository import async_session
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.handlers.edit import process_edit_phrase
-from bot.keyboards.inline import confirm_reminder_keyboard
+from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
 from bot.services.drafts import store_draft
+from bot.services.pending_tasks import store_pending_task
 from bot.services.reminder_display import format_parsed_summary_html
-from bot.texts.messages import format_confirm_card, format_parse_fail
+from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 from bot.services.media import (
     download_telegram_file,
     extract_audio_from_video,
@@ -58,10 +59,17 @@ async def _process_text_and_reply(
     parsed = await parse_reminder(phrase, timezone)
 
     if parsed is None:
-        await message.answer(
-            format_parse_fail(phrase),
-            reply_markup=main_menu_keyboard(),
-        )
+        if looks_like_task_only(phrase):
+            store_pending_task(user_id, phrase)
+            await message.answer(
+                format_parse_fail(phrase),
+                reply_markup=task_time_keyboard(),
+            )
+        else:
+            await message.answer(
+                format_parse_fail(phrase),
+                reply_markup=main_menu_keyboard(),
+            )
         return
 
     summary = format_parsed_summary_html(parsed, timezone)

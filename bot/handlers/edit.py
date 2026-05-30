@@ -5,14 +5,15 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, get_reminder
-from bot.keyboards.inline import confirm_reminder_keyboard
+from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
+from bot.services.pending_tasks import store_pending_task
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_reminder
 from bot.services.reminder_display import format_parsed_summary_html
-from bot.texts.messages import format_confirm_card, format_parse_fail
+from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 
 router = Router()
 
@@ -116,7 +117,12 @@ async def _parse_and_confirm_edit(
     parsed = await parse_reminder((clean_text or phrase).strip(), timezone)
     if parsed is None:
         set_edit_pending(user_id, reminder_id)
-        await message.answer(format_parse_fail((clean_text or phrase).strip()), reply_markup=main_menu_keyboard())
+        phrase_text = (clean_text or phrase).strip()
+        if looks_like_task_only(phrase_text):
+            store_pending_task(user_id, phrase_text)
+            await message.answer(format_parse_fail(phrase_text), reply_markup=task_time_keyboard())
+        else:
+            await message.answer(format_parse_fail(phrase_text), reply_markup=main_menu_keyboard())
         return
 
     clear_edit_pending(user_id)

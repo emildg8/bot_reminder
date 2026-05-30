@@ -56,12 +56,27 @@ PARSE_FAIL = (
 
 PARSE_FAIL_TASK_ONLY = (
     "🤔 <b>Не вижу время</b>\n\n"
-    "Добавь <b>когда</b> напомнить — одной фразой:\n"
-    "• <code>через 30 минут {task}</code>\n"
-    "• <code>через час {task}</code>\n"
-    "• <code>завтра в 14:00 {task}</code>\n\n"
-    "💡 Или нажми «Примеры»"
+    "Задача: <b>{task}</b>\n\n"
+    "Выбери когда напомнить 👇"
 )
+
+TASK_TIME_PRESETS: list[tuple[str, str]] = [
+    ("⏱ +30 мин", "30m"),
+    ("⏱ +1 час", "1h"),
+    ("📅 Завтра 9:00", "tom9"),
+    ("📅 Завтра 14:00", "tom14"),
+]
+
+
+def phrase_from_task_preset(task: str, code: str) -> str:
+    templates = {
+        "30m": "через 30 минут {task}",
+        "1h": "через час {task}",
+        "tom9": "завтра в 9:00 {task}",
+        "tom14": "завтра в 14:00 {task}",
+    }
+    template = templates.get(code, "через час {task}")
+    return template.format(task=task.strip())
 
 
 def looks_like_task_only(text: str) -> bool:

@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.texts.messages import EXAMPLE_PHRASES
+from bot.texts.messages import EXAMPLE_PHRASES, TASK_TIME_PRESETS
 
 TIMEZONE_OPTIONS = [
     ("Europe/Moscow", "Москва"),
@@ -105,6 +105,19 @@ def list_page_keyboard(
 def list_manage_keyboard(reminders, viewer_telegram_id: int) -> InlineKeyboardMarkup | None:
     """Legacy wrapper — первая страница."""
     return list_page_keyboard(reminders[:8], viewer_telegram_id, 0, max(1, (len(reminders) + 7) // 8))
+
+
+def task_time_keyboard() -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for label, code in TASK_TIME_PRESETS:
+        row.append(InlineKeyboardButton(text=label, callback_data=f"qt:{code}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def duplicate_confirm_keyboard(draft_id: str, duplicate_id: int) -> InlineKeyboardMarkup:
