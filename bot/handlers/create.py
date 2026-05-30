@@ -12,13 +12,13 @@ from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
 from bot.services.drafts import pop_search_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
-from bot.services.reminder_display import format_parsed_summary_html
+from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 from bot.services.media import download_telegram_file, transcribe_audio
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
-from bot.services.nlp.llm_parser import parse_reminder
+from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.nlp.speech_cleanup import cleanup_stt_text, is_stt_text_too_short
 
 logger = logging.getLogger(__name__)
@@ -44,23 +44,28 @@ async def _process_text_and_reply(
     use_phrase_text: bool = False,
 ) -> None:
     user_id = actor_user_id or message.from_user.id
+    me = await bot.get_me()
 
     if use_phrase_text or source_label:
         mention_id, mention_username, clean_text = None, None, text
-        u, cleaned = extract_leading_username(text)
+        u, cleaned = extract_leading_username(text, me.username)
         if u:
             mention_username = u
             clean_text = cleaned
     else:
-        mention_id, mention_username, clean_text = extract_mention_from_message(message)
+        mention_id, mention_username, clean_text = extract_mention_from_message(
+            message,
+            bot_username=me.username,
+            bot_id=me.id,
+        )
 
     mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
     phrase = (clean_text or text).strip()
 
     timezone = await _get_parse_timezone(message.chat.id, user_id)
-    parsed = await parse_reminder(phrase, timezone)
+    parsed_items = await parse_all_reminders(phrase, timezone)
 
-    if parsed is None:
+    if not parsed_items:
         if looks_like_task_only(phrase):
             store_pending_task(user_id, phrase)
             await message.answer(
@@ -74,7 +79,7 @@ async def _process_text_and_reply(
             )
         return
 
-    summary = format_parsed_summary_html(parsed, timezone)
+    summary = format_batch_parsed_summary_html(parsed_items, timezone)
     if source_label == "voice":
         prefix = f"🎤 Распознано: {text}\n\n"
     elif source_label == "video_note":
@@ -93,7 +98,7 @@ async def _process_text_and_reply(
     mention_provided = bool(mention_username or mention_id)
     draft_id = store_draft(
         user_id,
-        parsed,
+        parsed_items=parsed_items,
         mention_telegram_id=mention_telegram_id,
         mention_provided=mention_provided,
     )

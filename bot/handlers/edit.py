@@ -98,10 +98,20 @@ async def process_edit_phrase(message: Message, phrase: str, bot: Bot) -> bool:
     return True
 
 
-def _extract_mention_from_phrase(message: Message, phrase: str) -> tuple[int | None, str | None, str]:
+def _extract_mention_from_phrase(
+    message: Message,
+    phrase: str,
+    *,
+    bot_username: str | None = None,
+    bot_id: int | None = None,
+) -> tuple[int | None, str | None, str]:
     if message.text and message.text.strip() == phrase.strip():
-        return extract_mention_from_message(message)
-    username, clean = extract_leading_username(phrase)
+        return extract_mention_from_message(
+            message,
+            bot_username=bot_username,
+            bot_id=bot_id,
+        )
+    username, clean = extract_leading_username(phrase, bot_username)
     return None, username, clean
 
 
@@ -113,7 +123,13 @@ async def _parse_and_confirm_edit(
     user_id: int,
     bot: Bot,
 ) -> None:
-    mention_id, mention_username, clean_text = _extract_mention_from_phrase(message, phrase)
+    me = await bot.get_me()
+    mention_id, mention_username, clean_text = _extract_mention_from_phrase(
+        message,
+        phrase,
+        bot_username=me.username,
+        bot_id=me.id,
+    )
     mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
     parsed = await parse_reminder((clean_text or phrase).strip(), timezone)
     if parsed is None:

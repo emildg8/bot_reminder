@@ -123,6 +123,24 @@ def format_parsed_summary_html(parsed: ParsedReminder, timezone: str) -> str:
     )
 
 
+def format_batch_parsed_summary_html(items: list[ParsedReminder], timezone: str) -> str:
+    if len(items) == 1:
+        return format_parsed_summary_html(items[0], timezone)
+
+    lines = [f"📋 <b>{len(items)} напоминания</b>\n"]
+    for parsed in items:
+        if parsed.kind == "weekly" and parsed.daily_time and parsed.weekdays:
+            days = format_weekdays_label(weekdays=parsed.weekdays)
+            when = f"{days} в {parsed.daily_time.strftime('%H:%M')}"
+        elif parsed.kind == "once" and parsed.run_at:
+            when = parsed.run_at.astimezone(ZoneInfo(timezone)).strftime("%d.%m.%Y %H:%M")
+        else:
+            when = format_parsed_summary_html(parsed, timezone).split("\n")[1].removeprefix("🕐 ")
+        lines.append(f"• {when} — {escape(parsed.text)}")
+    lines.append(f"\n🌍 {format_timezone_label(timezone)}")
+    return "\n".join(lines)
+
+
 def reminder_to_export_dict(reminder: Reminder) -> dict:
     return {
         "id": reminder.id,

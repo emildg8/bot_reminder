@@ -230,6 +230,13 @@ def format_created(reminder_id: int, when: str, text: str) -> str:
     )
 
 
+def format_batch_created(items: list[tuple[int, str, str]]) -> str:
+    lines = [f"✅ <b>Готово!</b> Создано {len(items)} напоминания:\n"]
+    for reminder_id, when, text in items:
+        lines.append(f"• #{reminder_id} · {when} · {text}")
+    return "\n".join(lines)
+
+
 def format_updated(reminder_id: int, when: str) -> str:
     return f"✏️ Напоминание #{reminder_id} обновлено.\n🕐 Следующий раз: <b>{when}</b>"
 

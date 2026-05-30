@@ -10,7 +10,7 @@ from bot.services.nlp.absolute_time_parse import (
     try_dateparser_search,
 )
 from bot.services.nlp.schemas import ParsedReminder
-from bot.services.nlp.weekday_parse import find_custom_weekly
+from bot.services.nlp.weekday_parse import find_custom_weekly, find_weekly_schedules
 
 INTERVAL_HALF_HOUR = re.compile(r"кажды(?:е|й)\s+полчаса\b", re.IGNORECASE)
 INTERVAL_PATTERN = re.compile(
@@ -364,6 +364,29 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
         kind="once",
         run_at=parsed_date,
     )
+
+
+def parse_all_with_rules(text: str, timezone: str) -> list[ParsedReminder]:
+    """Все напоминания из одной фразы (несколько времён в неделю и т.п.)."""
+    raw = text.strip()
+    if not raw:
+        return []
+
+    cleaned = normalize_phrase(_strip_prefix(raw))
+    schedules = find_weekly_schedules(cleaned)
+    if schedules:
+        return [
+            ParsedReminder(
+                text=task or "Напоминание",
+                kind="weekly",
+                daily_time=time(hour, minute),
+                weekdays=weekdays,
+            )
+            for weekdays, hour, minute, task in schedules
+        ]
+
+    single = parse_with_rules(text, timezone)
+    return [single] if single else []
 
 
 def _next_daily_run(now: datetime, daily_time: time) -> datetime:

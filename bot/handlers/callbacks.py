@@ -35,7 +35,7 @@ from bot.services.user_prefs import (
     get_snooze_presets,
     get_snooze_step,
 )
-from bot.texts.messages import format_created, format_updated
+from bot.texts.messages import format_batch_created, format_created, format_updated
 from bot.services.scheduler import schedule_reminder, scheduler
 from bot.services.timezone_ctx import get_effective_timezone
 
@@ -54,6 +54,9 @@ async def _create_from_draft(
         await callback.answer("Черновик не найден или устарел.", show_alert=True)
         return
 
+    batch = len(entry.parsed_items) > 1
+    check_duplicate = not skip_duplicate and not batch
+
     async with async_session() as session:
         user = await get_or_create_user(
             session,
@@ -63,9 +66,8 @@ async def _create_from_draft(
         tz = await get_effective_timezone(
             session, callback.message.chat.id, callback.from_user.id
         )
-        next_run = compute_next_run(entry.parsed, tz)
 
-        if not skip_duplicate:
+        if check_duplicate:
             duplicate = await find_duplicate_reminder(
                 session,
                 callback.message.chat.id,
@@ -76,7 +78,7 @@ async def _create_from_draft(
             if duplicate:
                 new_draft_id = store_draft(
                     callback.from_user.id,
-                    entry.parsed,
+                    parsed_items=entry.parsed_items,
                     mention_telegram_id=entry.mention_telegram_id,
                     mention_provided=entry.mention_provided,
                 )
@@ -88,32 +90,40 @@ async def _create_from_draft(
                 await callback.answer()
                 return
 
-        reminder = await create_reminder(
-            session,
-            user_id=user.id,
-            chat_id=callback.message.chat.id,
-            created_by_telegram_id=callback.from_user.id,
-            timezone=tz,
-            text=entry.parsed.text,
-            kind=entry.parsed.kind,
-            next_run_at=next_run,
-            interval_seconds=entry.parsed.interval_seconds,
-            daily_time=entry.parsed.daily_time,
-            weekdays_mask=weekdays_to_mask(entry.parsed.weekdays) if entry.parsed.weekdays else None,
-            mention_telegram_id=entry.mention_telegram_id,
-        )
-        await log_reminder_event(
-            session,
-            reminder=reminder,
-            chat_id=callback.message.chat.id,
-            user_telegram_id=callback.from_user.id,
-            text=entry.parsed.text,
-            kind=ReminderEventKind.CREATED,
-        )
+        created: list[tuple[int, str, str]] = []
+        for parsed in entry.parsed_items:
+            next_run = compute_next_run(parsed, tz)
+            reminder = await create_reminder(
+                session,
+                user_id=user.id,
+                chat_id=callback.message.chat.id,
+                created_by_telegram_id=callback.from_user.id,
+                timezone=tz,
+                text=parsed.text,
+                kind=parsed.kind,
+                next_run_at=next_run,
+                interval_seconds=parsed.interval_seconds,
+                daily_time=parsed.daily_time,
+                weekdays_mask=weekdays_to_mask(parsed.weekdays) if parsed.weekdays else None,
+                mention_telegram_id=entry.mention_telegram_id,
+            )
+            await log_reminder_event(
+                session,
+                reminder=reminder,
+                chat_id=callback.message.chat.id,
+                user_telegram_id=callback.from_user.id,
+                text=parsed.text,
+                kind=ReminderEventKind.CREATED,
+            )
+            schedule_reminder(bot, reminder.id, next_run)
+            when = next_run.astimezone(ZoneInfo(tz)).strftime("%d.%m.%Y %H:%M")
+            created.append((reminder.id, when, parsed.text))
 
-    schedule_reminder(bot, reminder.id, next_run)
-    when = next_run.astimezone(ZoneInfo(tz)).strftime("%d.%m.%Y %H:%M")
-    await callback.message.edit_text(format_created(reminder.id, when, entry.parsed.text))
+    if len(created) == 1:
+        rid, when, text = created[0]
+        await callback.message.edit_text(format_created(rid, when, text))
+    else:
+        await callback.message.edit_text(format_batch_created(created))
     await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
     await callback.answer()
 

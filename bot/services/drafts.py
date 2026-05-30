@@ -14,12 +14,16 @@ SEARCH_PENDING_TTL = timedelta(minutes=10)
 
 @dataclass
 class DraftEntry:
-    parsed: ParsedReminder
+    parsed_items: list[ParsedReminder]
     user_id: int
     created_at: datetime
     mention_telegram_id: int | None = None
     mention_provided: bool = False
     edit_reminder_id: int | None = None
+
+    @property
+    def parsed(self) -> ParsedReminder:
+        return self.parsed_items[0]
 
 
 _draft_entries: dict[str, DraftEntry] = {}
@@ -29,15 +33,21 @@ _search_pending: dict[int, datetime] = {}
 
 def store_draft(
     user_id: int,
-    parsed: ParsedReminder,
+    parsed: ParsedReminder | None = None,
+    *,
+    parsed_items: list[ParsedReminder] | None = None,
     mention_telegram_id: int | None = None,
     mention_provided: bool = False,
     edit_reminder_id: int | None = None,
 ) -> str:
+    items = parsed_items if parsed_items is not None else ([parsed] if parsed else [])
+    if not items:
+        raise ValueError("Draft requires at least one parsed reminder")
+
     prune_expired()
     draft_id = uuid.uuid4().hex[:12]
     _draft_entries[draft_id] = DraftEntry(
-        parsed=parsed,
+        parsed_items=items,
         user_id=user_id,
         created_at=datetime.now(timezone.utc),
         mention_telegram_id=mention_telegram_id,

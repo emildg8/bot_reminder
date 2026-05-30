@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from openai import AsyncOpenAI
 
 from bot.config import settings
-from bot.services.nlp.rule_parser import parse_with_rules
+from bot.services.nlp.rule_parser import parse_all_with_rules, parse_with_rules
 from bot.services.nlp.schemas import ParsedReminder
 
 logger = logging.getLogger(__name__)
@@ -135,12 +135,11 @@ async def _try_llm(
     return None
 
 
-async def parse_reminder(text: str, timezone: str) -> ParsedReminder | None:
-    # 1) Сначала пробуем дешёвый и предсказуемый парсинг правилами.
-    parsed = parse_with_rules(text, timezone)
-    if parsed:
-        logger.info("Parsed via rules")
-        return parsed
+async def parse_all_reminders(text: str, timezone: str) -> list[ParsedReminder]:
+    results = parse_all_with_rules(text, timezone)
+    if results:
+        logger.info("Parsed via rules (%s item(s))", len(results))
+        return results
 
     providers: list[tuple[str, AsyncOpenAI, str]] = []
 
@@ -168,13 +167,18 @@ async def parse_reminder(text: str, timezone: str) -> ParsedReminder | None:
         parsed = await _try_llm(client, model, text, timezone)
         if parsed:
             logger.info("Parsed via free LLM (%s)", name)
-            return parsed
+            return [parsed]
 
     if settings.openai_api_key:
         client = _build_client("https://api.openai.com/v1", settings.openai_api_key)
         parsed = await _try_llm(client, settings.openai_model, text, timezone)
         if parsed:
             logger.info("Parsed via OpenAI")
-            return parsed
+            return [parsed]
 
-    return None
+    return []
+
+
+async def parse_reminder(text: str, timezone: str) -> ParsedReminder | None:
+    items = await parse_all_reminders(text, timezone)
+    return items[0] if items else None

@@ -67,3 +67,18 @@ def test_each_tuesday_full_name_not_truncated():
     assert parsed.kind == "weekly"
     assert parsed.daily_time.hour == 10
     assert parsed.text.lower() == "отчет"
+
+
+def test_multi_weekday_multi_time():
+    from bot.services.nlp.rule_parser import parse_all_with_rules
+
+    text = "Во вторник, среду, пятницу и субботу в 10.55, 16.10 и в 21.00 Экспа"
+    results = parse_all_with_rules(text, "Europe/Moscow")
+    assert len(results) == 3
+    for parsed in results:
+        assert parsed.kind == "weekly"
+        assert parsed.weekdays == [1, 2, 4, 5]
+        assert parsed.text == "Экспа"
+    times = sorted(p.daily_time.strftime("%H:%M") for p in results)
+    assert times == ["10:55", "16:10", "21:00"]
+
