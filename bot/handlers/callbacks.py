@@ -16,7 +16,9 @@ from bot.db.repository import (
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.drafts import discard_draft, pop_draft
 from bot.services.duplicates import find_duplicate_reminder
-from bot.texts.messages import format_confirm_card, format_created, format_updated
+from bot.services.reminder_apply import apply_parsed_to_reminder
+from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
+from bot.texts.messages import format_created, format_updated
 from bot.services.scheduler import schedule_reminder, scheduler
 from bot.services.timezone_ctx import get_effective_timezone
 

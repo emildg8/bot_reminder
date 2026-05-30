@@ -7,7 +7,7 @@ from apscheduler.triggers.date import DateTrigger
 from sqlalchemy import select
 
 from bot.db.models import Reminder
-from bot.db.repository import async_session, get_reminder, is_chat_paused
+from bot.db.repository import async_session, get_reminder, is_chat_paused, update_reminder_next_run
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder
 from bot.services.telegram_format import format_reminder_message, is_group_chat
