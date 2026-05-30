@@ -58,6 +58,11 @@ class Settings(BaseSettings):
 
     admin_telegram_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
 
+    github_repo: str = "emildg8/bot_reminder"
+    github_branch: str = "main"
+    auto_update_enabled: bool = True
+    auto_update_interval_minutes: int = 3
+
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod
     def parse_admin_telegram_ids(cls, value: Any) -> list[int]:

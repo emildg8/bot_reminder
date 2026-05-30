@@ -30,7 +30,9 @@ from bot.logging_setup import setup_logging
 from bot.services.backup import backup_database
 from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.bot_menu import setup_bot_commands, setup_bot_profile
+from bot.services.auto_update import should_restart_for_update
 from bot.services.cleanup import prune_all_caches
+from bot.services.deploy_meta import record_deploy_sha_from_git
 from bot.services.heartbeat import write_heartbeat
 from bot.services.scheduler import restore_scheduled_reminders, scheduler
 from bot.version import __version__
@@ -71,6 +73,20 @@ def _heartbeat_job() -> None:
     write_heartbeat(scheduler_running=scheduler.running)
 
 
+async def _auto_update_job(bot: Bot, dp: Dispatcher) -> None:
+    need_restart, local_sha, remote_sha = await should_restart_for_update()
+    if not need_restart or not remote_sha:
+        return
+
+    short = remote_sha[:7]
+    await _notify_admins(
+        bot,
+        f"🔄 Новая версия на GitHub (<code>{short}</code>) — перезапуск для обновления…",
+    )
+    logger.info("Auto-update restart: %s -> %s", (local_sha or "?")[:7], short)
+    await dp.stop_polling()
+
+
 async def main() -> None:
     data_dir = Path(__file__).resolve().parent.parent / "data"
     data_dir.mkdir(exist_ok=True)
@@ -97,6 +113,9 @@ async def main() -> None:
 
     logger.info("Starting bot v%s (pid %s)", __version__, os.getpid())
     logger.info("Log file: %s", log_file)
+    deploy_sha = record_deploy_sha_from_git()
+    if deploy_sha:
+        logger.info("Deploy sha: %s", deploy_sha[:7])
     await init_db()
 
     bot = Bot(
@@ -138,6 +157,14 @@ async def main() -> None:
         id="db_backup",
         replace_existing=True,
     )
+    if settings.auto_update_enabled:
+        scheduler.add_job(
+            _auto_update_job,
+            trigger=IntervalTrigger(minutes=settings.auto_update_interval_minutes),
+            id="auto_update",
+            replace_existing=True,
+            kwargs={"bot": bot, "dp": dp},
+        )
     await restore_scheduled_reminders(bot)
     await setup_bot_commands(bot)
     await setup_bot_profile(bot)

@@ -28,9 +28,7 @@ docker-down:
 	docker compose down
 
 deploy:
-	git pull origin main
-	pip install -r requirements.txt -q
-	@echo "Restart bot process manually or via panel"
+	@echo "Deploy is automated: push to main triggers GitHub Actions (see .github/DEPLOY.md)"
 
 avatar:
 	python scripts/set_bot_avatar.py

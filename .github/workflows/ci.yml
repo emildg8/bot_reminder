@@ -27,3 +27,29 @@ jobs:
         env:
           BOT_TOKEN: "0:ci-test-token"
         run: pytest -v --tb=short
+
+  deploy:
+    name: Deploy to Wispbyte
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Notify deploy start
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_TELEGRAM_IDS: ${{ secrets.ADMIN_TELEGRAM_IDS }}
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          bash scripts/notify_telegram.sh "🚀 Deploy <code>${SHORT_SHA}</code> — перезапуск сервера…"
+
+      - name: Restart Wispbyte server
+        env:
+          WISP_PANEL_URL: ${{ secrets.WISP_PANEL_URL }}
+          WISP_API_TOKEN: ${{ secrets.WISP_API_TOKEN }}
+          WISP_SERVER_UUID: ${{ secrets.WISP_SERVER_UUID }}
+          PTERODACTYL_PANEL_URL: ${{ secrets.PTERODACTYL_PANEL_URL }}
+          PTERODACTYL_API_TOKEN: ${{ secrets.PTERODACTYL_API_TOKEN }}
+          PTERODACTYL_SERVER_UUID: ${{ secrets.PTERODACTYL_SERVER_UUID }}
+        run: bash scripts/wisp_restart.sh

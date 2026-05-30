@@ -20,8 +20,11 @@ fi
 echo "==> pip install"
 pip install -r requirements.txt -q
 
-echo "==> Setting bot avatar (if needed)"
-python scripts/set_bot_avatar.py --force || echo "Avatar upload skipped/failed"
+echo "==> Record deploy sha"
+python scripts/record_deploy.py || true
+
+echo "==> Setting bot avatar (if missing)"
+python scripts/set_bot_avatar.py || echo "Avatar upload skipped/failed"
 
 echo "==> Starting bot..."
 exec python -m bot.main

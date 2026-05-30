@@ -1,9 +1,11 @@
-# Telegram-бот напоминалка · v2.5
+# Telegram-бот напоминалка · v2.6
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Работает в личке и в группах.
 
+> **v2.6.0** — полный CI/CD: push → тесты → auto-restart Wispbyte, fallback auto-update с GitHub.
+>
 > **v2.5.0** — optimistic advance для recurring, Docker healthcheck (heartbeat + pid + scheduler).
 >
 > **v2.4.0** — стабильность: no duplicate once after restart, graceful shutdown, safe backup, scheduler recovery.
@@ -84,13 +86,20 @@ docker compose up -d --build
 
 Полный список — в `.env.example`.
 
-## Деплой (Wispbyte / VPS)
+## Деплой — полностью автоматически
 
-```bash
-bash start.sh
-```
+**Push в `main` → GitHub Actions (тесты + перезапуск Wispbyte) → `start.sh` на сервере.**
 
-При старте: `git pull`, `pip install`, автозагрузка аватара, запуск бота.
+Один раз добавь secrets в GitHub — см. [.github/DEPLOY.md](.github/DEPLOY.md).
+
+| Secret | Назначение |
+|--------|------------|
+| `BOT_TOKEN`, `ADMIN_TELEGRAM_IDS` | Уведомления о деплое |
+| `WISP_PANEL_URL`, `WISP_API_TOKEN`, `WISP_SERVER_UUID` | Мгновенный restart через API |
+
+**Startup command на Wispbyte:** `bash start.sh`
+
+Без Wisp-секретов бот сам подтягивает обновления с GitHub каждые 3 мин (auto-update).
 
 ---
 

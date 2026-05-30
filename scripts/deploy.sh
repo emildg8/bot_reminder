@@ -14,5 +14,8 @@ fi
 echo "==> pip install"
 pip install -r requirements.txt -q
 
+echo "==> Record deploy sha"
+python scripts/record_deploy.py || true
+
 echo "==> ready — restart bot process"
 exec python -m bot.main
