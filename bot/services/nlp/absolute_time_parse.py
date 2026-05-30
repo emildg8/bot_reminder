@@ -55,6 +55,12 @@ NOISE_PREFIX = re.compile(
     re.IGNORECASE,
 )
 
+# «в 2 часа дня» / «в 8 вечера» / «в 3 часа ночи»
+HOUR_PART_OF_DAY = re.compile(
+    r"\b(?:в\s+)?(?P<h>\d{1,2})\s*(?:час(?:а|ов)?\s+)?(?P<part>дня|утра|вечера|ночи)\b",
+    re.IGNORECASE,
+)
+
 # «завтра в 2» / «в 14» без минут → «в 2:00» / «в 14:00»
 BARE_HOUR = re.compile(r"(\b(?:в\s+))(\d{1,2})(?![:.]\d)(\b)", re.IGNORECASE)
 
@@ -68,12 +74,38 @@ def normalize_time_dots(text: str) -> str:
     return TIME_DOT_PATTERN.sub(r"\1:\2", text)
 
 
+def _hour_from_part_of_day(hour: int, part: str) -> int:
+    part = part.lower()
+    if part in ("дня", "вечера"):
+        if 1 <= hour <= 11:
+            return hour + 12
+        return hour
+    if part == "утра":
+        return 0 if hour == 12 else hour
+    if part == "ночи":
+        return 0 if hour == 12 else hour
+    return hour
+
+
+def normalize_part_of_day(text: str) -> str:
+    def repl(match: re.Match) -> str:
+        hour = _hour_from_part_of_day(int(match.group("h")), match.group("part"))
+        return f"в {hour:02d}:00"
+
+    text = HOUR_PART_OF_DAY.sub(repl, text)
+    text = re.sub(r"\bв\s+полдень\b", "в 12:00", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bполдень\b", "12:00", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bв\s+полночь\b", "в 00:00", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bполночь\b", "00:00", text, flags=re.IGNORECASE)
+    return text
+
+
 def normalize_bare_hours(text: str) -> str:
     return BARE_HOUR.sub(r"\1\2:00\3", text)
 
 
 def normalize_phrase(text: str) -> str:
-    return normalize_bare_hours(normalize_time_dots(text.strip()))
+    return normalize_bare_hours(normalize_part_of_day(normalize_time_dots(text.strip())))
 
 
 def _day_offset(day_token: str) -> int:

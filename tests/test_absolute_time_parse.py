@@ -37,6 +37,39 @@ def test_normalize_bare_hour():
     assert "2:00" in normalize_phrase("завтра в 2 создать бота")
 
 
+def test_napomnyu_zavtra_v_2_chasa_dnya():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("Напомню завтра в 2 часа дня создать встречу", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.text.lower() == "создать встречу"
+    assert parsed.run_at.hour == 14
+    assert parsed.run_at.minute == 0
+
+
+def test_zavtra_v_2_dnya_shorthand():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("завтра в 2 дня созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 14
+    assert "созвон" in parsed.text.lower()
+
+
+def test_vecherom():
+    parsed = parse_absolute_datetime("завтра в 8 вечера ужин", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 20
+    assert "ужин" in parsed.text.lower()
+
+
+def test_nochyu():
+    parsed = parse_absolute_datetime("завтра в 2 часа ночи позвонить", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 2
+    assert "позвонить" in parsed.text.lower()
+
+
 def test_napomnyu_zavtra_v_2():
     from bot.services.nlp.rule_parser import parse_with_rules
 
