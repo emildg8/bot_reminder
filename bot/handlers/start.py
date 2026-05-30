@@ -14,7 +14,7 @@ from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, t
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.timezone_ctx import is_group_chat
 from bot.services.timezone_labels import format_timezone_label
-from bot.texts.messages import WELCOME_BACK, WELCOME_ONBOARDING
+from bot.texts.messages import ONBOARDING_READY, WELCOME_BACK, WELCOME_ONBOARDING
 
 router = Router()
 
@@ -76,10 +76,11 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
     chat_id = callback.message.chat.id
     if is_group_chat(chat_id):
         if not await can_manage_group_reminders(callback.bot, chat_id, callback.from_user.id):
-            await callback.answer("Только администраторы могут менять TZ группы.", show_alert=True)
+            await callback.answer("Только администраторы могут менять часовой пояс группы.", show_alert=True)
             return
 
     tz_label = format_timezone_label(timezone)
+    was_first_setup = False
     async with async_session() as session:
         if is_group_chat(chat_id):
             chat = await get_or_create_chat(session, chat_id, settings.default_timezone)
@@ -89,12 +90,15 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
             user = await get_or_create_user(
                 session, callback.from_user.id, settings.default_timezone
             )
+            was_first_setup = not user.timezone_confirmed
             await update_user_timezone(session, user, timezone)
             label = f"✅ Часовой пояс: <b>{tz_label}</b>"
 
     await callback.message.edit_text(label + "\n\nМожешь создавать напоминания ✨")
     if not is_group_chat(chat_id):
         await callback.message.answer("⌨️ Меню:", reply_markup=main_menu_keyboard())
+        if was_first_setup:
+            await callback.message.answer(ONBOARDING_READY, reply_markup=main_menu_inline_keyboard())
     await callback.answer("Сохранено")
 
 

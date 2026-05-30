@@ -101,6 +101,28 @@ def format_parse_fail(phrase: str) -> str:
 CONFIRM_CREATE_HEADER = "📌 <b>Проверь напоминание</b>"
 CONFIRM_EDIT_HEADER = "✏️ <b>Изменить напоминание</b>"
 
+ONBOARDING_READY = (
+    "✨ <b>Готово!</b> Попробуй создать первое напоминание:\n\n"
+    "• <code>через час созвон</code>\n"
+    "• <code>через 3-4 часа обед</code>\n"
+    "• <code>каждый день в 9:00 зарядка</code>\n\n"
+    "Или нажми ➕ <b>Создать</b> в меню внизу."
+)
+
+
+def format_about(version: str = __version__) -> str:
+    return (
+        f"📦 <b>{BOT_NAME}</b> · v{version}\n\n"
+        "Telegram-ежедневник: напоминания текстом, голосом или кружочком.\n\n"
+        "<b>Возможности</b>\n"
+        "• Разовые, интервальные и ежедневные напоминания\n"
+        "• Дневник и история за день\n"
+        "• Статистика за месяц\n"
+        "• Группы и личные чаты\n"
+        "• Отложить с настраиваемыми вариантами\n\n"
+        "Команды: /help · /list · /journal · /stats"
+    )
+
 HELP_TEXT = f"""\
 <b>{BOT_NAME}</b> · v{__version__}
 
@@ -117,7 +139,7 @@ HELP_TEXT = f"""\
 • пн ср пт в 10:00 тренировка
 
 <b>Команды</b>
-/start · /list · /history · /journal · /stats
+/start · /list · /history · /journal · /stats · /about
 /search · /edit · /cancel · /settings
 /pause · /resume · /timezone · /status
 /export · /import · /clear · /help

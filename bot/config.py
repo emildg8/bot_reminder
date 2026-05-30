@@ -51,10 +51,11 @@ class Settings(BaseSettings):
     bot_description: str = (
         "⏰ Напоминалка — не забывай важное.\n\n"
         "• Текст, голос или кружочек\n"
-        "• Разовые, ежедневные, по будням, интервалы\n"
-        "• Личка и группы · /help"
+        "• Разовые, ежедневные, интервалы, будни\n"
+        "• Дневник, история, статистика\n"
+        "• Личка и группы · /help · /about"
     )
-    bot_short_description: str = "⏰ Напоминания текстом, голосом и по расписанию"
+    bot_short_description: str = "⏰ Напоминания, дневник и статистика"
 
     admin_telegram_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
 

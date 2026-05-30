@@ -32,6 +32,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="docs/releases/v${VERSION}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "Release notes not found: $NOTES_FILE" >&2
+            exit 1
+          fi
           gh release create "$GITHUB_REF_NAME" \
-            --title "v${VERSION}" \
-            --notes "Release v${VERSION}. See commit history for changes."
+            --title "v${VERSION} — Напоминалка" \
+            --notes-file "$NOTES_FILE"

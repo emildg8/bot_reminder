@@ -1,12 +1,11 @@
-# Telegram-бот напоминалка · v2.7
+# Telegram-бот напоминалка · v3.0
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Работает в личке и в группах.
 
-> **v2.7.1** — финальная полировка: русский интерфейс, исправлен /stats, подтверждение удаления.
->
-> **v2.7.0** — дневник и история за день, статистика за месяц, счётчик «Отложить», парсинг «3-4 часа».
+> **v3.0.0 — стабильный релиз.** Дневник, история, статистика, авто-деплой, полностью русский интерфейс.
 >
 > **v2.6.2** — исправлена аватарка: квадратный crop 640×640, авто-перезагрузка при смене файла.
 >
@@ -48,6 +47,7 @@
 | `/timezone` | Часовой пояс |
 | `/clear` | Удалить все в чате |
 | `/export` / `/import` | JSON |
+| `/about` | О боте и возможностях |
 | `/help` | Справка |
 | `/sysinfo` | Системная статистика (только админ бота) |
 

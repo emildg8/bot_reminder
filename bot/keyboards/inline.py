@@ -109,6 +109,7 @@ def more_menu_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
+                InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
             ],
         ]
     )

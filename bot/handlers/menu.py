@@ -157,6 +157,15 @@ async def menu_help(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data == "menu:about")
+async def menu_about(callback: CallbackQuery) -> None:
+    from bot.texts.messages import format_about
+
+    _clear_modes(callback.from_user.id)
+    await callback.message.answer(format_about(__version__))
+    await callback.answer()
+
+
 @router.callback_query(F.data == "menu:examples")
 async def menu_examples(callback: CallbackQuery) -> None:
     _clear_modes(callback.from_user.id)

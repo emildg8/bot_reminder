@@ -17,13 +17,14 @@ router = Router()
 
 @router.message(Command("ping"))
 async def cmd_ping(message: Message) -> None:
-    await message.answer(f"✅ ok · v{__version__} · uptime {format_uptime(uptime_seconds())}")
+    uptime = format_uptime(uptime_seconds())
+    await message.answer(f"✅ Бот работает · v{__version__} · аптайм {uptime}")
 
 
 @router.message(Command("health"))
 async def cmd_health(message: Message) -> None:
     if not settings.admin_telegram_ids or message.from_user.id not in settings.admin_telegram_ids:
-        await message.answer("Команда доступна только админам.")
+        await message.answer("Команда доступна только администраторам бота.")
         return
 
     now = datetime.now().astimezone()
@@ -41,17 +42,22 @@ async def cmd_health(message: Message) -> None:
 
     scheduled_jobs = count_scheduled_reminder_jobs()
     drift = abs(scheduled_jobs - with_schedule)
-    status = "ok" if drift <= 2 else "degraded"
+    if drift <= 2:
+        status_label = "✅ норма"
+    else:
+        status_label = "⚠️ рассинхрон"
+
+    scheduler_state = "работает" if scheduler.running else "остановлен"
 
     await message.answer(
-        "🩺 Health\n"
-        f"- status: {status}\n"
-        f"- version: {__version__}\n"
-        f"- uptime: {format_uptime(uptime_seconds())}\n"
-        f"- users: {users_count}\n"
-        f"- active reminders: {len(active_reminders)}\n"
-        f"- with next_run_at: {with_schedule}\n"
-        f"- overdue in db: {overdue}\n"
-        f"- scheduled jobs: {scheduled_jobs}\n"
-        f"- scheduler: {'running' if scheduler.running else 'stopped'}\n"
+        "🩺 <b>Состояние сервера</b>\n\n"
+        f"Статус: <b>{status_label}</b>\n"
+        f"Версия: <b>{__version__}</b>\n"
+        f"Аптайм: <b>{format_uptime(uptime_seconds())}</b>\n"
+        f"Пользователей: <b>{users_count}</b>\n"
+        f"Активных напоминаний: <b>{len(active_reminders)}</b>\n"
+        f"С расписанием: <b>{with_schedule}</b>\n"
+        f"Просрочено в БД: <b>{overdue}</b>\n"
+        f"Задач планировщика: <b>{scheduled_jobs}</b>\n"
+        f"Планировщик: <b>{scheduler_state}</b>"
     )

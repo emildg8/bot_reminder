@@ -5,10 +5,15 @@ from aiogram.types import Message
 from bot.db.repository import async_session, get_active_chat_reminders, is_chat_paused
 from bot.keyboards.reply import main_menu_keyboard
 from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
-from bot.texts.messages import format_status
+from bot.texts.messages import format_about, format_status
 from bot.version import __version__
 
 router = Router()
+
+
+@router.message(Command("about"))
+async def cmd_about(message: Message) -> None:
+    await message.answer(format_about(__version__), reply_markup=main_menu_keyboard())
 
 
 @router.message(Command("status"))
