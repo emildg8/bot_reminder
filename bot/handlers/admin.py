@@ -18,10 +18,11 @@ def _is_admin(user_id: int) -> bool:
     return bool(settings.admin_telegram_ids) and user_id in set(settings.admin_telegram_ids)
 
 
-@router.message(Command("stats"))
-async def cmd_stats(message: Message) -> None:
+@router.message(Command("sysinfo"))
+async def cmd_sysinfo(message: Message) -> None:
+    """Системная статистика — только для админов бота."""
     if not _is_admin(message.from_user.id):
-        await message.answer("Команда доступна только админам.")
+        await message.answer("Команда доступна только администраторам бота.")
         return
 
     async with async_session() as session:
@@ -32,13 +33,13 @@ async def cmd_stats(message: Message) -> None:
     scheduled_jobs = len([j for j in scheduler.get_jobs() if j.id.startswith("reminder_")])
 
     await message.answer(
-        "📊 Статистика\n"
-        f"- Version: {__version__}\n"
-        f"- Uptime: {format_uptime(uptime_seconds())}\n"
-        f"- Users: {users_count}\n"
-        f"- Reminders total: {reminders_total}\n"
-        f"- Reminders active: {reminders_active}\n"
-        f"- Scheduled jobs: {scheduled_jobs}\n"
+        "🛠 <b>Системная статистика</b>\n\n"
+        f"Версия: <b>{__version__}</b>\n"
+        f"Аптайм: <b>{format_uptime(uptime_seconds())}</b>\n"
+        f"Пользователей: <b>{users_count}</b>\n"
+        f"Напоминаний всего: <b>{reminders_total}</b>\n"
+        f"Активных: <b>{reminders_active}</b>\n"
+        f"Задач в планировщике: <b>{scheduled_jobs}</b>"
     )
 
 

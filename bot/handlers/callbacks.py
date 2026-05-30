@@ -204,7 +204,8 @@ async def snooze_menu(callback: CallbackQuery) -> None:
 
     set_picker(callback.from_user.id, reminder_id, default_mins)
     await callback.message.edit_text(
-        f"⏰ <b>Отложить</b>\n📝 {reminder.text}\n\nВыбери время или используй − / +:",
+        f"⏰ <b>Отложить</b>\n📝 {reminder.text}\n\n"
+        "Выбери быстрый вариант или измени время кнопками − / +:",
         reply_markup=snooze_picker_keyboard(reminder_id, default_mins, presets),
     )
     await callback.answer()

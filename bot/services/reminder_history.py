@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db.models import Reminder, ReminderEvent, ReminderEventKind
 from bot.db.repository import async_session
+from bot.services.date_format import format_month_year
 from bot.services.user_prefs import format_snooze_minutes
 
 
@@ -184,7 +185,7 @@ def _event_label(event: ReminderEvent, tz: ZoneInfo) -> str:
     if event.event_kind == ReminderEventKind.DONE.value:
         return f"{time_str} {icon} {text}{rid}"
     if event.event_kind == ReminderEventKind.FIRED.value:
-        return f"{time_str} {icon} {text}{rid}"
+        return f"{time_str} {icon} напоминание: {text}{rid}"
     if event.event_kind == ReminderEventKind.CREATED.value:
         return f"{time_str} {icon} {text}{rid}"
     if event.event_kind == ReminderEventKind.DELETED.value:
@@ -284,15 +285,7 @@ async def build_journal_message(chat_id: int, user_telegram_id: int, timezone: s
 
 async def build_stats_message(chat_id: int, user_telegram_id: int, timezone: str) -> str:
     now = datetime.now(ZoneInfo(timezone))
-    month_label = now.astimezone(ZoneInfo(timezone)).strftime("%B %Y")
-    # Russian month names simple mapping
-    months_ru = {
-        "January": "январь", "February": "февраль", "March": "март", "April": "апрель",
-        "May": "май", "June": "июнь", "July": "июль", "August": "август",
-        "September": "сентябрь", "October": "октябрь", "November": "ноябрь", "December": "декабрь",
-    }
-    for en, ru in months_ru.items():
-        month_label = month_label.replace(en, ru)
+    month_label = format_month_year(now.astimezone(ZoneInfo(timezone)))
     async with async_session() as session:
         stats = await get_month_stats(
             session, chat_id, day=now, timezone=timezone, user_telegram_id=user_telegram_id

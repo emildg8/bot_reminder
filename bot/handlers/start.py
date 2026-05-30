@@ -64,7 +64,7 @@ async def cmd_timezone(message: Message) -> None:
 async def tz_menu(callback: CallbackQuery) -> None:
     target = callback.data.split(":", 1)[1]
     if target == "offset":
-        await callback.message.edit_text("🕐 Выбери UTC offset:", reply_markup=timezone_offset_keyboard())
+        await callback.message.edit_text("🕐 Выбери смещение от UTC:", reply_markup=timezone_offset_keyboard())
     else:
         await callback.message.edit_text("🕐 Выбери часовой пояс:", reply_markup=timezone_keyboard())
     await callback.answer()

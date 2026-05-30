@@ -1,4 +1,4 @@
-"""Состояние picker отложить (stepper как на iPhone)."""
+"""Состояние выбора времени для «Отложить»."""
 
 from __future__ import annotations
 

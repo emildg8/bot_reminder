@@ -5,9 +5,19 @@ from aiogram.types import CallbackQuery, Message
 from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, update_user_snooze_settings
 from bot.keyboards.inline import settings_snooze_keyboard
-from bot.services.user_prefs import get_snooze_presets, get_snooze_step, parse_snooze_presets
+from bot.services.user_prefs import format_snooze_minutes, get_snooze_presets, get_snooze_step, parse_snooze_presets
 
 router = Router()
+
+
+def _settings_text(presets: list[int], step: int) -> str:
+    preset_line = ", ".join(format_snooze_minutes(p) for p in presets)
+    return (
+        "⚙️ <b>Настройки «Отложить»</b>\n\n"
+        f"Быстрые варианты: <b>{preset_line}</b>\n"
+        f"Шаг кнопок − / +: <b>{step} мин</b>\n\n"
+        "Выбери профиль или нажми «Шаг ±» для смены шага:"
+    )
 
 
 @router.message(Command("settings"))
@@ -17,9 +27,7 @@ async def cmd_settings(message: Message) -> None:
         presets = get_snooze_presets(user)
         step = get_snooze_step(user)
     await message.answer(
-        "⚙️ <b>Настройки отложить</b>\n\n"
-        "Stepper «⏰ Отложить»: шаг +/− и быстрые пресеты.\n"
-        "Выбери профиль или шаг:",
+        _settings_text(presets, step),
         reply_markup=settings_snooze_keyboard(presets, step),
     )
 
@@ -53,7 +61,8 @@ async def cycle_step(callback: CallbackQuery) -> None:
             new_step = 15
         await update_user_snooze_settings(session, user, step=new_step)
         presets = get_snooze_presets(user)
-    await callback.message.edit_reply_markup(
+    await callback.message.edit_text(
+        _settings_text(presets, new_step),
         reply_markup=settings_snooze_keyboard(presets, new_step),
     )
     await callback.answer(f"Шаг: {new_step} мин")
@@ -65,7 +74,8 @@ async def _apply_presets(callback: CallbackQuery, raw: str) -> None:
         user = await get_or_create_user(session, callback.from_user.id, settings.default_timezone)
         await update_user_snooze_settings(session, user, presets=raw)
         step = get_snooze_step(user)
-    await callback.message.edit_reply_markup(
+    await callback.message.edit_text(
+        _settings_text(presets, step),
         reply_markup=settings_snooze_keyboard(presets, step),
     )
-    await callback.answer("Пресеты обновлены")
+    await callback.answer("Варианты обновлены")

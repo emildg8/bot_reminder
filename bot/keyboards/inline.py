@@ -17,7 +17,7 @@ def timezone_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=label, callback_data=f"tz:{value}")]
         for value, label in TIMEZONE_OPTIONS
     ]
-    rows.append([InlineKeyboardButton(text="UTC offset…", callback_data="tz_menu:offset")])
+    rows.append([InlineKeyboardButton(text="Другой пояс (UTC)…", callback_data="tz_menu:offset")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -61,7 +61,7 @@ def reminder_actions_keyboard(reminder_id: int) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="✏️ Изменить", callback_data=f"edit:{reminder_id}"),
-                InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete:{reminder_id}"),
+                InlineKeyboardButton(text="🗑 Удалить", callback_data=f"del_confirm:{reminder_id}"),
             ],
         ]
     )
@@ -105,7 +105,7 @@ def more_menu_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
-                InlineKeyboardButton(text="⚙️ Snooze", callback_data="menu:settings"),
+                InlineKeyboardButton(text="⚙️ Отложить", callback_data="menu:settings"),
             ],
             [
                 InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
@@ -127,17 +127,15 @@ def list_tabs_keyboard(active: bool, page: int = 0) -> InlineKeyboardMarkup:
     )
 
 
-def settings_snooze_keyboard(presets: list[int], step: int) -> InlineKeyboardMarkup:
-    preset_text = ", ".join(format_snooze_minutes(p) for p in presets)
+def settings_snooze_keyboard(_presets: list[int], step: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"Шаг: {step} мин", callback_data="set:step")],
-            [InlineKeyboardButton(text=f"Пресеты: {preset_text}", callback_data="set:presets")],
+            [InlineKeyboardButton(text=f"Шаг ±: {step} мин", callback_data="set:step")],
             [
-                InlineKeyboardButton(text="5·15·30·60", callback_data="set:pre:std"),
-                InlineKeyboardButton(text="5·15·30·1ч·3ч·4ч", callback_data="set:pre:long"),
+                InlineKeyboardButton(text="Короткие: 5·15·30·60", callback_data="set:pre:std"),
+                InlineKeyboardButton(text="Длинные: +1ч·3ч·4ч", callback_data="set:pre:long"),
             ],
-            [InlineKeyboardButton(text="⬅ Меню", callback_data="menu:more")],
+            [InlineKeyboardButton(text="⬅ Назад", callback_data="menu:more")],
         ]
     )
 

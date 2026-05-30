@@ -11,7 +11,7 @@ async def setup_bot_commands(bot: Bot) -> None:
         BotCommand(command="history", description="История за сегодня"),
         BotCommand(command="journal", description="Дневник дня"),
         BotCommand(command="stats", description="Статистика за месяц"),
-        BotCommand(command="settings", description="Настройки snooze"),
+        BotCommand(command="settings", description="Настройки отложить"),
         BotCommand(command="status", description="Статус чата"),
         BotCommand(command="search", description="Поиск по тексту"),
         BotCommand(command="cancel", description="Отменить режим"),
@@ -25,6 +25,7 @@ async def setup_bot_commands(bot: Bot) -> None:
         BotCommand(command="import", description="Импорт из JSON"),
         BotCommand(command="help", description="Справка"),
         BotCommand(command="ping", description="Проверка работы"),
+        BotCommand(command="sysinfo", description="Системная статистика (админ)"),
     ]
     await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
 
