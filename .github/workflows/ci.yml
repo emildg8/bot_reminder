@@ -5,14 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -31,12 +32,44 @@ jobs:
   deploy:
     name: Deploy to Wispbyte
     needs: lint-and-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Check deploy secrets
+        id: secrets
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_TELEGRAM_IDS: ${{ secrets.ADMIN_TELEGRAM_IDS }}
+          WISP_PANEL_URL: ${{ secrets.WISP_PANEL_URL }}
+          WISP_API_TOKEN: ${{ secrets.WISP_API_TOKEN }}
+          WISP_SERVER_UUID: ${{ secrets.WISP_SERVER_UUID }}
+          PTERODACTYL_PANEL_URL: ${{ secrets.PTERODACTYL_PANEL_URL }}
+          PTERODACTYL_API_TOKEN: ${{ secrets.PTERODACTYL_API_TOKEN }}
+          PTERODACTYL_SERVER_UUID: ${{ secrets.PTERODACTYL_SERVER_UUID }}
+        run: |
+          missing=()
+          [[ -z "$BOT_TOKEN" ]] && missing+=("BOT_TOKEN")
+          [[ -z "$ADMIN_TELEGRAM_IDS" ]] && missing+=("ADMIN_TELEGRAM_IDS")
+          panel="${WISP_PANEL_URL:-$PTERODACTYL_PANEL_URL}"
+          token="${WISP_API_TOKEN:-$PTERODACTYL_API_TOKEN}"
+          uuid="${WISP_SERVER_UUID:-$PTERODACTYL_SERVER_UUID}"
+          [[ -z "$panel" ]] && missing+=("WISP_PANEL_URL")
+          [[ -z "$token" ]] && missing+=("WISP_API_TOKEN")
+          [[ -z "$uuid" ]] && missing+=("WISP_SERVER_UUID")
+          if ((${#missing[@]} > 0)); then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Deploy secrets not configured: ${missing[*]}"
+            echo "### Deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "Secrets not set: \`${missing[*]}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "See [.github/DEPLOY.md](.github/DEPLOY.md). Bot will auto-update via GitHub polling (~3 min)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Notify deploy start
+        if: steps.secrets.outputs.missing != 'true'
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_TELEGRAM_IDS: ${{ secrets.ADMIN_TELEGRAM_IDS }}
@@ -45,6 +78,7 @@ jobs:
           bash scripts/notify_telegram.sh "🚀 Deploy <code>${SHORT_SHA}</code> — перезапуск сервера…"
 
       - name: Restart Wispbyte server
+        if: steps.secrets.outputs.missing != 'true'
         env:
           WISP_PANEL_URL: ${{ secrets.WISP_PANEL_URL }}
           WISP_API_TOKEN: ${{ secrets.WISP_API_TOKEN }}

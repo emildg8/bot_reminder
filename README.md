@@ -4,6 +4,8 @@
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Работает в личке и в группах.
 
+> **v2.6.1** — auto-update теперь делает `git pull` + `pip install` и перезапускает процесс без ручного вмешательства.
+>
 > **v2.6.0** — полный CI/CD: push → тесты → auto-restart Wispbyte, fallback auto-update с GitHub.
 >
 > **v2.5.0** — optimistic advance для recurring, Docker healthcheck (heartbeat + pid + scheduler).

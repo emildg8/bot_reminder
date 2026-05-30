@@ -30,7 +30,12 @@ from bot.logging_setup import setup_logging
 from bot.services.backup import backup_database
 from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.bot_menu import setup_bot_commands, setup_bot_profile
-from bot.services.auto_update import should_restart_for_update
+from bot.services.auto_update import (
+    apply_git_update_to_sha,
+    consume_reexec_flag,
+    request_process_reexec,
+    should_restart_for_update,
+)
 from bot.services.cleanup import prune_all_caches
 from bot.services.deploy_meta import record_deploy_sha_from_git
 from bot.services.heartbeat import write_heartbeat
@@ -81,9 +86,24 @@ async def _auto_update_job(bot: Bot, dp: Dispatcher) -> None:
     short = remote_sha[:7]
     await _notify_admins(
         bot,
-        f"🔄 Новая версия на GitHub (<code>{short}</code>) — перезапуск для обновления…",
+        f"🔄 Новая версия на GitHub (<code>{short}</code>) — скачиваю обновление…",
     )
-    logger.info("Auto-update restart: %s -> %s", (local_sha or "?")[:7], short)
+    logger.info("Auto-update: %s -> %s", (local_sha or "?")[:7], short)
+
+    success, new_sha = await apply_git_update_to_sha(remote_sha)
+    if not success:
+        await _notify_admins(
+            bot,
+            f"⚠️ Не удалось обновиться до <code>{short}</code>. Проверь логи или перезапусти сервер.",
+        )
+        return
+
+    applied = (new_sha or remote_sha)[:7]
+    await _notify_admins(
+        bot,
+        f"✅ Обновлено до <code>{applied}</code> — перезапуск процесса…",
+    )
+    request_process_reexec()
     await dp.stop_polling()
 
 
@@ -195,6 +215,10 @@ async def main() -> None:
         await bot.session.close()
         await dispose_engine()
         _release_instance_lock(lock_path)
+
+    if consume_reexec_flag():
+        logger.info("Re-exec after auto-update")
+        os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
 
 
 if __name__ == "__main__":
