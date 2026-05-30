@@ -30,6 +30,9 @@ _STT_TYPOS = (
     (re.compile(r"\bпару\s+минут\b", re.I), "пару минут"),
     (re.compile(r"\bзапомни\b", re.I), "напомни"),
     (re.compile(r"\bна\s+помни\b", re.I), "напомни"),
+    (re.compile(r"\bко\s+обед\b", re.I), "к обеду"),
+    (re.compile(r"\bк\s+обед\b", re.I), "к обеду"),
+    (re.compile(r"\bк\s+вечер\b", re.I), "к вечеру"),
 )
 
 MIN_STT_WORDS = 2

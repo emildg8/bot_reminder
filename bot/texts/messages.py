@@ -20,6 +20,7 @@ _TIME_HINT = re.compile(
     r"(?:завтра|сегодня|послезавтра)\s+(?:утром|днем|дня|вечером|ночью|утра|вечера|ночи)\b|"
     r"\d{1,2}[:.]\d{2}|"
     r"полдень|полночь|полтора\s+дня|"
+    r"к\s+обед|к\s+вечер|к\s+утр|"
     r"кажд|будня|выходн|ежедневн|"
     r"(?<!\w)(?:недел)(?!\w)",
     re.IGNORECASE,
@@ -118,16 +119,22 @@ def looks_like_task_only(text: str) -> bool:
     return bool(text.strip()) and not _TIME_HINT.search(text)
 
 
-def format_parse_fail(phrase: str, *, source: str = "") -> str:
+def format_parse_fail(phrase: str, *, source: str = "", heard: str = "") -> str:
     task = " ".join(phrase.strip().split()[:6]) or "задача"
     is_voice = source in ("voice", "video_note")
     if looks_like_task_only(phrase):
-        if is_voice:
-            return PARSE_FAIL_VOICE_TASK.format(task=task)
-        return PARSE_FAIL_TASK_ONLY.format(task=task)
-    if is_voice:
-        return PARSE_FAIL_VOICE
-    return PARSE_FAIL
+        body = (
+            PARSE_FAIL_VOICE_TASK.format(task=task)
+            if is_voice
+            else PARSE_FAIL_TASK_ONLY.format(task=task)
+        )
+    elif is_voice:
+        body = PARSE_FAIL_VOICE
+    else:
+        body = PARSE_FAIL
+    if is_voice and heard.strip():
+        return f"🎤 Распознано: {heard.strip()}\n\n{body}"
+    return body
 
 CONFIRM_CREATE_HEADER = "📌 <b>Проверь напоминание</b>"
 CONFIRM_EDIT_HEADER = "✏️ <b>Изменить напоминание</b>"
@@ -193,6 +200,7 @@ HELP_TEXT = f"""\
 Кнопки управления приходят создателю в личку с ботом."""
 
 EXAMPLE_PHRASES: list[tuple[str, str]] = [
+    ("🎤 К обеду", "завтра к обеду созвон"),
     ("🎤 2 часа дня", "завтра в два часа дня созвон"),
     ("⏱ 3-4 часа", "через 3-4 часа созвон"),
     ("⏱ Пару часов", "через пару часов обед"),

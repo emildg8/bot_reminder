@@ -167,6 +167,22 @@ def normalize_spoken_zero_time(text: str) -> str:
     )
 
 
+def normalize_k_time(text: str) -> str:
+    """«к обеду», «к вечеру» — разговорные формулировки STT."""
+    replacements = (
+        (r"\bко\s+обед\b", "в 13:00"),
+        (r"\bк\s+обеду\b", "в 13:00"),
+        (r"\bк\s+обед\b", "в 13:00"),
+        (r"\bк\s+вечеру\b", "в 20:00"),
+        (r"\bк\s+утру\b", "в 09:00"),
+        (r"\bк\s+полудню\b", "в 12:00"),
+        (r"\bк\s+ночи\b", "в 22:00"),
+    )
+    for pattern, repl in replacements:
+        text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
+    return text
+
+
 def _parse_hour_token(token: str) -> int | None:
     token = token.lower().strip()
     if token.isdigit():
@@ -226,6 +242,7 @@ def normalize_phrase(text: str) -> str:
     text = normalize_time_dots(text.strip())
     text = normalize_spaced_time(text)
     text = normalize_spoken_zero_time(text)
+    text = normalize_k_time(text)
     text = normalize_part_of_day(text)
     return normalize_bare_hours(text)
 

@@ -100,6 +100,30 @@ def test_chetyrnadtsat_nol_nol():
     assert parsed.run_at.hour == 14
 
 
+def test_zavtra_k_obedy():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules("завтра к обеду созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 13
+    assert "созвон" in parsed.text.lower()
+
+
+def test_poslezavtra_k_vecheru():
+    parsed = parse_absolute_datetime("послезавтра к вечеру ужин", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.hour == 20
+    assert "ужин" in parsed.text.lower()
+
+
+def test_format_parse_fail_voice_heard():
+    from bot.texts.messages import format_parse_fail
+
+    msg = format_parse_fail("созвон", source="voice", heard="завтра созвон")
+    assert "Распознано" in msg
+    assert "созвон" in msg
+
+
 def test_stt_dva_chasa_dnya_slovami():
     from bot.services.nlp.rule_parser import parse_with_rules
 

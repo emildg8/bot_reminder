@@ -64,12 +64,12 @@ async def _process_text_and_reply(
         if looks_like_task_only(phrase):
             store_pending_task(user_id, phrase)
             await message.answer(
-                format_parse_fail(phrase, source=source_label),
+                format_parse_fail(phrase, source=source_label, heard=text if source_label else ""),
                 reply_markup=task_time_keyboard(),
             )
         else:
             await message.answer(
-                format_parse_fail(phrase, source=source_label),
+                format_parse_fail(phrase, source=source_label, heard=text if source_label else ""),
                 reply_markup=main_menu_keyboard(),
             )
         return
