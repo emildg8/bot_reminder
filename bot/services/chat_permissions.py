@@ -22,7 +22,7 @@ async def bot_can_post_reminders(bot: Bot, chat_id: int) -> bool:
         member = await bot.get_chat_member(chat_id, me.id)
     except Exception as exc:
         logger.warning("Cannot check bot member in %s: %s", chat_id, exc)
-        return True
+        return False
 
     if member.status == ChatMemberStatus.ADMINISTRATOR:
         can = getattr(member, "can_post_messages", None)

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 
 from aiogram import Bot, F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
@@ -54,6 +55,8 @@ from bot.services.channel_schedule import (
 )
 from bot.services.reminder_jobs import cancel_reminder_job, teardown_reminder_schedule
 from bot.services.scheduler import schedule_reminder, scheduler
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -111,13 +114,28 @@ async def _reply_after_create(
             )
         try:
             await bot.send_message(entry.collective_chat_id, notice)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "Cannot send collective created notice to %s: %s",
+                entry.collective_chat_id,
+                exc,
+            )
+            try:
+                await bot.send_message(
+                    user.id,
+                    "⚠️ Напоминание создано, но группу уведомить не удалось — проверь права бота.",
+                )
+            except Exception:
+                pass
         if not await bot_can_post_reminders(bot, target_chat_id):
             try:
                 await bot.send_message(entry.collective_chat_id, format_bot_cannot_post_hint())
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning(
+                    "Cannot send bot permissions hint to %s: %s",
+                    entry.collective_chat_id,
+                    exc,
+                )
     elif collective is not None:
         if not await bot_can_post_reminders(bot, target_chat_id):
             await callback.message.answer(format_bot_cannot_post_hint())

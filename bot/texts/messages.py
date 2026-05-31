@@ -251,8 +251,9 @@ def format_collective_check_dm(chat_kind: ChatKind, chat_title: str | None) -> s
 def format_collective_dm_failed_fallback(bot_username: str | None) -> str:
     uname = bot_username or "бот"
     return (
-        f"⚠️ Не могу написать в личку — нажми /start у @{uname} "
-        "и подтверди напоминание кнопкой здесь."
+        f"⚠️ Не могу написать в личку.\n"
+        f"1) <a href=\"https://t.me/{uname}?start=group\">Открыть @{uname}</a> и нажми Start\n"
+        f"2) Или подтверди кнопкой здесь"
     )
 
 

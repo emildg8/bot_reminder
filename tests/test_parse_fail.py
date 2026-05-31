@@ -29,6 +29,13 @@ def test_format_parse_fail_group_hint():
     assert "/remind@mybot" in msg
 
 
+def test_dm_failed_fallback_has_link():
+    from bot.texts.messages import format_collective_dm_failed_fallback
+
+    msg = format_collective_dm_failed_fallback("mybot")
+    assert "t.me/mybot" in msg
+
+
 def test_parse_fail_generic_constant():
     from bot.texts.messages import PARSE_FAIL
 

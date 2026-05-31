@@ -2,6 +2,17 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.19.0] — 2026-05-31
+
+### Надёжность collective и ops
+- **Права бота fail-closed** — при ошибке API не «всё ок», а предупреждение до confirm
+- **DM fallback** — ссылка `t.me/бот?start=group` + confirm в чате
+- **Reply-кнопки в группе** → открывают group-меню (не мёртвый текст)
+- **Collective notice** — ошибка отправки в группу → лог + DM создателю
+- **Health monitor** — алерт админам при scheduler repair / drift (раз в час)
+- **Roadmap** — `docs/plans/improvements-roadmap.md`
+- **Тесты** — chat_permissions, collective list, health monitor
+
 ## [3.18.0] — 2026-05-31
 
 ### Группы: меньше шума и понятнее ошибки

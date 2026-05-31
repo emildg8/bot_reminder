@@ -54,7 +54,7 @@
 - [x] `example_picked` — try/except + текст в чат
 
 ### B2. `/list` в группе
-- Уже без лишних кнопок ✅ — проверить пагинацию и edit-кнопки только для своих
+- [x] Без edit-кнопок в collective UI; пагинация через `list:page` — тест `test_collective_list`
 
 ### B3. Ошибки
 - [x] Глобальный error handler вместо «Ошибка»

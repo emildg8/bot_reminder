@@ -44,7 +44,7 @@ from bot.services.auto_update import (
 )
 from bot.services.cleanup import prune_all_caches
 from bot.services.deploy_meta import record_deploy_sha_from_git
-from bot.services.heartbeat import write_heartbeat
+from bot.services.health_monitor import run_health_monitor
 from bot.services.instance_lock import acquire_instance_lock, release_instance_lock
 from bot.services.bot_privacy import format_group_privacy_admin_warning
 from bot.services.scheduler import repair_reminder_jobs, restore_scheduled_reminders, scheduler
@@ -213,6 +213,13 @@ async def main() -> None:
         repair_reminder_jobs,
         trigger=IntervalTrigger(minutes=3),
         id="repair_reminders",
+        replace_existing=True,
+        kwargs={"bot": bot},
+    )
+    scheduler.add_job(
+        run_health_monitor,
+        trigger=IntervalTrigger(minutes=15),
+        id="health_monitor",
         replace_existing=True,
         kwargs={"bot": bot},
     )

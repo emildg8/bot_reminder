@@ -83,10 +83,7 @@ async def _send_status(message: Message, bot) -> None:
 @router.message(F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_menu_buttons(message: Message, bot) -> None:
     if is_group_menu_chat(message.chat):
-        await message.answer(
-            "В группе используй меню выше или <code>/remind@бот …</code>\n"
-            "Команда: /menu",
-        )
+        await send_group_menu_home(message, bot)
         return
 
     text = message.text
