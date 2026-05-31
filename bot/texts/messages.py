@@ -188,44 +188,30 @@ def format_about(version: str = __version__) -> str:
         "Команды: /help · /list · /journal · /stats"
     )
 
-GROUP_CREATED_SUFFIX = "\n\n📣 Сработает в группе · кнопки — в личке"
-CHANNEL_CREATED_SUFFIX = "\n\n📣 Сработает в канале · кнопки — в личке"
+GROUP_CREATED_SUFFIX = ""
+CHANNEL_CREATED_SUFFIX = ""
 
 
 def collective_created_suffix(chat_kind: ChatKind) -> str:
-    if chat_kind == ChatKind.CHANNEL:
-        return CHANNEL_CREATED_SUFFIX
-    return GROUP_CREATED_SUFFIX
+    return ""
 
 
 def format_collective_confirm_prefix(chat_kind: ChatKind) -> str:
-    place = collective_place_label(chat_kind)
-    return f"📣 Напоминание в {place} · кнопки управления — в личке.\n\n"
+    return ""
 
 
 def format_collective_dm_confirm_header(chat_kind: ChatKind, chat_title: str | None) -> str:
-    noun = collective_noun(chat_kind)
-    title = chat_title or noun
-    return f"📣 Подтверждение для {noun}: <b>{title}</b>\n\n"
+    title = chat_title or collective_noun(chat_kind)
+    return f"📣 <b>{title}</b>\n\n"
 
 
 def format_collective_check_dm(chat_kind: ChatKind, chat_title: str | None) -> str:
-    place = collective_place_label(chat_kind)
-    title = f" «{chat_title}»" if chat_title else ""
-    return (
-        f"📲 Подтверди напоминание в <b>личке с ботом</b> "
-        f"(кнопки отправлены создателю).\n"
-        f"<i>Чат{title} · {place}</i>"
-    )
+    return "👌 Подтвердите в личке с ботом"
 
 
 def format_collective_dm_failed_fallback(bot_username: str | None) -> str:
     uname = bot_username or "бот"
-    return (
-        f"⚠️ Не удалось написать в личку. Нажми /start у @{uname}, "
-        "затем повтори команду.\n"
-        "Подтверждение ниже — в этом чате:"
-    )
+    return f"⚠️ Напиши /start у @{uname} и повтори."
 
 
 def format_collective_created_notice(
@@ -241,11 +227,7 @@ def format_collective_created_notice(
         who = f"@{creator_username}"
     else:
         who = f'<a href="tg://user?id={creator_user_id}">участник</a>'
-    place = collective_place_label(chat_kind)
-    return (
-        f"✅ {who} · #{reminder_id} · {when} · <b>{text}</b>\n"
-        f"<i>Напоминание в {place} · кнопки — в личке</i>"
-    )
+    return f"✅ {who} · #{reminder_id} · {when} · <b>{text}</b>"
 
 
 def format_collective_batch_notice(
@@ -259,11 +241,7 @@ def format_collective_batch_notice(
         who = f"@{creator_username}"
     else:
         who = f'<a href="tg://user?id={creator_user_id}">участник</a>'
-    place = collective_place_label(chat_kind)
-    return (
-        f"✅ {who} создал <b>{count}</b> напоминания · /list\n"
-        f"<i>Сработают в {place} · кнопки — в личке</i>"
-    )
+    return f"✅ {who} · {count} напоминаний · /list"
 
 
 def format_group_tz_onboarding() -> str:
@@ -368,19 +346,18 @@ def format_delay_label(seconds: int) -> str:
 
 def format_group_reminder_hint(bot_username: str | None = None) -> str:
     link = f"@{bot_username}" if bot_username else "бота"
-    return (
-        f"📲 Кнопки «Отложить / Готово» — в личке. "
-        f"Если не приходят, напиши {link} и нажми /start."
-    )
+    return f"📲 Кнопки управления — в личке. Нет сообщений? /start у {link}"
 
 
 def format_discussion_channel_hint(bot_username: str | None = None) -> str:
     link = f"@{bot_username}" if bot_username else "бота"
     return (
-        "💡 Похоже, это <b>группа обсуждений</b> канала.\n"
-        f"Добавь {link} в канал как администратора с правом публикации — "
-        "тогда напоминания из этой группы будут уходить в канал."
+        "💡 Группа обсуждений канала — добавь "
+        f"{link} в канал с правом публикации."
     )
+
+def format_collective_dm_fired(reminder_id: int, text: str) -> str:
+    return f"⏰ #{reminder_id} · {text}"
 
 
 def format_dm_failed_in_group(
@@ -390,11 +367,8 @@ def format_dm_failed_in_group(
     bot_username: str | None = None,
 ) -> str:
     who = f"@{creator_username}" if creator_username else f'<a href="tg://user?id={creator_user_id}">создатель</a>'
-    hint = format_group_reminder_hint(bot_username)
-    return f"👤 {who}, {hint}"
-
-
-GROUP_CREATED_SUFFIX = "\n\n📣 Сработает в группе · кнопки — в личке"
+    link = bot_username or "бота"
+    return f"👤 {who}, напиши /start @{link} — кнопки управления в личке"
 
 
 def format_confirm_card(summary: str, *, is_edit: bool = False) -> str:

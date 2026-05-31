@@ -17,7 +17,7 @@ from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
-from bot.texts.messages import format_collective_confirm_prefix, format_confirm_card, format_parse_fail, looks_like_task_only
+from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 
 router = Router()
 
@@ -169,7 +169,6 @@ async def _parse_and_confirm_edit(
         prefix = f"👤 Упоминание: {who}\n\n"
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
-        prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
         if delivery_chat_id != message.chat.id:
             prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
         if not await bot_can_post_reminders(bot, delivery_chat_id):
@@ -187,11 +186,14 @@ async def _parse_and_confirm_edit(
         collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
         delivery_chat_id=delivery_chat_id if chat_kind != ChatKind.PRIVATE else None,
     )
-    body = format_confirm_card(summary, is_edit=True)
-    if len(parsed_items) > 1:
-        body = body.replace("Подтверди действие:", "Подтверди замену:")
-    if prefix:
-        body = prefix + body
+    if chat_kind != ChatKind.PRIVATE:
+        body = prefix + summary
+    else:
+        body = format_confirm_card(summary, is_edit=True)
+        if len(parsed_items) > 1:
+            body = body.replace("Подтверди действие:", "Подтверди замену:")
+        if prefix:
+            body = prefix + body
 
     if chat_kind != ChatKind.PRIVATE:
         sent_dm = await send_collective_confirm(

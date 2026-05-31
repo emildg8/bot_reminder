@@ -44,7 +44,6 @@ from bot.texts.messages import (
     format_collective_created_notice,
     format_created,
     format_edit_replaced,
-    format_group_reminder_hint,
     format_updated,
 )
 from bot.services.reminder_display import format_parsed_when_label
@@ -113,22 +112,12 @@ async def _reply_after_create(
             await bot.send_message(entry.collective_chat_id, notice)
         except Exception:
             pass
-        me = await bot.get_me()
         if not await bot_can_post_reminders(bot, target_chat_id):
             try:
                 await bot.send_message(entry.collective_chat_id, format_bot_cannot_post_hint())
             except Exception:
                 pass
-        try:
-            await bot.send_message(
-                callback.from_user.id,
-                format_group_reminder_hint(me.username),
-            )
-        except Exception:
-            pass
     elif collective is not None:
-        me = await bot.get_me()
-        await callback.message.answer(format_group_reminder_hint(me.username))
         if not await bot_can_post_reminders(bot, target_chat_id):
             await callback.message.answer(format_bot_cannot_post_hint())
     elif kb := menu_keyboard_for_chat(callback.message.chat.id):
@@ -292,11 +281,6 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
             )
 
     if entry.collective_chat_id and collective is not None and len(entry.parsed_items) > 1:
-        me = await bot.get_me()
-        try:
-            await bot.send_message(callback.from_user.id, format_group_reminder_hint(me.username))
-        except Exception:
-            pass
         try:
             await bot.send_message(
                 entry.collective_chat_id,

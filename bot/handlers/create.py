@@ -21,7 +21,6 @@ from bot.services.pending_tasks import store_pending_task
 from bot.services.reminder_display import format_batch_parsed_summary_html
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import (
-    format_collective_confirm_prefix,
     format_confirm_card,
     format_parse_fail,
     looks_like_task_only,
@@ -118,7 +117,6 @@ async def _process_text_and_reply(
         prefix += f"👤 Упоминание: {who}\n\n"
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
-        prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
         if delivery_chat_id != message.chat.id:
             prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
         if not await bot_can_post_reminders(bot, delivery_chat_id):
@@ -136,8 +134,8 @@ async def _process_text_and_reply(
         delivery_chat_id=delivery_chat_id if chat_kind != ChatKind.PRIVATE else None,
     )
 
-    body = format_confirm_card(summary)
-    if prefix:
+    body = format_confirm_card(summary) if chat_kind == ChatKind.PRIVATE else (prefix + summary)
+    if chat_kind == ChatKind.PRIVATE and prefix:
         body = prefix + body
 
     if chat_kind != ChatKind.PRIVATE:

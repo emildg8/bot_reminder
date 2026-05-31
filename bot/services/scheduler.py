@@ -26,7 +26,7 @@ from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
 from bot.services.telegram_format import format_reminder_message
 from bot.services.chat_ctx import ChatKind, is_group_chat
-from bot.texts.messages import format_dm_failed_in_group
+from bot.texts.messages import format_dm_failed_in_group, format_collective_dm_fired
 
 logger = logging.getLogger(__name__)
 
@@ -128,14 +128,11 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             pass
 
         in_collective = is_group_chat(reminder.chat_id)
-        place = "группе"
         if in_collective:
             try:
                 chat = await bot.get_chat(reminder.chat_id)
                 chat_type = chat.type
                 chat_title = chat.title
-                if chat.type == ChatType.CHANNEL:
-                    place = "канале"
             except Exception:
                 pass
 
@@ -151,8 +148,6 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         )
 
         collective_hint = ""
-        if in_collective:
-            collective_hint = f"\n\n<i>Управление — в личке с ботом.</i>"
 
         is_once = reminder.kind == ReminderKind.ONCE.value
         job_id = f"reminder_{reminder_id}"
@@ -187,7 +182,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             try:
                 await bot.send_message(
                     reminder.created_by_telegram_id,
-                    f"⏰ Напоминание в {place} (#{reminder.id}):\n{body}",
+                    format_collective_dm_fired(reminder.id, reminder.text),
                     reply_markup=reminder_actions_keyboard(reminder.id),
                 )
                 dm_sent = True

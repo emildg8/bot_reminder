@@ -53,12 +53,12 @@ def test_format_help_variants():
 
 
 def test_collective_suffix():
-    assert "канале" in collective_created_suffix(ChatKind.CHANNEL)
-    assert "группе" in collective_created_suffix(ChatKind.SUPERGROUP)
+    assert collective_created_suffix(ChatKind.CHANNEL) == ""
+    assert collective_created_suffix(ChatKind.SUPERGROUP) == ""
 
 
 def test_confirm_prefix():
-    assert "канале" in format_collective_confirm_prefix(ChatKind.CHANNEL)
+    assert format_collective_confirm_prefix(ChatKind.CHANNEL) == ""
 
 
 def test_welcome_texts():

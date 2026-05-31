@@ -20,7 +20,9 @@ def test_dm_confirm_header():
 
 
 def test_check_dm_text():
-    assert "личке" in format_collective_check_dm(ChatKind.SUPERGROUP, "Test")
+    text = format_collective_check_dm(ChatKind.SUPERGROUP, "Test")
+    assert "личке" in text
+    assert len(text) < 80
 
 
 def test_created_notice():
