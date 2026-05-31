@@ -1,10 +1,12 @@
-# Telegram-бот напоминалка · v3.20
+# Telegram-бот напоминалка · v3.21
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Личка, группы и каналы.
 
+> **v3.21** — roadmap закрыт: тесты repository/confirm/LLM, coverage gate, «завтра созвон» → кнопки времени.
+>
 > **v3.20** — «завтра в 2» → уточняющие кнопки (14:00 / 02:00 / 09:00).
 >
 > **v3.19.1** — в группах без inline-меню, только команды.

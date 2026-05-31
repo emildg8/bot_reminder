@@ -17,17 +17,17 @@
 | 9 | Группы без inline-меню | v3.19.1 |
 | 10 | NLP: уточнение «завтра в 2» кнопками | v3.20 |
 | 11 | Удалён мёртвый код group_* keyboards | v3.20 |
+| 12 | NLP: «завтра созвон» → кнопки времени | v3.21 |
+| 13 | Repository unit tests | v3.21 |
+| 14 | E2E confirm → create → schedule (мок) | v3.21 |
+| 15 | LLM fallback integration tests | v3.21 |
+| 16 | Coverage gate в CI | v3.21 |
 
-## Дальше (backlog)
+## Отменено / не актуально
 
-| # | Улучшение | Impact | Effort |
-|---|-----------|--------|--------|
-| A | ~~NLP: уточнение «завтра в 2»~~ | high | done v3.20 |
-| B | E2E-тесты confirm → create → schedule (мок Bot) | medium | medium |
-| C | Coverage gate в CI | low | small |
-| D | Auto-delete group menu через 30 с | low | small |
-| E | LLM fallback integration tests | low | medium |
-| F | Repository unit tests | medium | medium |
+| # | Улучшение | Причина |
+|---|-----------|---------|
+| D | Auto-delete group menu через 30 с | Inline-меню в группах убрано в v3.19.1 |
 
 ## Ops-критерии (не код)
 

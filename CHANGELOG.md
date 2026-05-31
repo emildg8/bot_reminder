@@ -2,6 +2,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.21.0] — 2026-05-31
+
+### Roadmap: тесты и NLP
+- **«завтра созвон»** без времени — кнопки 🌅 09:00 / ☀️ 14:00 / 🌆 18:00 (вместо тихого дефолта 9:00)
+- **Repository tests** — user/chat/reminder CRUD, pause, search
+- **Confirm flow tests** — draft → create_and_schedule_items, expired draft
+- **LLM fallback tests** — правила пусто → LLM; правила есть → LLM не вызывается
+- **CI coverage gate** — `--cov-fail-under=38` (базовая линия ~40%)
+
 ## [3.20.0] — 2026-05-31
 
 ### NLP: уточнение двусмысленного времени

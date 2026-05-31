@@ -293,6 +293,18 @@ def ambiguous_hour_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def ambiguous_day_only_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🌅 09:00", callback_data="ah:morn"),
+                InlineKeyboardButton(text="☀️ 14:00", callback_data="ah:day"),
+            ],
+            [InlineKeyboardButton(text="🌆 18:00", callback_data="ah:night")],
+        ]
+    )
+
+
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

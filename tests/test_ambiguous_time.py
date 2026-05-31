@@ -39,3 +39,23 @@ def test_phrase_night_choice():
         choice="night",
     )
     assert "02:00" in phrase
+
+
+def test_detect_day_only_zavtra_sozvon():
+    from bot.services.nlp.ambiguous_time import detect_ambiguous_day_only, phrase_from_day_only_choice
+
+    amb = detect_ambiguous_day_only("завтра созвон")
+    assert amb is not None
+    assert amb.day == "завтра"
+    assert amb.task == "созвон"
+
+    phrase = phrase_from_day_only_choice(task="созвон", day="завтра", choice="day")
+    assert "14:00" in phrase
+    assert "созвон" in phrase
+
+
+def test_day_only_not_when_time_in_phrase():
+    from bot.services.nlp.ambiguous_time import detect_ambiguous_day_only
+
+    assert detect_ambiguous_day_only("завтра в 14:00 созвон") is None
+    assert detect_ambiguous_day_only("завтра утром зарядка") is None
