@@ -43,7 +43,7 @@ from bot.services.auto_update import (
 from bot.services.cleanup import prune_all_caches
 from bot.services.deploy_meta import record_deploy_sha_from_git
 from bot.services.heartbeat import write_heartbeat
-from bot.services.scheduler import restore_scheduled_reminders, scheduler
+from bot.services.scheduler import repair_reminder_jobs, restore_scheduled_reminders, scheduler
 from bot.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -196,6 +196,13 @@ async def main() -> None:
         trigger=IntervalTrigger(hours=settings.db_backup_interval_hours),
         id="db_backup",
         replace_existing=True,
+    )
+    scheduler.add_job(
+        repair_reminder_jobs,
+        trigger=IntervalTrigger(minutes=3),
+        id="repair_reminders",
+        replace_existing=True,
+        kwargs={"bot": bot},
     )
     if settings.auto_update_enabled:
         scheduler.add_job(

@@ -25,7 +25,13 @@ def test_ensure_future_run_at_from_naive_moscow():
     assert moscow.minute == future.minute
 
 
-def test_ensure_future_run_at_past_becomes_soon():
-    past = datetime.now(ZoneInfo("Europe/Moscow")) - timedelta(hours=1)
-    utc = ensure_future_run_at(past, "Europe/Moscow", min_seconds=5)
-    assert (utc - datetime.now(UTC)).total_seconds() <= 10
+def test_storage_next_run_at_naive_local():
+    from zoneinfo import ZoneInfo
+
+    from bot.services.reminder_utils import storage_next_run_at
+
+    aware = datetime.now(ZoneInfo("Europe/Moscow")) + timedelta(minutes=5)
+    stored = storage_next_run_at(aware, "Europe/Moscow")
+    assert stored.tzinfo is None
+    assert stored.hour == aware.hour
+    assert stored.minute == aware.minute

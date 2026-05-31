@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from bot.config import settings
 from bot.db.models import Base, ChatSettings, Reminder, ReminderEvent, User
+from bot.services.reminder_utils import storage_next_run_at
 
 engine = create_async_engine(settings.database_url, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
@@ -181,7 +182,7 @@ async def create_reminder(
         timezone=timezone,
         text=text,
         kind=kind,
-        next_run_at=next_run_at,
+        next_run_at=storage_next_run_at(next_run_at, timezone),
         interval_seconds=interval_seconds,
         daily_time=daily_time,
         weekdays_mask=weekdays_mask,
@@ -236,6 +237,8 @@ async def get_all_active_reminders(session: AsyncSession) -> list[Reminder]:
 async def update_reminder_next_run(
     session: AsyncSession, reminder: Reminder, next_run_at: datetime | None
 ) -> Reminder:
+    if next_run_at is not None:
+        next_run_at = storage_next_run_at(next_run_at, reminder.timezone)
     reminder.next_run_at = next_run_at
     await session.commit()
     await session.refresh(reminder)

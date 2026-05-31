@@ -34,7 +34,45 @@ scheduler = AsyncIOScheduler(timezone="UTC")
 RESTORE_JITTER_SECONDS = 3
 RESTORE_JITTER_CAP_SECONDS = 120
 SEND_RETRY_MINUTES = 2
+COLLECTIVE_SEND_RETRY_SECONDS = 30
 PAUSE_RETRY_MINUTES = 5
+
+
+async def _send_to_collective_chat(
+    bot: Bot,
+    *,
+    chat_id: int,
+    reminder_id: int,
+    text: str,
+    collective_hint: str,
+    plain_text: str,
+) -> bool:
+    """HTML с упоминанием, при ошибке — plain text без разметки."""
+    try:
+        await bot.send_message(chat_id=chat_id, text=text + collective_hint)
+        return True
+    except Exception as exc:
+        logger.warning(
+            "HTML reminder %s to collective chat %s failed: %s",
+            reminder_id,
+            chat_id,
+            exc,
+        )
+    try:
+        await bot.send_message(
+            chat_id=chat_id,
+            text=f"⏰ {plain_text}{collective_hint}",
+            parse_mode=None,
+        )
+        return True
+    except Exception as exc:
+        logger.exception(
+            "Failed to send reminder %s to collective chat %s: %s",
+            reminder_id,
+            chat_id,
+            exc,
+        )
+    return False
 
 
 async def send_reminder(bot: Bot, reminder_id: int) -> None:
@@ -120,23 +158,18 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
 
-        sent = False
+        group_sent = False
         dm_sent = False
 
         if in_collective:
-            try:
-                await bot.send_message(
-                    chat_id=reminder.chat_id,
-                    text=body + collective_hint,
-                )
-                sent = True
-            except Exception as exc:
-                logger.exception(
-                    "Failed to send reminder %s to collective chat %s: %s",
-                    reminder_id,
-                    reminder.chat_id,
-                    exc,
-                )
+            group_sent = await _send_to_collective_chat(
+                bot,
+                chat_id=reminder.chat_id,
+                reminder_id=reminder_id,
+                text=body,
+                collective_hint=collective_hint,
+                plain_text=reminder.text,
+            )
 
             try:
                 await bot.send_message(
@@ -145,7 +178,6 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                     reply_markup=reminder_actions_keyboard(reminder.id),
                 )
                 dm_sent = True
-                sent = True
             except Exception as dm_exc:
                 logger.warning(
                     "Cannot DM creator %s for reminder %s: %s",
@@ -154,7 +186,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                     dm_exc,
                 )
 
-            if sent and not dm_sent:
+            if group_sent and not dm_sent:
                 try:
                     me = await bot.get_me()
                     await bot.send_message(
@@ -171,7 +203,10 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                         reminder_id,
                         hint_exc,
                     )
+
+            sent = group_sent
         else:
+            sent = False
             try:
                 await bot.send_message(
                     chat_id=reminder.chat_id,
@@ -188,7 +223,10 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                 )
 
         if not sent:
-            retry_at = datetime.now(UTC) + timedelta(minutes=SEND_RETRY_MINUTES)
+            if in_collective:
+                retry_at = datetime.now(UTC) + timedelta(seconds=COLLECTIVE_SEND_RETRY_SECONDS)
+            else:
+                retry_at = datetime.now(UTC) + timedelta(minutes=SEND_RETRY_MINUTES)
             await update_reminder_next_run(session, reminder, retry_at)
             schedule_reminder(bot, reminder.id, retry_at, timezone=reminder.timezone)
             return

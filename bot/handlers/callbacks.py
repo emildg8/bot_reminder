@@ -27,7 +27,7 @@ from bot.services.reminder_create import create_and_schedule_items
 from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
-from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
+from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.user_prefs import (
     clamp_snooze_minutes,
@@ -69,6 +69,8 @@ async def _reply_after_create(
     if collective is not None:
         me = await bot.get_me()
         await callback.message.answer(format_group_reminder_hint(me.username))
+        if not await bot_can_post_reminders(bot, chat_id):
+            await callback.message.answer(format_bot_cannot_post_hint())
     elif kb := menu_keyboard_for_chat(chat_id):
         await callback.message.answer("Меню:", reply_markup=kb)
     await callback.answer()

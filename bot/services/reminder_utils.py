@@ -35,6 +35,15 @@ def to_utc_storage(dt: datetime | None, timezone_name: str) -> datetime | None:
     return local_run_at(dt, timezone_name).astimezone(UTC)
 
 
+def storage_next_run_at(dt: datetime | None, timezone_name: str) -> datetime | None:
+    """Naive local wall clock для SQLite (см. test_run_at_timezone)."""
+    if dt is None:
+        return None
+    local = local_run_at(dt, timezone_name)
+    assert local is not None
+    return local.replace(tzinfo=None)
+
+
 def ensure_future_run_at(
     run_at: datetime,
     timezone_name: str,
