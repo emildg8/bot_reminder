@@ -226,23 +226,50 @@ EXAMPLE_PHRASES: list[tuple[str, str]] = [
 EXAMPLES_INTRO = "💡 <b>Нажми пример</b> — бот подставит фразу и определит время:"
 
 
+def format_delay_label(seconds: int) -> str:
+    if seconds < 60:
+        return f"через {seconds} сек от подтверждения"
+    if seconds % 3600 == 0 and seconds >= 3600:
+        h = seconds // 3600
+        return f"через {h} ч от подтверждения"
+    if seconds % 60 == 0:
+        return f"через {seconds // 60} мин от подтверждения"
+    return f"через {seconds // 60} мин от подтверждения"
+
+
+def format_group_reminder_hint(bot_username: str | None = None) -> str:
+    link = f"@{bot_username}" if bot_username else "бота"
+    return (
+        f"📲 Кнопки «Отложить / Готово» — в личке. "
+        f"Если не приходят, напиши {link} и нажми /start."
+    )
+
+
+GROUP_CREATED_SUFFIX = "\n\n📣 Сработает в группе · кнопки — в личке"
+
+
 def format_confirm_card(summary: str, *, is_edit: bool = False) -> str:
     header = CONFIRM_EDIT_HEADER if is_edit else CONFIRM_CREATE_HEADER
     return f"{header}\n\n{summary}\n\nПодтверди действие:"
 
 
-def format_created(reminder_id: int, when: str, text: str) -> str:
-    return (
+def format_created(reminder_id: int, when: str, text: str, *, in_group: bool = False) -> str:
+    body = (
         f"✅ <b>Готово!</b> Напоминание #{reminder_id}\n\n"
         f"🕐 {when}\n"
         f"📝 {text}"
     )
+    if in_group:
+        body += GROUP_CREATED_SUFFIX
+    return body
 
 
-def format_batch_created(items: list[tuple[int, str, str]]) -> str:
+def format_batch_created(items: list[tuple[int, str, str]], *, in_group: bool = False) -> str:
     lines = [f"✅ <b>Готово!</b> Создано {len(items)} напоминания:\n"]
     for reminder_id, when, text in items:
         lines.append(f"• #{reminder_id} · {when} · {text}")
+    if in_group:
+        lines.append(GROUP_CREATED_SUFFIX)
     return "\n".join(lines)
 
 

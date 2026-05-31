@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from bot.db.models import Reminder
 from bot.services.nlp.schemas import ParsedReminder
+from bot.texts.messages import format_delay_label
 from bot.services.reminder_utils import compute_next_run, local_run_at, mask_to_weekdays
 from bot.services.timezone_labels import format_timezone_label
 
@@ -56,6 +57,8 @@ def format_weekdays_label(weekdays: list[int] | None = None, mask: int | None = 
 def format_parsed_when_label(parsed: ParsedReminder, timezone: str) -> str:
     """Краткая подпись расписания для сообщений «создано» / «обновлено»."""
     tz = ZoneInfo(timezone)
+    if parsed.kind == "once" and parsed.delay_seconds:
+        return format_delay_label(parsed.delay_seconds)
     if parsed.kind == "weekly" and parsed.daily_time and parsed.weekdays:
         days = format_weekdays_label(weekdays=parsed.weekdays)
         return f"{days} в {parsed.daily_time.strftime('%H:%M')}"
@@ -122,7 +125,10 @@ def format_parsed_summary_html(parsed: ParsedReminder, timezone: str) -> str:
 
     when_line = ""
     if parsed.kind == "once":
-        when_line = next_run.strftime("%d.%m.%Y %H:%M")
+        if parsed.delay_seconds:
+            when_line = format_delay_label(parsed.delay_seconds)
+        else:
+            when_line = next_run.strftime("%d.%m.%Y %H:%M")
     elif parsed.kind == "interval":
         when_line = format_interval_seconds(parsed.interval_seconds)
         when_line += f", первый раз {next_run.strftime('%d.%m %H:%M')}"
@@ -146,11 +152,19 @@ def format_batch_parsed_summary_html(items: list[ParsedReminder], timezone: str)
     if len(items) == 1:
         return format_parsed_summary_html(items[0], timezone)
 
-    lines = [f"📋 <b>{len(items)} напоминания</b>\n"]
+    weekly_batch = all(p.kind == "weekly" for p in items)
+    header = (
+        f"📋 <b>{len(items)} еженедельных напоминания</b> (по одному на время)\n"
+        if weekly_batch
+        else f"📋 <b>{len(items)} напоминания</b>\n"
+    )
+    lines = [header]
     for parsed in items:
         if parsed.kind == "weekly" and parsed.daily_time and parsed.weekdays:
             days = format_weekdays_label(weekdays=parsed.weekdays)
             when = f"{days} в {parsed.daily_time.strftime('%H:%M')}"
+        elif parsed.kind == "once" and parsed.delay_seconds:
+            when = format_delay_label(parsed.delay_seconds)
         elif parsed.kind == "once" and parsed.run_at:
             when = parsed.run_at.astimezone(ZoneInfo(timezone)).strftime("%d.%m.%Y %H:%M")
         else:

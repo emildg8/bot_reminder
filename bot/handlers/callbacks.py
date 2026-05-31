@@ -21,13 +21,14 @@ from bot.keyboards.inline import (
     reminder_actions_keyboard,
     snooze_picker_keyboard,
 )
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.drafts import discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
 from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
+from bot.services.timezone_ctx import is_group_chat
 from bot.services.user_prefs import (
     clamp_snooze_minutes,
     format_snooze_minutes,
@@ -35,7 +36,12 @@ from bot.services.user_prefs import (
     get_snooze_presets,
     get_snooze_step,
 )
-from bot.texts.messages import format_batch_created, format_created, format_updated
+from bot.texts.messages import (
+    format_batch_created,
+    format_created,
+    format_group_reminder_hint,
+    format_updated,
+)
 from bot.services.reminder_display import format_parsed_when_label
 from bot.services.scheduler import schedule_reminder, scheduler
 from bot.services.timezone_ctx import get_effective_timezone
@@ -120,12 +126,20 @@ async def _create_from_draft(
             when = format_parsed_when_label(parsed, tz)
             created.append((reminder.id, when, parsed.text))
 
+    chat_id = callback.message.chat.id
+    in_group = is_group_chat(chat_id)
+
     if len(created) == 1:
         rid, when, text = created[0]
-        await callback.message.edit_text(format_created(rid, when, text))
+        await callback.message.edit_text(format_created(rid, when, text, in_group=in_group))
     else:
-        await callback.message.edit_text(format_batch_created(created))
-    await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
+        await callback.message.edit_text(format_batch_created(created, in_group=in_group))
+
+    if in_group:
+        me = await bot.get_me()
+        await callback.message.answer(format_group_reminder_hint(me.username))
+    elif kb := menu_keyboard_for_chat(chat_id):
+        await callback.message.answer("Меню:", reply_markup=kb)
     await callback.answer()
 
 
@@ -179,7 +193,8 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
     schedule_reminder(bot, reminder_id, next_run, timezone=reminder.timezone)
     when = format_parsed_when_label(entry.parsed, reminder.timezone)
     await callback.message.edit_text(format_updated(reminder_id, when))
-    await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
+    if kb := menu_keyboard_for_chat(callback.message.chat.id):
+        await callback.message.answer("Меню:", reply_markup=kb)
     await callback.answer()
 
 

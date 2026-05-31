@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from bot.config import settings
 from bot.db.models import Reminder, User
 from bot.db.repository import async_session, get_all_active_reminders
+from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.auto_update import fetch_remote_sha, force_update, schedule_process_restart
 from bot.services.deploy_meta import read_deploy_sha
 from bot.services.media import describe_stt_backends, is_ffmpeg_available

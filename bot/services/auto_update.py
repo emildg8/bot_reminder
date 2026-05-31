@@ -217,12 +217,26 @@ async def force_update() -> tuple[bool, str, str | None]:
     )
 
 
-def schedule_process_restart(delay_seconds: float = 1.5) -> None:
-    async def _restart() -> None:
-        await asyncio.sleep(delay_seconds)
-        os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
+_shutdown_dispatcher = None
 
-    asyncio.get_running_loop().create_task(_restart())
+
+def register_shutdown_dispatcher(dp) -> None:
+    global _shutdown_dispatcher
+    _shutdown_dispatcher = dp
+
+
+async def restart_bot_after_update(delay_seconds: float = 1.5) -> None:
+    """Корректный перезапуск: stop polling, затем execv (как auto-update)."""
+    await asyncio.sleep(delay_seconds)
+    request_process_reexec()
+    if _shutdown_dispatcher is not None:
+        await _shutdown_dispatcher.stop_polling()
+        return
+    os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
+
+
+def schedule_process_restart(delay_seconds: float = 1.5) -> None:
+    asyncio.get_running_loop().create_task(restart_bot_after_update(delay_seconds))
 
 
 async def apply_git_update_to_sha(remote_sha: str) -> tuple[bool, str | None]:

@@ -18,7 +18,7 @@ from bot.keyboards.reply import (
     BTN_STATS,
     BTN_TIMEZONE,
     MENU_BUTTON_TEXTS,
-    main_menu_keyboard,
+    menu_keyboard_for_chat,
 )
 from bot.services.drafts import clear_edit_pending, clear_search_pending, set_search_pending
 from bot.services.reminders_ui import send_active_reminders
@@ -38,13 +38,13 @@ def _clear_modes(user_id: int) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     _clear_modes(message.from_user.id)
-    await message.answer(HELP_TEXT, reply_markup=main_menu_keyboard())
+    await message.answer(HELP_TEXT, reply_markup=menu_keyboard_for_chat(message.chat.id))
 
 
 @router.message(Command("cancel"))
 async def cmd_cancel(message: Message) -> None:
     _clear_modes(message.from_user.id)
-    await message.answer("Отменено.", reply_markup=main_menu_keyboard())
+    await message.answer("Отменено.", reply_markup=menu_keyboard_for_chat(message.chat.id))
 
 
 @router.message(Command("menu"))
@@ -52,7 +52,7 @@ async def cmd_menu(message: Message) -> None:
     _clear_modes(message.from_user.id)
     await message.answer(
         "⌨️ <b>Меню</b> — кнопки внизу или команды через /",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
 
 
@@ -66,7 +66,7 @@ async def _send_status(message: Message) -> None:
     tz_scope = "группы" if is_group_chat(chat_id) else "твой"
     await message.answer(
         format_status(count=count, paused=paused, tz=tz, tz_scope=tz_scope, version=__version__),
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(chat_id),
     )
 
 
@@ -79,7 +79,7 @@ async def handle_menu_buttons(message: Message, bot) -> None:
         await message.answer(
             "🔍 <b>Поиск</b>\n\nНапиши слово или фразу — найду среди активных напоминаний.\n"
             "Отмена: /cancel",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 
@@ -93,12 +93,12 @@ async def handle_menu_buttons(message: Message, bot) -> None:
     elif text == BTN_MORE:
         await message.answer("Дополнительно:", reply_markup=more_menu_keyboard())
     elif text == BTN_CREATE:
-        await message.answer(CREATE_HINT, reply_markup=main_menu_keyboard())
+        await message.answer(CREATE_HINT, reply_markup=menu_keyboard_for_chat(message.chat.id))
     elif text == BTN_TIMEZONE:
         label = "группы" if is_group_chat(message.chat.id) else "личный"
         await message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
     elif text == BTN_HELP:
-        await message.answer(HELP_TEXT, reply_markup=main_menu_keyboard())
+        await message.answer(HELP_TEXT, reply_markup=menu_keyboard_for_chat(message.chat.id))
     elif text == BTN_EXAMPLES:
         await message.answer(EXAMPLES_INTRO, reply_markup=examples_keyboard())
 
@@ -137,7 +137,7 @@ async def menu_search(callback: CallbackQuery) -> None:
     set_search_pending(callback.from_user.id)
     await callback.message.answer(
         "🔍 <b>Поиск</b>\n\nНапиши слово или фразу.\nОтмена: /cancel",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(callback.message.chat.id),
     )
     await callback.answer()
 

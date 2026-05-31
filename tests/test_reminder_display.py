@@ -42,6 +42,11 @@ def test_format_weekdays_mask():
     assert format_weekdays_label(mask=0b11111) == "по будням"
 
 
+def test_format_parsed_when_label_delay():
+    parsed = ParsedReminder(text="созвон", kind="once", delay_seconds=120)
+    assert format_parsed_when_label(parsed, "Europe/Moscow") == "через 2 мин от подтверждения"
+
+
 def test_format_parsed_when_label_weekly():
     parsed = ParsedReminder(
         text="Экспа",

@@ -36,6 +36,7 @@ from bot.services.bot_menu import setup_bot_commands, setup_bot_profile
 from bot.services.auto_update import (
     apply_git_update_to_sha,
     consume_reexec_flag,
+    register_shutdown_dispatcher,
     request_process_reexec,
     should_restart_for_update,
 )
@@ -159,6 +160,7 @@ async def main() -> None:
     await bot.delete_webhook(drop_pending_updates=False)
 
     dp = Dispatcher()
+    register_shutdown_dispatcher(dp)
     dp.include_router(start.router)
     dp.include_router(group.router)
     dp.include_router(menu.router)

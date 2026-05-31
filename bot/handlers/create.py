@@ -98,6 +98,9 @@ async def _process_text_and_reply(
         who = f"@{mention_username}" if mention_username else "участнику"
         prefix += f"👤 Упоминание: {who}\n\n"
 
+    if is_group_chat(message.chat.id):
+        prefix += "📣 Напоминание в группе · кнопки управления — в личке.\n\n"
+
     mention_provided = bool(mention_username or mention_id)
     draft_id = store_draft(
         user_id,
