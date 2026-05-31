@@ -22,6 +22,8 @@ def compute_next_run(parsed: ParsedReminder, timezone: str) -> datetime:
     now = datetime.now(tz)
 
     if parsed.kind == "once":
+        if parsed.delay_seconds is not None and parsed.delay_seconds > 0:
+            return now + timedelta(seconds=parsed.delay_seconds)
         if parsed.run_at is None:
             raise ValueError("once reminder requires run_at")
         run_at = parsed.run_at

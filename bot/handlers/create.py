@@ -144,7 +144,7 @@ async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None
             "не набирай @ вручную."
         )
         return
-    await _route_user_phrase(message, phrase, bot)
+    await _process_text_and_reply(message, phrase, bot, use_phrase_text=True)
 
 
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))

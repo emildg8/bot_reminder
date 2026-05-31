@@ -3,6 +3,11 @@ import re
 from aiogram.types import Message
 
 USERNAME_PREFIX = re.compile(r"^@(\w{4,32})\s+", re.IGNORECASE)
+TELEGRAM_COMMAND_PREFIX = re.compile(r"^/\w+(?:@\w+)?\s*", re.IGNORECASE)
+
+
+def strip_telegram_command(text: str) -> str:
+    return TELEGRAM_COMMAND_PREFIX.sub("", text.strip()).strip()
 
 
 def _normalize_username(username: str | None) -> str | None:
@@ -45,6 +50,8 @@ def extract_mention_from_message(
     text = (message.text or message.caption or "").strip()
     if not text:
         return None, None, text
+
+    text = strip_telegram_command(text)
 
     clean = text
     mention_id: int | None = None

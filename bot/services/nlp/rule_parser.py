@@ -9,6 +9,7 @@ from bot.services.nlp.absolute_time_parse import (
     parse_number_token,
     try_dateparser_search,
 )
+from bot.services.mention_parse import strip_telegram_command
 from bot.services.nlp.schemas import ParsedReminder
 from bot.services.nlp.weekday_parse import find_custom_weekly, find_weekly_schedules
 
@@ -82,7 +83,26 @@ REMINDER_PREFIX = re.compile(
 
 
 def _strip_prefix(text: str) -> str:
+    text = strip_telegram_command(text)
     return REMINDER_PREFIX.sub("", text).strip(" ,.")
+
+
+def _once_relative(
+    now: datetime,
+    task: str,
+    *,
+    seconds: int = 0,
+    minutes: int = 0,
+    hours: int = 0,
+    weeks: int = 0,
+) -> ParsedReminder:
+    delay = seconds + minutes * 60 + hours * 3600 + weeks * 7 * 86400
+    return ParsedReminder(
+        text=task or "Напоминание",
+        kind="once",
+        delay_seconds=delay,
+        run_at=now + timedelta(seconds=delay),
+    )
 
 
 def _parse_duration(value: int, unit: str) -> int:
@@ -132,36 +152,28 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
         )
 
     if match := IN_HALF_HOUR.search(cleaned):
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_HALF_HOUR),
-            kind="once",
-            run_at=now + timedelta(minutes=30),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_HALF_HOUR), minutes=30
         )
 
     if match := IN_COUPLE_PATTERN.search(cleaned):
         unit = match.group(1).lower()
         seconds = 7200 if unit.startswith("ч") else 120
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_COUPLE_PATTERN),
-            kind="once",
-            run_at=now + timedelta(seconds=seconds),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_COUPLE_PATTERN), seconds=seconds
         )
 
     if match := IN_FEW_HOURS.search(cleaned):
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_FEW_HOURS),
-            kind="once",
-            run_at=now + timedelta(hours=3),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_FEW_HOURS), hours=3
         )
 
     if match := IN_RANGE_PATTERN.search(cleaned):
         low, high = int(match.group(1)), int(match.group(2))
         value = max(low, high)
         seconds = _parse_duration(value, match.group(3))
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_RANGE_PATTERN),
-            kind="once",
-            run_at=now + timedelta(seconds=seconds),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_RANGE_PATTERN), seconds=seconds
         )
 
     if match := IN_WORD_RANGE.search(cleaned):
@@ -169,60 +181,44 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
         b = _parse_count_token(match.group("b"))
         if a and b:
             hours = max(a, b)
-            return ParsedReminder(
-                text=_task_without_pattern(cleaned, IN_WORD_RANGE),
-                kind="once",
-                run_at=now + timedelta(hours=hours),
+            return _once_relative(
+                now, _task_without_pattern(cleaned, IN_WORD_RANGE), hours=hours
             )
 
     if match := IN_ONE_AND_HALF_HOUR.search(cleaned):
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_ONE_AND_HALF_HOUR),
-            kind="once",
-            run_at=now + timedelta(minutes=90),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_ONE_AND_HALF_HOUR), minutes=90
         )
 
     if match := IN_WORD_HOURS.search(cleaned):
         hours = _parse_count_token(match.group("n"))
         if hours and hours > 0:
-            return ParsedReminder(
-                text=_task_without_pattern(cleaned, IN_WORD_HOURS),
-                kind="once",
-                run_at=now + timedelta(hours=hours),
+            return _once_relative(
+                now, _task_without_pattern(cleaned, IN_WORD_HOURS), hours=hours
             )
 
     if match := IN_WORD_MINUTES.search(cleaned):
         minutes = _parse_count_token(match.group("n"))
         if minutes and minutes > 0:
-            return ParsedReminder(
-                text=_task_without_pattern(cleaned, IN_WORD_MINUTES),
-                kind="once",
-                run_at=now + timedelta(minutes=minutes),
+            return _once_relative(
+                now, _task_without_pattern(cleaned, IN_WORD_MINUTES), minutes=minutes
             )
 
     if match := IN_HOUR_WORD.search(cleaned):
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_HOUR_WORD),
-            kind="once",
-            run_at=now + timedelta(hours=1),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_HOUR_WORD), hours=1
         )
 
     if match := IN_WEEK.search(cleaned):
         weeks = int(match.group(1)) if match.group(1) else 1
-        return ParsedReminder(
-            text=_task_without_pattern(cleaned, IN_WEEK),
-            kind="once",
-            run_at=now + timedelta(weeks=weeks),
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_WEEK), weeks=weeks
         )
 
     if match := IN_PATTERN.search(cleaned):
         seconds = _parse_duration(int(match.group(1)), match.group(2))
         task_text = _task_without_pattern(cleaned, IN_PATTERN)
-        return ParsedReminder(
-            text=task_text,
-            kind="once",
-            run_at=now + timedelta(seconds=seconds),
-        )
+        return _once_relative(now, task_text, seconds=seconds)
 
     if match := INTERVAL_WORD_PATTERN.search(cleaned):
         count = _parse_count_token(match.group("n"))

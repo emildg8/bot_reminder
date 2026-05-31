@@ -80,3 +80,28 @@ def test_kazhdye_polchasa():
     assert parsed is not None
     assert parsed.kind == "interval"
     assert parsed.interval_seconds == 1800
+
+
+def test_remind_command_phrase():
+    parsed = parse_with_rules(
+        "/remind@break_remind_bot Через 1 минуту проснуться",
+        "Europe/Moscow",
+    )
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert parsed.text == "проснуться"
+    assert parsed.delay_seconds == 60
+
+
+def test_relative_delay_recomputed_at_confirm():
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    from bot.services.reminder_utils import compute_next_run
+
+    parsed = parse_with_rules("через 1 минуту проснуться", "Europe/Moscow")
+    assert parsed.delay_seconds == 60
+    before = datetime.now(ZoneInfo("Europe/Moscow"))
+    next_run = compute_next_run(parsed, "Europe/Moscow")
+    after = datetime.now(ZoneInfo("Europe/Moscow"))
+    assert before + timedelta(seconds=55) <= next_run <= after + timedelta(seconds=65)
