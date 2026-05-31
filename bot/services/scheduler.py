@@ -113,6 +113,20 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         if in_group:
             try:
                 await bot.send_message(
+                    chat_id=reminder.chat_id,
+                    text=body + group_hint,
+                )
+                sent = True
+            except Exception as exc:
+                logger.exception(
+                    "Failed to send reminder %s to group %s: %s",
+                    reminder_id,
+                    reminder.chat_id,
+                    exc,
+                )
+
+            try:
+                await bot.send_message(
                     reminder.created_by_telegram_id,
                     f"⏰ Напоминание в группе (#{reminder.id}):\n{body}",
                     reply_markup=reminder_actions_keyboard(reminder.id),
@@ -125,21 +139,21 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                     reminder_id,
                     dm_exc,
                 )
-
-        try:
-            await bot.send_message(
-                chat_id=reminder.chat_id,
-                text=body + group_hint,
-                reply_markup=None if in_group else reminder_actions_keyboard(reminder.id),
-            )
-            sent = True
-        except Exception as exc:
-            logger.exception(
-                "Failed to send reminder %s to chat %s: %s",
-                reminder_id,
-                reminder.chat_id,
-                exc,
-            )
+        else:
+            try:
+                await bot.send_message(
+                    chat_id=reminder.chat_id,
+                    text=body,
+                    reply_markup=reminder_actions_keyboard(reminder.id),
+                )
+                sent = True
+            except Exception as exc:
+                logger.exception(
+                    "Failed to send reminder %s to chat %s: %s",
+                    reminder_id,
+                    reminder.chat_id,
+                    exc,
+                )
 
         if not sent:
             retry_at = datetime.now(UTC) + timedelta(minutes=SEND_RETRY_MINUTES)
