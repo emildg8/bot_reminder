@@ -45,13 +45,12 @@ def format_group_welcome(bot_username: str | None = None) -> str:
     uname = bot_username or "бот"
     return (
         f"👋 <b>{BOT_NAME}</b> теперь в этой группе!\n\n"
-        "В группе бот видит только команды и сообщения с @бот.\n\n"
-        f"✅ <b>Надёжно</b> — команда <code>/remind@{uname}</code>:\n"
-        f"• <code>/remind@{uname} через 30 минут созвон</code>\n"
+        f"✅ <b>Надёжно</b> — <code>/remind@{uname} через 30 минут созвон</code>\n"
         f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n\n"
-        f"Или выбери {at} <b>из списка</b> (не печатай @ вручную):\n"
+        f"Или {at} <b>из списка</b> + фраза:\n"
         f"• <code>{at} через 30 минут созвон</code>\n\n"
-        "🕐 Часовой пояс: /timezone · 📋 Список: /list · /help"
+        "⚠️ @, набранный вручную, бот <b>не увидит</b> — ответа не будет.\n\n"
+        "🕐 /timezone · 📋 /list · /help · /menu"
     )
 
 
@@ -81,20 +80,23 @@ GROUP_EXAMPLES_INTRO = "💡 <b>Примеры</b> — нажми, бот поп
 
 def format_group_menu_home(bot_username: str | None = None) -> str:
     uname = bot_username or "бот"
+    at = f"@{uname}"
     return (
         f"📋 <b>Меню группы</b>\n\n"
-        f"Создать: <code>/remind@{uname} через 30 минут …</code>\n"
-        f"Или @{uname} из списка участников."
+        f"✅ <code>/remind@{uname} через 30 минут …</code>\n"
+        f"Или {at} <b>из списка</b> (не вводи @ руками)."
     )
 
 
 def format_group_create_hint(bot_username: str | None = None) -> str:
     uname = bot_username or "бот"
+    at = f"@{uname}"
     return (
         "✍️ <b>Как создать</b>\n\n"
-        f"• <code>/remind@{uname} через час созвон</code>\n"
+        f"• <code>/remind@{uname} через час созвон</code> — всегда работает\n"
         f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n"
-        f"• @{uname} из списка + фраза\n\n"
+        f"• {at} <b>из списка</b> + фраза\n\n"
+        "⚠️ @ вручную — бот может не увидеть сообщение.\n"
         "Подтверждение и кнопки — в личке с ботом."
     )
 
@@ -305,15 +307,17 @@ HELP_TEXT_GROUP = f"""\
 <b>Создать</b> — надёжно:
 <code>/remind@бот через 1 час созвон</code>
 
-Или @бот <b>из списка</b> (не печатай @ вручную):
+Или @бот <b>из списка</b> + фраза:
 <code>@бот завтра в 14:00 созвон</code>
+
+⚠️ @, набранный вручную, бот не увидит — используй /remind.
 
 Участнику: <code>@user @бот через 1 час задача</code> (только если user в чате)
 
 💬 <b>Группа обсуждений канала</b> — /remind публикует в канал, confirm в личке.
 
 <b>Команды</b>
-/list · /edit · /pause · /resume · /timezone · /status · /help
+/list · /edit · /pause · /resume · /timezone · /status · /help · /menu
 
 Срабатывание — в группу, кнопки — в личку с ботом."""
 

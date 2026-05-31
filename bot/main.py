@@ -45,7 +45,7 @@ from bot.services.cleanup import prune_all_caches
 from bot.services.deploy_meta import record_deploy_sha_from_git
 from bot.services.heartbeat import write_heartbeat
 from bot.services.instance_lock import acquire_instance_lock, release_instance_lock
-from bot.services.process_restart import exit_for_restart
+from bot.services.bot_privacy import format_group_privacy_admin_warning
 from bot.services.scheduler import repair_reminder_jobs, restore_scheduled_reminders, scheduler
 from bot.version import __version__
 
@@ -236,7 +236,15 @@ async def main() -> None:
         logger.warning("Avatar upload on startup failed: %s", exc)
 
     if settings.admin_telegram_ids:
-        await _notify_admins(bot, f"✅ Бот запущен · v{__version__}")
+        me = await bot.get_me()
+        startup_msg = f"✅ Бот запущен · v{__version__}"
+        privacy_warn = format_group_privacy_admin_warning(
+            can_read_all_group_messages=me.can_read_all_group_messages,
+        )
+        if privacy_warn:
+            logger.warning("Group Privacy enabled — manual @ in groups won't reach the bot")
+            startup_msg += f"\n\n{privacy_warn}"
+        await _notify_admins(bot, startup_msg)
 
     logger.info("Bot started v%s", __version__)
     try:

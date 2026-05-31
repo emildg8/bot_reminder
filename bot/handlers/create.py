@@ -196,8 +196,8 @@ async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None
             "✍️ <b>Создать напоминание в группе</b>\n\n"
             f"<code>/remind@{uname} завтра в 14:00 созвон</code>\n"
             f"<code>/remind@{uname} через 30 минут таблетки</code>\n\n"
-            f"💡 Если пишешь через @ — выбери <code>@{uname}</code> из списка, "
-            "не набирай @ вручную."
+            f"💡 @{uname} — только <b>из списка</b>. "
+            "Если набрал @ вручную и бот молчит — используй /remind."
         )
         return
     await _process_text_and_reply(message, phrase, bot, use_phrase_text=True)
