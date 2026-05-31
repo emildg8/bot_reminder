@@ -4,6 +4,8 @@ from zoneinfo import ZoneInfo
 from bot.db.models import Reminder, ReminderKind
 from bot.services.nlp.schemas import ParsedReminder
 
+UTC = ZoneInfo("UTC")
+
 
 def weekdays_to_mask(weekdays: list[int]) -> int:
     mask = 0
@@ -15,6 +17,38 @@ def weekdays_to_mask(weekdays: list[int]) -> int:
 
 def mask_to_weekdays(mask: int) -> list[int]:
     return [d for d in range(7) if mask & (1 << d)]
+
+
+def local_run_at(dt: datetime | None, timezone_name: str) -> datetime | None:
+    """Naive значения из SQLite — в часовом поясе напоминания, не сервера."""
+    if dt is None:
+        return None
+    tz = ZoneInfo(timezone_name)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=tz)
+    return dt.astimezone(tz)
+
+
+def to_utc_storage(dt: datetime | None, timezone_name: str) -> datetime | None:
+    if dt is None:
+        return None
+    return local_run_at(dt, timezone_name).astimezone(UTC)
+
+
+def ensure_future_run_at(
+    run_at: datetime,
+    timezone_name: str,
+    *,
+    min_seconds: int = 3,
+) -> datetime:
+    """UTC-момент для APScheduler; не раньше чем через min_seconds."""
+    local = local_run_at(run_at, timezone_name)
+    assert local is not None
+    now = datetime.now(UTC)
+    target = local.astimezone(UTC)
+    if target <= now:
+        return now + timedelta(seconds=min_seconds)
+    return target
 
 
 def compute_next_run(parsed: ParsedReminder, timezone: str) -> datetime:
@@ -70,10 +104,8 @@ def advance_reminder(reminder: Reminder, timezone: str) -> datetime | None:
 
     if reminder.kind == ReminderKind.INTERVAL.value:
         seconds = reminder.interval_seconds or 3600
-        base = reminder.next_run_at or now
-        if base.tzinfo is None:
-            base = base.replace(tzinfo=tz)
-        return base.astimezone(tz) + timedelta(seconds=seconds)
+        base = local_run_at(reminder.next_run_at, timezone) or now
+        return base + timedelta(seconds=seconds)
 
     if reminder.kind == ReminderKind.DAILY.value and reminder.daily_time:
         candidate = now.replace(
@@ -99,11 +131,9 @@ def resolve_next_run_on_resume(reminder: Reminder, now: datetime) -> datetime | 
     if next_run is None:
         return None
 
-    tz = ZoneInfo(reminder.timezone)
-    if next_run.tzinfo is None:
-        next_run = next_run.replace(tzinfo=tz)
-    else:
-        next_run = next_run.astimezone(tz)
+    next_run = local_run_at(next_run, reminder.timezone)
+    assert next_run is not None
+    now = now.astimezone(ZoneInfo(reminder.timezone)) if now.tzinfo else now.replace(tzinfo=ZoneInfo(reminder.timezone))
 
     if next_run > now:
         return next_run

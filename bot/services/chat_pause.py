@@ -50,6 +50,6 @@ async def resume_chat_reminders(bot: Bot, chat_id: int) -> int:
                 if db_reminder is not None:
                     await update_reminder_next_run(session, db_reminder, next_run)
 
-        schedule_reminder(bot, reminder.id, next_run)
+        schedule_reminder(bot, reminder.id, next_run, timezone=reminder.timezone)
         count += 1
     return count

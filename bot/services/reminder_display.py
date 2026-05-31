@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from bot.db.models import Reminder
 from bot.services.nlp.schemas import ParsedReminder
-from bot.services.reminder_utils import compute_next_run, mask_to_weekdays
+from bot.services.reminder_utils import compute_next_run, local_run_at, mask_to_weekdays
 from bot.services.timezone_labels import format_timezone_label
 
 WEEKDAY_NAMES = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
@@ -73,13 +73,14 @@ def format_parsed_when_label(parsed: ParsedReminder, timezone: str) -> str:
 def format_reminder_schedule(reminder: Reminder, timezone: str) -> str:
     tz = ZoneInfo(timezone)
     now = datetime.now(tz)
-    if reminder.kind == "once" and reminder.next_run_at:
-        nxt = reminder.next_run_at.astimezone(tz)
+    next_run = local_run_at(reminder.next_run_at, reminder.timezone)
+    if reminder.kind == "once" and next_run:
+        nxt = next_run.astimezone(tz)
         if nxt <= now:
             return f"✅ сработало {nxt.strftime('%d.%m %H:%M')}"
     if reminder.kind == "interval" and reminder.interval_seconds:
-        if reminder.next_run_at:
-            nxt = reminder.next_run_at.astimezone(tz).strftime("%d.%m %H:%M")
+        if next_run:
+            nxt = next_run.astimezone(tz).strftime("%d.%m %H:%M")
             return f"{format_interval_seconds(reminder.interval_seconds)}, след. {nxt}"
         return format_interval_seconds(reminder.interval_seconds)
 
@@ -91,8 +92,8 @@ def format_reminder_schedule(reminder: Reminder, timezone: str) -> str:
         t = reminder.daily_time.strftime("%H:%M")
         return f"{days} в {t}" if days else f"в {t}"
 
-    if reminder.next_run_at:
-        return reminder.next_run_at.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+    if next_run:
+        return next_run.astimezone(tz).strftime("%d.%m.%Y %H:%M")
 
     if reminder.daily_time:
         return reminder.daily_time.strftime("%H:%M")

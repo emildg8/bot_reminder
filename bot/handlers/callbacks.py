@@ -116,7 +116,7 @@ async def _create_from_draft(
                 text=parsed.text,
                 kind=ReminderEventKind.CREATED,
             )
-            schedule_reminder(bot, reminder.id, next_run)
+            schedule_reminder(bot, reminder.id, next_run, timezone=tz)
             when = format_parsed_when_label(parsed, tz)
             created.append((reminder.id, when, parsed.text))
 
@@ -176,7 +176,7 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
             reminder.mention_telegram_id = entry.mention_telegram_id
             await session.commit()
 
-    schedule_reminder(bot, reminder_id, next_run)
+    schedule_reminder(bot, reminder_id, next_run, timezone=reminder.timezone)
     when = format_parsed_when_label(entry.parsed, reminder.timezone)
     await callback.message.edit_text(format_updated(reminder_id, when))
     await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
@@ -338,7 +338,7 @@ async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, min
             extra={"minutes": minutes},
         )
 
-    schedule_reminder(bot, reminder_id, next_run)
+    schedule_reminder(bot, reminder_id, next_run, timezone=reminder.timezone)
     when = next_run.strftime("%d.%m.%Y %H:%M")
     await callback.message.edit_text(
         f"⏰ Отложено на <b>{format_snooze_minutes(minutes)}</b> (до {when})\n"

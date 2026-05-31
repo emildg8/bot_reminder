@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,12 +20,12 @@ from bot.db.repository import (
     update_reminder_next_run,
 )
 from bot.keyboards.inline import reminder_actions_keyboard
-from bot.services.reminder_utils import advance_reminder
+from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
 from bot.services.telegram_format import format_reminder_message, is_group_chat
 
 logger = logging.getLogger(__name__)
 
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(timezone="UTC")
 
 RESTORE_JITTER_SECONDS = 3
 RESTORE_JITTER_CAP_SECONDS = 120
@@ -34,12 +34,17 @@ PAUSE_RETRY_MINUTES = 5
 
 
 async def send_reminder(bot: Bot, reminder_id: int) -> None:
+    tz_name = "Europe/Moscow"
     try:
         await _send_reminder_impl(bot, reminder_id)
     except Exception as exc:
         logger.exception("Unhandled error sending reminder %s: %s", reminder_id, exc)
-        retry_at = datetime.now().astimezone() + timedelta(minutes=SEND_RETRY_MINUTES)
-        schedule_reminder(bot, reminder_id, retry_at)
+        async with async_session() as session:
+            reminder = await get_reminder(session, reminder_id)
+            if reminder:
+                tz_name = reminder.timezone
+        retry_at = datetime.now(UTC) + timedelta(minutes=SEND_RETRY_MINUTES)
+        schedule_reminder(bot, reminder_id, retry_at, timezone=tz_name)
 
 
 async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
@@ -50,9 +55,9 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
 
         if await is_chat_paused(session, reminder.chat_id):
             logger.info("Chat %s paused, reschedule reminder %s", reminder.chat_id, reminder_id)
-            retry_at = datetime.now().astimezone() + timedelta(minutes=PAUSE_RETRY_MINUTES)
+            retry_at = datetime.now(UTC) + timedelta(minutes=PAUSE_RETRY_MINUTES)
             await update_reminder_next_run(session, reminder, retry_at)
-            schedule_reminder(bot, reminder.id, retry_at)
+            schedule_reminder(bot, reminder.id, retry_at, timezone=reminder.timezone)
             try:
                 await bot.send_message(
                     reminder.created_by_telegram_id,
@@ -95,11 +100,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         job_id = f"reminder_{reminder_id}"
         planned_next: datetime | None = None
 
-        if is_once:
-            # once: сначала убираем next_run_at — после рестарта не будет повторной отправки
-            await clear_reminder_next_run(session, reminder)
-        else:
-            # recurring: сразу фиксируем следующий запуск — падение после send не дублирует текущий
+        if not is_once:
             planned_next = advance_reminder(reminder, reminder.timezone)
             if planned_next is not None:
                 await update_reminder_next_run(session, reminder, planned_next)
@@ -107,32 +108,47 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
 
+        sent = False
+
+        if in_group:
+            try:
+                await bot.send_message(
+                    reminder.created_by_telegram_id,
+                    f"⏰ Напоминание в группе (#{reminder.id}):\n{body}",
+                    reply_markup=reminder_actions_keyboard(reminder.id),
+                )
+                sent = True
+            except Exception as dm_exc:
+                logger.warning(
+                    "Cannot DM creator %s for reminder %s: %s",
+                    reminder.created_by_telegram_id,
+                    reminder_id,
+                    dm_exc,
+                )
+
         try:
             await bot.send_message(
                 chat_id=reminder.chat_id,
                 text=body + group_hint,
                 reply_markup=None if in_group else reminder_actions_keyboard(reminder.id),
             )
-            if in_group:
-                try:
-                    await bot.send_message(
-                        reminder.created_by_telegram_id,
-                        f"⏰ Напоминание в группе (#{reminder.id}):\n{body}",
-                        reply_markup=reminder_actions_keyboard(reminder.id),
-                    )
-                except Exception as dm_exc:
-                    logger.warning(
-                        "Cannot DM creator %s for reminder %s: %s",
-                        reminder.created_by_telegram_id,
-                        reminder_id,
-                        dm_exc,
-                    )
+            sent = True
         except Exception as exc:
-            logger.exception("Failed to send reminder %s: %s", reminder_id, exc)
-            retry_at = datetime.now().astimezone() + timedelta(minutes=SEND_RETRY_MINUTES)
+            logger.exception(
+                "Failed to send reminder %s to chat %s: %s",
+                reminder_id,
+                reminder.chat_id,
+                exc,
+            )
+
+        if not sent:
+            retry_at = datetime.now(UTC) + timedelta(minutes=SEND_RETRY_MINUTES)
             await update_reminder_next_run(session, reminder, retry_at)
-            schedule_reminder(bot, reminder.id, retry_at)
+            schedule_reminder(bot, reminder.id, retry_at, timezone=reminder.timezone)
             return
+
+        if is_once:
+            await clear_reminder_next_run(session, reminder)
 
         await log_reminder_event(
             session,
@@ -144,18 +160,25 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         )
 
         if planned_next is not None:
-            schedule_reminder(bot, reminder.id, planned_next)
+            schedule_reminder(bot, reminder.id, planned_next, timezone=reminder.timezone)
 
 
-def schedule_reminder(bot: Bot, reminder_id: int, run_at: datetime) -> None:
+def schedule_reminder(
+    bot: Bot,
+    reminder_id: int,
+    run_at: datetime,
+    *,
+    timezone: str = "Europe/Moscow",
+) -> None:
     job_id = f"reminder_{reminder_id}"
+    run_at_utc = ensure_future_run_at(run_at, timezone)
 
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
 
     scheduler.add_job(
         send_reminder,
-        trigger=DateTrigger(run_date=run_at),
+        trigger=DateTrigger(run_date=run_at_utc),
         id=job_id,
         args=[bot, reminder_id],
         replace_existing=True,
@@ -163,7 +186,12 @@ def schedule_reminder(bot: Bot, reminder_id: int, run_at: datetime) -> None:
         max_instances=1,
         coalesce=True,
     )
-    logger.info("Scheduled reminder %s at %s", reminder_id, run_at.isoformat())
+    logger.info(
+        "Scheduled reminder %s at %s (tz %s)",
+        reminder_id,
+        run_at_utc.isoformat(),
+        timezone,
+    )
 
 
 def compute_restore_run_at(now: datetime, overdue_index: int) -> datetime:
@@ -179,20 +207,19 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
         )
         reminders = list(result.scalars().all())
 
-    now = datetime.now().astimezone()
+    now = datetime.now(UTC)
     overdue_index = 0
     future_count = 0
 
     for reminder in reminders:
-        run_at = reminder.next_run_at
+        run_at = local_run_at(reminder.next_run_at, reminder.timezone)
         if run_at is None:
             continue
-        if run_at.tzinfo is None:
-            run_at = run_at.replace(tzinfo=now.tzinfo)
+        run_at_utc = run_at.astimezone(UTC)
 
-        if run_at <= now:
+        if run_at_utc <= now:
             restore_at = compute_restore_run_at(now, overdue_index)
-            schedule_reminder(bot, reminder.id, restore_at)
+            schedule_reminder(bot, reminder.id, restore_at, timezone=reminder.timezone)
             overdue_index += 1
             logger.info(
                 "Overdue reminder %s (%s), restore at %s",
@@ -201,7 +228,7 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
                 restore_at.isoformat(),
             )
         else:
-            schedule_reminder(bot, reminder.id, run_at)
+            schedule_reminder(bot, reminder.id, run_at, timezone=reminder.timezone)
             future_count += 1
 
     logger.info(

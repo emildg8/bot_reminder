@@ -212,7 +212,7 @@ async def cmd_import(message: Message, bot: Bot) -> None:
                 weekdays_mask=weekdays_mask,
                 mention_telegram_id=result.mention_telegram_id,
             )
-            schedule_reminder(bot, reminder.id, next_run)
+            schedule_reminder(bot, reminder.id, next_run, timezone=result.timezone)
             imported += 1
 
     lines = [f"✅ Импортировано: {imported}"]
