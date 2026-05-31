@@ -13,8 +13,8 @@ from bot.services.mention_parse import extract_leading_username, extract_mention
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
-from bot.services.timezone_ctx import is_group_chat
-from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
+from bot.texts.messages import format_collective_confirm_prefix, format_confirm_card, format_parse_fail, looks_like_task_only
 
 router = Router()
 
@@ -159,8 +159,8 @@ async def _parse_and_confirm_edit(
         who = f"@{mention_username}" if mention_username else "участнику"
         prefix = f"👤 Упоминание: {who}\n\n"
 
-    if is_group_chat(message.chat.id):
-        prefix += "📣 Напоминание в группе · кнопки управления — в личке.\n\n"
+    if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
+        prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
 
     mention_provided = bool(mention_username or mention_id)
     draft_id = store_draft(

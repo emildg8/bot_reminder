@@ -2,6 +2,16 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.9.0] — 2026-05-31
+
+### Группы и каналы
+- **`chat_ctx`:** тип чата (private / group / channel), метки и тексты
+- **Каналы:** welcome, `/help`, scoped команды, `/remind` hint
+- **Группы:** контекстный `/start` и `/help`, укороченное меню команд
+- **Collective UX:** суффиксы «в группе/канале», confirm prefix
+- **Голос в группах:** тот же mention-фильтр, что и текст
+- План: `docs/plans/groups-channels.md`
+
 ## [3.8.1] — 2026-05-31
 
 ### Деплой

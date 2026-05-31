@@ -9,14 +9,20 @@ from bot.db.repository import async_session
 from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
-from bot.services.bot_mention import should_handle_group_text
+from bot.services.bot_mention import should_handle_collective_message
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
 from bot.services.stt_errors import format_stt_error
-from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
+from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.drafts import pop_search_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
 from bot.services.reminder_display import format_batch_parsed_summary_html
 from bot.services.search_ui import send_search_results
-from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
+from bot.texts.messages import (
+    format_collective_confirm_prefix,
+    format_confirm_card,
+    format_parse_fail,
+    looks_like_task_only,
+)
 from bot.services.media import download_telegram_file, transcribe_audio
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
@@ -97,8 +103,8 @@ async def _process_text_and_reply(
         who = f"@{mention_username}" if mention_username else "участнику"
         prefix += f"👤 Упоминание: {who}\n\n"
 
-    if is_group_chat(message.chat.id):
-        prefix += "📣 Напоминание в группе · кнопки управления — в личке.\n\n"
+    if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
+        prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
 
     mention_provided = bool(mention_username or mention_id)
     draft_id = store_draft(
@@ -135,9 +141,18 @@ async def _route_user_phrase(
 @router.message(Command("remind"))
 async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None:
     phrase = (command.args or "").strip()
+    kind = chat_kind_from_chat(message.chat)
     if not phrase:
         me = await bot.get_me()
         uname = me.username or "бот"
+        if kind == ChatKind.CHANNEL:
+            await message.answer(
+                "✍️ <b>Напоминание в канале</b>\n\n"
+                f"<code>/remind@{uname} завтра в 10:00 пост</code>\n"
+                f"<code>/remind@{uname} через 2 часа проверить</code>\n\n"
+                "Кнопки «Отложить / Готово» — в личке у создавшего админа."
+            )
+            return
         await message.answer(
             "✍️ <b>Создать напоминание в группе</b>\n\n"
             f"<code>/remind@{uname} завтра в 14:00 созвон</code>\n"
@@ -153,7 +168,7 @@ async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None
 async def handle_text(message: Message, bot: Bot) -> None:
     try:
         me = await bot.get_me()
-        if not should_handle_group_text(
+        if not should_handle_collective_message(
             message, bot_username=me.username, bot_id=me.id
         ):
             return
@@ -193,6 +208,10 @@ async def _handle_audio_message(
                 f"Короче {max_seconds} с — одной фразой с задачей и временем."
             )
             return
+
+    me = await bot.get_me()
+    if not should_handle_collective_message(message, bot_username=me.username, bot_id=me.id):
+        return
 
     status = await message.answer("🎧 Распознаю...")
     raw_path: Path | None = None

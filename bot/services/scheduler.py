@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from aiogram import Bot
+from aiogram.enums import ChatType
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
 from sqlalchemy import select
@@ -23,7 +24,7 @@ from bot.db.repository import (
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
 from bot.services.telegram_format import format_reminder_message
-from bot.services.timezone_ctx import is_group_chat
+from bot.services.chat_ctx import ChatKind, is_group_chat
 from bot.texts.messages import format_dm_failed_in_group
 
 logger = logging.getLogger(__name__)
@@ -94,10 +95,18 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             chat_id=reminder.chat_id,
         )
 
-        in_group = is_group_chat(reminder.chat_id)
-        group_hint = ""
-        if in_group:
-            group_hint = "\n\n<i>Управление — в личке с ботом.</i>"
+        in_collective = is_group_chat(reminder.chat_id)
+        place = "группе"
+        if in_collective:
+            try:
+                chat = await bot.get_chat(reminder.chat_id)
+                if chat.type == ChatType.CHANNEL:
+                    place = "канале"
+            except Exception:
+                pass
+        collective_hint = ""
+        if in_collective:
+            collective_hint = f"\n\n<i>Управление — в личке с ботом.</i>"
 
         is_once = reminder.kind == ReminderKind.ONCE.value
         job_id = f"reminder_{reminder_id}"
@@ -114,16 +123,16 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         sent = False
         dm_sent = False
 
-        if in_group:
+        if in_collective:
             try:
                 await bot.send_message(
                     chat_id=reminder.chat_id,
-                    text=body + group_hint,
+                    text=body + collective_hint,
                 )
                 sent = True
             except Exception as exc:
                 logger.exception(
-                    "Failed to send reminder %s to group %s: %s",
+                    "Failed to send reminder %s to collective chat %s: %s",
                     reminder_id,
                     reminder.chat_id,
                     exc,
@@ -132,7 +141,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             try:
                 await bot.send_message(
                     reminder.created_by_telegram_id,
-                    f"⏰ Напоминание в группе (#{reminder.id}):\n{body}",
+                    f"⏰ Напоминание в {place} (#{reminder.id}):\n{body}",
                     reply_markup=reminder_actions_keyboard(reminder.id),
                 )
                 dm_sent = True

@@ -2,6 +2,7 @@
 
 import re
 
+from bot.services.chat_ctx import ChatKind, collective_place_label, is_group_chat
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
@@ -50,8 +51,27 @@ def format_group_welcome(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n\n"
         f"Или выбери {at} <b>из списка</b> (не печатай @ вручную):\n"
         f"• <code>{at} через 30 минут созвон</code>\n\n"
-        "🕐 Часовой пояс: /timezone · 📋 Список: /list"
+        "🕐 Часовой пояс: /timezone · 📋 Список: /list · /help"
     )
+
+
+def format_channel_welcome(bot_username: str | None = None) -> str:
+    uname = bot_username or "бот"
+    return (
+        f"👋 <b>{BOT_NAME}</b> в канале.\n\n"
+        "Напоминания публикуются <b>в канал</b>, кнопки «Отложить / Готово» — "
+        "в личке у создавшего админа.\n\n"
+        f"✅ Создать: <code>/remind@{uname} завтра в 10:00 пост</code>\n"
+        f"• <code>/remind@{uname} через 2 часа проверить</code>\n\n"
+        "📋 /list · 🕐 /timezone · /help\n"
+        "⏸ /pause · /resume — только админы канала."
+    )
+
+
+def format_collective_welcome(chat_kind: ChatKind, bot_username: str | None = None) -> str:
+    if chat_kind == ChatKind.CHANNEL:
+        return format_channel_welcome(bot_username)
+    return format_group_welcome(bot_username)
 
 
 GROUP_WELCOME = format_group_welcome()
@@ -168,7 +188,22 @@ def format_about(version: str = __version__) -> str:
         "Команды: /help · /list · /journal · /stats"
     )
 
-HELP_TEXT = f"""\
+GROUP_CREATED_SUFFIX = "\n\n📣 Сработает в группе · кнопки — в личке"
+CHANNEL_CREATED_SUFFIX = "\n\n📣 Сработает в канале · кнопки — в личке"
+
+
+def collective_created_suffix(chat_kind: ChatKind) -> str:
+    if chat_kind == ChatKind.CHANNEL:
+        return CHANNEL_CREATED_SUFFIX
+    return GROUP_CREATED_SUFFIX
+
+
+def format_collective_confirm_prefix(chat_kind: ChatKind) -> str:
+    place = collective_place_label(chat_kind)
+    return f"📣 Напоминание в {place} · кнопки управления — в личке.\n\n"
+
+
+HELP_TEXT_PRIVATE = f"""\
 <b>{BOT_NAME}</b> · v{__version__}
 
 Создавай напоминания <b>текстом</b>, <b>голосом</b> или <b>кружочком</b>.
@@ -176,37 +211,55 @@ HELP_TEXT = f"""\
 <b>Голосом</b> — одной фразой: когда + что
 • «завтра в два часа дня созвон»
 • «через час выпить таблетки»
-• «завтра утром зарядка»
 
-<b>Примеры фраз</b>
+<b>Примеры</b>
 • через 30 минут выпить таблетки
-• через 3-4 часа созвон
-• через пару часов обед
 • завтра в 14:00 созвон
-• каждые 2 часа встать
 • каждый день в 9:00 зарядка
 • по будням в 09:00 стендап
-• пн ср пт в 10:00 тренировка
 
 <b>Команды</b>
 /start · /list · /history · /journal · /stats · /about
-/search · /edit · /cancel · /settings
-/pause · /resume · /timezone · /status
-/export · /import · /clear · /help
+/search · /edit · /settings · /timezone · /help"""
 
-<b>Списки</b>
-📋 Список — активные · 📜 История — за сегодня (не удаляется)
-📔 Дневник — хронология дня · 📊 Статистика — за месяц
+HELP_TEXT_GROUP = f"""\
+<b>{BOT_NAME}</b> в группе · v{__version__}
 
-<b>Отложить</b>
-Кнопка «⏰ Отложить» открывает счётчик − / + и быстрые варианты. Настройки: /settings
+<b>Создать</b> — надёжно:
+<code>/remind@бот через 1 час созвон</code>
 
-<b>Группы</b>
-Надёжно — команда <code>/remind@бот фраза</code>:
-• <code>/remind@бот через 1 час созвон</code>
-Если через @ — выбери бота из списка, не печатай @ вручную.
-• <code>@username @бот через 1 час задача</code> — напомнить участнику.
-Кнопки управления приходят создателю в личку с ботом."""
+Или @бот <b>из списка</b> (не печатай @ вручную):
+<code>@бот завтра в 14:00 созвон</code>
+
+Участнику: <code>@user @бот через 1 час задача</code>
+
+<b>Команды</b>
+/list · /edit · /pause · /resume · /timezone · /status · /help
+
+Срабатывание — в группу, кнопки — в личку с ботом."""
+
+HELP_TEXT_CHANNEL = f"""\
+<b>{BOT_NAME}</b> в канале · v{__version__}
+
+<b>Создать</b> (админ канала):
+<code>/remind@бот завтра в 10:00 пост</code>
+<code>/remind@бот через 2 часа проверить</code>
+
+<b>Команды</b>
+/list · /pause · /resume · /timezone · /status · /help
+
+Публикация — в канал, кнопки — в личку создателю."""
+
+
+def format_help(chat_kind: ChatKind = ChatKind.PRIVATE) -> str:
+    if chat_kind == ChatKind.CHANNEL:
+        return HELP_TEXT_CHANNEL
+    if chat_kind in (ChatKind.GROUP, ChatKind.SUPERGROUP):
+        return HELP_TEXT_GROUP
+    return HELP_TEXT_PRIVATE
+
+
+HELP_TEXT = HELP_TEXT_PRIVATE
 
 EXAMPLE_PHRASES: list[tuple[str, str]] = [
     ("🎤 К обеду", "завтра к обеду созвон"),
@@ -264,23 +317,41 @@ def format_confirm_card(summary: str, *, is_edit: bool = False) -> str:
     return f"{header}\n\n{summary}\n\nПодтверди действие:"
 
 
-def format_created(reminder_id: int, when: str, text: str, *, in_group: bool = False) -> str:
+def format_created(
+    reminder_id: int,
+    when: str,
+    text: str,
+    *,
+    in_group: bool = False,
+    collective: ChatKind | None = None,
+) -> str:
     body = (
         f"✅ <b>Готово!</b> Напоминание #{reminder_id}\n\n"
         f"🕐 {when}\n"
         f"📝 {text}"
     )
-    if in_group:
-        body += GROUP_CREATED_SUFFIX
+    kind = collective
+    if kind is None and in_group:
+        kind = ChatKind.SUPERGROUP
+    if kind is not None and kind != ChatKind.PRIVATE:
+        body += collective_created_suffix(kind)
     return body
 
 
-def format_batch_created(items: list[tuple[int, str, str]], *, in_group: bool = False) -> str:
+def format_batch_created(
+    items: list[tuple[int, str, str]],
+    *,
+    in_group: bool = False,
+    collective: ChatKind | None = None,
+) -> str:
     lines = [f"✅ <b>Готово!</b> Создано {len(items)} напоминания:\n"]
     for reminder_id, when, text in items:
         lines.append(f"• #{reminder_id} · {when} · {text}")
-    if in_group:
-        lines.append(GROUP_CREATED_SUFFIX)
+    kind = collective
+    if kind is None and in_group:
+        kind = ChatKind.SUPERGROUP
+    if kind is not None and kind != ChatKind.PRIVATE:
+        lines.append(collective_created_suffix(kind))
     return "\n".join(lines)
 
 
@@ -293,12 +364,16 @@ def format_edit_replaced(
     items: list[tuple[int, str, str]],
     *,
     in_group: bool = False,
+    collective: ChatKind | None = None,
 ) -> str:
     lines = [f"✅ Напоминание #{old_id} заменено на <b>{len(items)}</b>:\n"]
     for reminder_id, when, text in items:
         lines.append(f"• #{reminder_id} · {when} · {text}")
-    if in_group:
-        lines.append(GROUP_CREATED_SUFFIX)
+    kind = collective
+    if kind is None and in_group:
+        kind = ChatKind.SUPERGROUP
+    if kind is not None and kind != ChatKind.PRIVATE:
+        lines.append(collective_created_suffix(kind))
     return "\n".join(lines)
 
 
@@ -309,13 +384,16 @@ def format_status(
     tz: str,
     tz_scope: str,
     version: str = __version__,
+    chat_kind: ChatKind = ChatKind.PRIVATE,
 ) -> str:
     tz_label = format_timezone_label(tz)
     state = "⏸ на паузе" if paused else "▶️ активны"
+    extra = ""
+    if chat_kind == ChatKind.PRIVATE:
+        extra = "\n\n📔 Дневник: /journal · 📜 История: /history"
     return (
         f"📊 <b>Статус</b> · v{version}\n\n"
         f"📋 Активных: <b>{count}</b>\n"
         f"⚡️ Состояние: {state}\n"
-        f"🕐 Часовой пояс ({tz_scope}): <b>{tz_label}</b>\n\n"
-        f"📔 Дневник: /journal · 📜 История: /history"
+        f"🕐 Часовой пояс ({tz_scope}): <b>{tz_label}</b>{extra}"
     )

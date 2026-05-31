@@ -27,7 +27,8 @@ from bot.services.reminder_create import create_and_schedule_items
 from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
-from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
+from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.user_prefs import (
     clamp_snooze_minutes,
     format_snooze_minutes,
@@ -54,13 +55,18 @@ async def _reply_after_create(
     created: list[tuple[int, str, str]],
 ) -> None:
     chat_id = callback.message.chat.id
-    in_group = is_group_chat(chat_id)
+    kind = chat_kind_from_chat(callback.message.chat)
+    collective = kind if kind != ChatKind.PRIVATE else None
     if len(created) == 1:
         rid, when, text = created[0]
-        await callback.message.edit_text(format_created(rid, when, text, in_group=in_group))
+        await callback.message.edit_text(
+            format_created(rid, when, text, collective=collective)
+        )
     else:
-        await callback.message.edit_text(format_batch_created(created, in_group=in_group))
-    if in_group:
+        await callback.message.edit_text(
+            format_batch_created(created, collective=collective)
+        )
+    if collective is not None:
         me = await bot.get_me()
         await callback.message.answer(format_group_reminder_hint(me.username))
     elif kb := menu_keyboard_for_chat(chat_id):
@@ -155,7 +161,8 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
         return
 
     chat_id = callback.message.chat.id
-    in_group = is_group_chat(chat_id)
+    kind = chat_kind_from_chat(callback.message.chat)
+    collective = kind if kind != ChatKind.PRIVATE else None
 
     async with async_session() as session:
         user = await get_or_create_user(
@@ -199,10 +206,10 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
                 mention_telegram_id=entry.mention_telegram_id,
             )
             await callback.message.edit_text(
-                format_edit_replaced(reminder_id, created, in_group=in_group)
+                format_edit_replaced(reminder_id, created, collective=collective)
             )
 
-    if in_group and len(entry.parsed_items) > 1:
+    if collective is not None and len(entry.parsed_items) > 1:
         me = await bot.get_me()
         await callback.message.answer(format_group_reminder_hint(me.username))
     elif kb := menu_keyboard_for_chat(chat_id):

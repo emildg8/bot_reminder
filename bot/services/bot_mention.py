@@ -1,11 +1,12 @@
-"""Проверка упоминания бота в сообщении группы."""
+"""Проверка упоминания бота в collective-чатах (группа / канал)."""
 
 from __future__ import annotations
 
+from aiogram.enums import ChatType
 from aiogram.types import Message
 
+from bot.services.chat_ctx import is_collective_chat
 from bot.services.mention_parse import _is_bot_mention
-from bot.services.timezone_ctx import is_group_chat
 
 
 def is_bot_mentioned(
@@ -40,12 +41,26 @@ def is_bot_mentioned(
     return False
 
 
-def should_handle_group_text(
+def _is_command_message(message: Message) -> bool:
+    text = message.text or message.caption or ""
+    return bool(text.strip().startswith("/"))
+
+
+def should_handle_collective_message(
     message: Message,
     *,
     bot_username: str | None,
     bot_id: int | None,
 ) -> bool:
-    if not is_group_chat(message.chat.id):
+    """Личка — всегда. Группа — @бот. Канал — только команды (best practice)."""
+    if not is_collective_chat(message.chat.id, message.chat.type):
         return True
+
+    if message.chat.type == ChatType.CHANNEL:
+        return _is_command_message(message)
+
     return is_bot_mentioned(message, bot_username=bot_username, bot_id=bot_id)
+
+
+# Обратная совместимость
+should_handle_group_text = should_handle_collective_message

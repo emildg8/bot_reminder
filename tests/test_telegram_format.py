@@ -1,4 +1,5 @@
-from bot.services.telegram_format import format_reminder_message, is_group_chat
+from bot.services.chat_ctx import is_group_chat
+from bot.services.telegram_format import format_reminder_message
 
 
 def test_is_group_chat():

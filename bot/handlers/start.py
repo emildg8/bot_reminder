@@ -12,9 +12,14 @@ from bot.db.repository import (
 )
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
-from bot.services.timezone_ctx import is_group_chat
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat, tz_scope_label
 from bot.services.timezone_labels import format_timezone_label
-from bot.texts.messages import ONBOARDING_READY, WELCOME_BACK, WELCOME_ONBOARDING
+from bot.texts.messages import (
+    ONBOARDING_READY,
+    WELCOME_BACK,
+    WELCOME_ONBOARDING,
+    format_collective_welcome,
+)
 
 router = Router()
 
@@ -39,7 +44,7 @@ async def cmd_start(message: Message) -> None:
         await message.answer(WELCOME_ONBOARDING, reply_markup=timezone_keyboard())
         return
 
-    tz_scope = "группы" if is_group_chat(message.chat.id) else "твой"
+    kind = chat_kind_from_chat(message.chat)
     async with async_session() as session:
         if is_group_chat(message.chat.id):
             chat = await get_or_create_chat(session, message.chat.id, settings.default_timezone)
@@ -47,8 +52,21 @@ async def cmd_start(message: Message) -> None:
         else:
             tz = user.timezone
 
+    if kind != ChatKind.PRIVATE:
+        me = await message.bot.get_me()
+        await message.answer(format_collective_welcome(kind, me.username))
+        if kind != ChatKind.CHANNEL:
+            await message.answer(
+                "⚡️ Быстрые действия:",
+                reply_markup=main_menu_inline_keyboard(),
+            )
+        return
+
     await message.answer(
-        WELCOME_BACK.format(tz_scope=tz_scope, tz_label=format_timezone_label(tz)),
+        WELCOME_BACK.format(
+            tz_scope=tz_scope_label(kind),
+            tz_label=format_timezone_label(tz),
+        ),
         reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
     await message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
@@ -56,8 +74,9 @@ async def cmd_start(message: Message) -> None:
 
 @router.message(lambda m: m.text and m.text.startswith("/timezone"))
 async def cmd_timezone(message: Message) -> None:
-    label = "группы" if is_group_chat(message.chat.id) else "личный"
-    await message.answer(f"🕐 Выбери часовой пояс ({label}):", reply_markup=timezone_keyboard())
+    kind = chat_kind_from_chat(message.chat)
+    scope = "личный" if kind == ChatKind.PRIVATE else tz_scope_label(kind)
+    await message.answer(f"🕐 Выбери часовой пояс ({scope}):", reply_markup=timezone_keyboard())
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("tz_menu:"))
@@ -74,9 +93,14 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
     from bot.services.chat_permissions import can_manage_group_reminders
 
     chat_id = callback.message.chat.id
+    kind = chat_kind_from_chat(callback.message.chat)
     if is_group_chat(chat_id):
         if not await can_manage_group_reminders(callback.bot, chat_id, callback.from_user.id):
-            await callback.answer("Только администраторы могут менять часовой пояс группы.", show_alert=True)
+            scope = "канала" if kind == ChatKind.CHANNEL else "группы"
+            await callback.answer(
+                f"Только администраторы могут менять часовой пояс {scope}.",
+                show_alert=True,
+            )
             return
 
     tz_label = format_timezone_label(timezone)
@@ -85,7 +109,8 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
         if is_group_chat(chat_id):
             chat = await get_or_create_chat(session, chat_id, settings.default_timezone)
             await update_chat_timezone(session, chat, timezone)
-            label = f"✅ Часовой пояс группы: <b>{tz_label}</b>"
+            scope = tz_scope_label(kind)
+            label = f"✅ Часовой пояс {scope}: <b>{tz_label}</b>"
         else:
             user = await get_or_create_user(
                 session, callback.from_user.id, settings.default_timezone

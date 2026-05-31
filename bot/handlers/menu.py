@@ -22,8 +22,9 @@ from bot.keyboards.reply import (
 )
 from bot.services.drafts import clear_edit_pending, clear_search_pending, set_search_pending
 from bot.services.reminders_ui import send_active_reminders
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, tz_scope_label
 from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
-from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, HELP_TEXT, format_status, phrase_from_task_preset
+from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, format_help, format_status, phrase_from_task_preset
 from bot.services.pending_tasks import pop_pending_task
 from bot.version import __version__
 
@@ -38,7 +39,7 @@ def _clear_modes(user_id: int) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     _clear_modes(message.from_user.id)
-    await message.answer(HELP_TEXT, reply_markup=menu_keyboard_for_chat(message.chat.id))
+    await message.answer(format_help(chat_kind_from_chat(message.chat)), reply_markup=menu_keyboard_for_chat(message.chat.id))
 
 
 @router.message(Command("cancel"))
@@ -63,9 +64,16 @@ async def _send_status(message: Message) -> None:
         paused = await is_chat_paused(session, chat_id)
         tz = await get_effective_timezone(session, chat_id, message.from_user.id)
 
-    tz_scope = "группы" if is_group_chat(chat_id) else "твой"
+    tz_scope = tz_scope_label(chat_kind_from_chat(message.chat))
     await message.answer(
-        format_status(count=count, paused=paused, tz=tz, tz_scope=tz_scope, version=__version__),
+        format_status(
+            count=count,
+            paused=paused,
+            tz=tz,
+            tz_scope=tz_scope,
+            version=__version__,
+            chat_kind=chat_kind_from_chat(message.chat),
+        ),
         reply_markup=menu_keyboard_for_chat(chat_id),
     )
 
@@ -95,10 +103,10 @@ async def handle_menu_buttons(message: Message, bot) -> None:
     elif text == BTN_CREATE:
         await message.answer(CREATE_HINT, reply_markup=menu_keyboard_for_chat(message.chat.id))
     elif text == BTN_TIMEZONE:
-        label = "группы" if is_group_chat(message.chat.id) else "личный"
+        label = tz_scope_label(chat_kind_from_chat(message.chat))
         await message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
     elif text == BTN_HELP:
-        await message.answer(HELP_TEXT, reply_markup=menu_keyboard_for_chat(message.chat.id))
+        await message.answer(format_help(chat_kind_from_chat(message.chat)), reply_markup=menu_keyboard_for_chat(message.chat.id))
     elif text == BTN_EXAMPLES:
         await message.answer(EXAMPLES_INTRO, reply_markup=examples_keyboard())
 
@@ -145,7 +153,7 @@ async def menu_search(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "menu:timezone")
 async def menu_timezone(callback: CallbackQuery) -> None:
     _clear_modes(callback.from_user.id)
-    label = "группы" if is_group_chat(callback.message.chat.id) else "личный"
+    label = tz_scope_label(chat_kind_from_chat(callback.message.chat))
     await callback.message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
     await callback.answer()
 
@@ -153,7 +161,7 @@ async def menu_timezone(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "menu:help")
 async def menu_help(callback: CallbackQuery) -> None:
     _clear_modes(callback.from_user.id)
-    await callback.message.answer(HELP_TEXT)
+    await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
     await callback.answer()
 
 

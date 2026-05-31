@@ -1,4 +1,4 @@
-"""Часовой пояс: личка — user, группа — chat_settings."""
+"""Часовой пояс: личка — user, collective — chat_settings."""
 
 from __future__ import annotations
 
@@ -6,10 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import settings
 from bot.db.repository import get_or_create_chat, get_or_create_user
+from bot.services.chat_ctx import is_group_chat
 
-
-def is_group_chat(chat_id: int) -> bool:
-    return chat_id < 0
+__all__ = ["get_effective_timezone", "is_group_chat"]
 
 
 async def get_effective_timezone(
