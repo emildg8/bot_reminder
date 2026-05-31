@@ -13,6 +13,7 @@ from bot.db.repository import (
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat, tz_scope_label
+from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
 from bot.services.chat_delivery import sync_channel_linked_chat
 from bot.services.bot_menu import setup_channel_commands
 from bot.services.timezone_labels import format_timezone_label
@@ -49,7 +50,10 @@ async def cmd_start(message: Message) -> None:
     kind = chat_kind_from_chat(message.chat)
     async with async_session() as session:
         if is_group_chat(message.chat.id):
-            chat = await get_or_create_chat(session, message.chat.id, settings.default_timezone)
+            ops_id = await resolve_delivery_chat_id(
+                session, message.chat.id, message.chat.type
+            )
+            chat = await get_or_create_chat(session, ops_id, settings.default_timezone)
             tz = chat.timezone
         else:
             tz = user.timezone
@@ -118,10 +122,14 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
     was_first_setup = False
     async with async_session() as session:
         if is_group_chat(chat_id):
-            chat = await get_or_create_chat(session, chat_id, settings.default_timezone)
+            ops_id = await resolve_delivery_chat_id(
+                session, chat_id, callback.message.chat.type
+            )
+            chat = await get_or_create_chat(session, ops_id, settings.default_timezone)
             await update_chat_timezone(session, chat, timezone)
             scope = tz_scope_label(kind)
             label = f"✅ Часовой пояс {scope}: <b>{tz_label}</b>"
+            label += format_ops_target_note(chat_id, ops_id)
         else:
             user = await get_or_create_user(
                 session, callback.from_user.id, settings.default_timezone

@@ -56,3 +56,9 @@ async def resolve_delivery_chat_id(
     if parent is not None:
         return parent
     return source_chat_id
+
+
+def format_ops_target_note(source_chat_id: int, ops_chat_id: int) -> str:
+    if source_chat_id != ops_chat_id:
+        return "\n📢 Применено к связанному <b>каналу</b>."
+    return ""

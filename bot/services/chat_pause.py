@@ -14,8 +14,9 @@ from bot.db.repository import (
     set_chat_paused,
     update_reminder_next_run,
 )
+from bot.services.reminder_jobs import cancel_reminder_job
 from bot.services.reminder_utils import resolve_next_run_on_resume
-from bot.services.scheduler import schedule_reminder, scheduler
+from bot.services.scheduler import schedule_reminder
 
 
 async def pause_chat_reminders(bot: Bot, chat_id: int) -> int:
@@ -24,9 +25,7 @@ async def pause_chat_reminders(bot: Bot, chat_id: int) -> int:
         reminders = await get_active_chat_reminders(session, chat_id)
 
     for reminder in reminders:
-        job_id = f"reminder_{reminder.id}"
-        if scheduler.get_job(job_id):
-            scheduler.remove_job(job_id)
+        cancel_reminder_job(reminder.id)
 
     return len(reminders)
 

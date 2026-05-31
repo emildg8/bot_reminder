@@ -21,9 +21,19 @@ from bot.services.chat_permissions import can_manage_group_reminders
 from bot.services.export_import import parse_import_item
 from bot.services.reminder_display import reminder_to_export_dict
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
-from bot.services.scheduler import schedule_reminder, scheduler
+from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
+from bot.services.reminder_jobs import cancel_reminder_job
+
+from bot.services.scheduler import schedule_reminder
 
 router = Router()
+
+
+async def _ops_chat_id(message: Message) -> int:
+    async with async_session() as session:
+        return await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
 
 MAX_SKIP_REASONS = 5
 
@@ -31,9 +41,12 @@ MAX_SKIP_REASONS = 5
 @router.message(Command("export"))
 async def cmd_export(message: Message) -> None:
     async with async_session() as session:
+        ops_id = await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
         result = await session.execute(
             select(Reminder)
-            .where(Reminder.chat_id == message.chat.id, Reminder.is_active.is_(True))
+            .where(Reminder.chat_id == ops_id, Reminder.is_active.is_(True))
             .order_by(Reminder.created_at.desc())
         )
         reminders = list(result.scalars().all())
@@ -43,7 +56,7 @@ async def cmd_export(message: Message) -> None:
     payload = json.dumps(
         {
             "exported_at": datetime.utcnow().isoformat() + "Z",
-            "chat_id": message.chat.id,
+            "chat_id": ops_id,
             "version": 2,
             "reminders": data,
         },
@@ -65,14 +78,18 @@ async def cmd_clear(message: Message, bot: Bot) -> None:
         return
 
     async with async_session() as session:
-        count = len(await get_active_chat_reminders(session, message.chat.id))
+        ops_id = await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
+        count = len(await get_active_chat_reminders(session, ops_id))
 
     if count == 0:
         await message.answer("Активных напоминаний нет.")
         return
 
+    note = format_ops_target_note(message.chat.id, ops_id)
     await message.answer(
-        f"Удалить все активные напоминания в этом чате ({count} шт.)?",
+        f"Удалить все активные напоминания ({count} шт.)?{note}",
         reply_markup=clear_confirm_keyboard(),
     )
 
@@ -92,15 +109,17 @@ async def clear_confirm(callback: CallbackQuery, bot: Bot) -> None:
         return
 
     async with async_session() as session:
-        reminders = await get_active_chat_reminders(session, callback.message.chat.id)
-        count = await deactivate_all_chat_reminders(session, callback.message.chat.id)
+        ops_id = await resolve_delivery_chat_id(
+            session, callback.message.chat.id, callback.message.chat.type
+        )
+        reminders = await get_active_chat_reminders(session, ops_id)
+        count = await deactivate_all_chat_reminders(session, ops_id)
 
     for reminder in reminders:
-        job_id = f"reminder_{reminder.id}"
-        if scheduler.get_job(job_id):
-            scheduler.remove_job(job_id)
+        cancel_reminder_job(reminder.id)
 
-    await callback.message.edit_text(f"🗑 Удалено напоминаний: {count}")
+    note = format_ops_target_note(callback.message.chat.id, ops_id)
+    await callback.message.edit_text(f"🗑 Удалено напоминаний: {count}{note}")
     await callback.answer()
 
 
@@ -115,13 +134,15 @@ async def cmd_pause(message: Message, bot: Bot) -> None:
         )
         return
 
-    count = await pause_chat_reminders(bot, message.chat.id)
+    ops_id = await _ops_chat_id(message)
+    count = await pause_chat_reminders(bot, ops_id)
     if count == 0:
         await message.answer("Активных напоминаний нет.")
         return
+    note = format_ops_target_note(message.chat.id, ops_id)
     await message.answer(
         f"⏸ Напоминания на паузе ({count} шт.).\n"
-        "Срабатывания остановлены. Возобновить: /resume",
+        f"Срабатывания остановлены. Возобновить: /resume{note}",
         reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
 
@@ -137,9 +158,11 @@ async def cmd_resume(message: Message, bot: Bot) -> None:
         )
         return
 
-    count = await resume_chat_reminders(bot, message.chat.id)
+    ops_id = await _ops_chat_id(message)
+    count = await resume_chat_reminders(bot, ops_id)
+    note = format_ops_target_note(message.chat.id, ops_id)
     await message.answer(
-        f"▶️ Напоминания возобновлены ({count} в расписании).",
+        f"▶️ Напоминания возобновлены ({count} в расписании).{note}",
         reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
 
@@ -181,6 +204,9 @@ async def cmd_import(message: Message, bot: Bot) -> None:
             telegram_id=message.from_user.id,
             timezone=settings.default_timezone,
         )
+        ops_id = await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
         for idx, item in enumerate(items, start=1):
             if not item.get("is_active", True):
                 skipped_inactive += 1
@@ -201,7 +227,7 @@ async def cmd_import(message: Message, bot: Bot) -> None:
             reminder = await create_reminder(
                 session,
                 user_id=user.id,
-                chat_id=message.chat.id,
+                chat_id=ops_id,
                 created_by_telegram_id=message.from_user.id,
                 timezone=result.timezone,
                 text=result.parsed.text,

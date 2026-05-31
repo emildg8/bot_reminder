@@ -2,6 +2,14 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.13.0] — 2026-05-31
+
+### Collective ops — единый чат доставки
+- **pause / resume / clear / export / import** — из discussion group управляют **каналом**
+- **Timezone** — `/timezone` в discussion group меняет TZ канала
+- **`collective_ops_chat_id`** — общая логика для TZ и операций
+- **`/status`** — единый `build_status_text` для command и menu
+
 ## [3.12.0] — 2026-05-31
 
 ### UX и надёжность collective

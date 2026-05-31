@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from bot.db.repository import async_session, get_active_chat_reminders, get_reminder, is_chat_paused
+from bot.db.repository import async_session, get_reminder
 from bot.handlers.create import _process_text_and_reply
 from bot.handlers.edit import _parse_and_confirm_edit
 from bot.handlers.diary import _send_journal, _send_stats
@@ -23,9 +23,9 @@ from bot.keyboards.reply import (
 from bot.services.drafts import clear_edit_pending, clear_search_pending, set_search_pending
 from bot.services.reminders_ui import send_active_reminders
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, tz_scope_label
-from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
-from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, format_help, format_status, phrase_from_task_preset
+from bot.services.chat_status import build_status_text
 from bot.services.pending_tasks import pop_pending_task
+from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, format_help, phrase_from_task_preset
 from bot.version import __version__
 
 router = Router()
@@ -57,25 +57,9 @@ async def cmd_menu(message: Message) -> None:
     )
 
 
-async def _send_status(message: Message) -> None:
-    chat_id = message.chat.id
-    async with async_session() as session:
-        count = len(await get_active_chat_reminders(session, chat_id))
-        paused = await is_chat_paused(session, chat_id)
-        tz = await get_effective_timezone(session, chat_id, message.from_user.id)
-
-    tz_scope = tz_scope_label(chat_kind_from_chat(message.chat))
-    await message.answer(
-        format_status(
-            count=count,
-            paused=paused,
-            tz=tz,
-            tz_scope=tz_scope,
-            version=__version__,
-            chat_kind=chat_kind_from_chat(message.chat),
-        ),
-        reply_markup=menu_keyboard_for_chat(chat_id),
-    )
+async def _send_status(message: Message, bot) -> None:
+    text = await build_status_text(bot, message)
+    await message.answer(text, reply_markup=menu_keyboard_for_chat(message.chat.id))
 
 
 @router.message(F.text.in_(MENU_BUTTON_TEXTS))
@@ -133,9 +117,9 @@ async def menu_more(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(F.data == "menu:status")
-async def menu_status(callback: CallbackQuery) -> None:
+async def menu_status(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
-    await _send_status(callback.message)
+    await _send_status(callback.message, bot)
     await callback.answer()
 
 
