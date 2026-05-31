@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.db.repository import async_session, get_reminder, search_chat_reminders
 from bot.keyboards.inline import search_page_keyboard
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.reminder_display import format_reminder_list_line
 from bot.services.reminders_ui import _paginate
 
@@ -84,7 +84,7 @@ async def send_search_results(message: Message, query: str, page: int = 0) -> No
     if not results:
         await message.answer(
             f"🔍 По запросу «{query}» ничего не найдено.",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 
@@ -94,7 +94,7 @@ async def send_search_results(message: Message, query: str, page: int = 0) -> No
     keyboard = search_page_keyboard(page_items, message.from_user.id, page, total_pages)
     await message.answer(
         _format_search_body(query, len(results), page, total_pages, lines),
-        reply_markup=keyboard or main_menu_keyboard(),
+        reply_markup=keyboard or menu_keyboard_for_chat(message.chat.id),
     )
 
 

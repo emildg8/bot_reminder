@@ -2,6 +2,17 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.8.0] — 2026-05-31
+
+### Добавлено
+- **`/health`:** авто-перепланирование просроченных и напоминаний без задачи в планировщике
+
+### Улучшено
+- **Рефакторинг:** общие модули `admin_access`, `deploy_info`, `health_status`, `reminder_create`
+- **Handlers:** `menu_keyboard_for_chat` везде вместо `main_menu_keyboard` в группах
+- **`is_group_chat`:** единый источник в `timezone_ctx`
+- **README:** актуальная версия и команды
+
 ## [3.7.0] — 2026-05-31
 
 ### Улучшено

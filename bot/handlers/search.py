@@ -3,7 +3,7 @@ import re
 from aiogram import Router
 from aiogram.types import Message
 
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.search_ui import send_search_results
 
 router = Router()
@@ -20,7 +20,7 @@ async def cmd_search(message: Message) -> None:
         await message.answer(
             "Формат: <code>/search таблетки</code>\n"
             "Или нажми 🔍 Поиск в меню и напиши слово.",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 

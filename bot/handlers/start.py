@@ -11,7 +11,7 @@ from bot.db.repository import (
     update_user_timezone,
 )
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.timezone_ctx import is_group_chat
 from bot.services.timezone_labels import format_timezone_label
 from bot.texts.messages import ONBOARDING_READY, WELCOME_BACK, WELCOME_ONBOARDING
@@ -49,7 +49,7 @@ async def cmd_start(message: Message) -> None:
 
     await message.answer(
         WELCOME_BACK.format(tz_scope=tz_scope, tz_label=format_timezone_label(tz)),
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
     await message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
 
@@ -96,7 +96,7 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
 
     await callback.message.edit_text(label + "\n\nМожешь создавать напоминания ✨")
     if not is_group_chat(chat_id):
-        await callback.message.answer("⌨️ Меню:", reply_markup=main_menu_keyboard())
+        await callback.message.answer("⌨️ Меню:", reply_markup=menu_keyboard_for_chat(chat_id))
         if was_first_setup:
             await callback.message.answer(ONBOARDING_READY, reply_markup=main_menu_inline_keyboard())
     await callback.answer("Сохранено")

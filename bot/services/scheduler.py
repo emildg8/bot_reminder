@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from aiogram import Bot
@@ -21,7 +22,8 @@ from bot.db.repository import (
 )
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
-from bot.services.telegram_format import format_reminder_message, is_group_chat
+from bot.services.telegram_format import format_reminder_message
+from bot.services.timezone_ctx import is_group_chat
 from bot.texts.messages import format_dm_failed_in_group
 
 logger = logging.getLogger(__name__)
@@ -235,6 +237,58 @@ def compute_restore_run_at(now: datetime, overdue_index: int) -> datetime:
     return now + timedelta(seconds=delay)
 
 
+def _scheduled_reminder_ids() -> set[int]:
+    ids: set[int] = set()
+    for job in scheduler.get_jobs():
+        if job.id.startswith("reminder_"):
+            ids.add(int(job.id.removeprefix("reminder_")))
+    return ids
+
+
+@dataclass
+class RepairStats:
+    overdue_rescheduled: int = 0
+    missing_job_fixed: int = 0
+
+
+async def repair_reminder_jobs(bot: Bot) -> RepairStats:
+    """Перепланирует просроченные и активные напоминания без задачи в APScheduler."""
+    stats = RepairStats()
+    async with async_session() as session:
+        result = await session.execute(
+            select(Reminder).where(Reminder.is_active.is_(True), Reminder.next_run_at.is_not(None))
+        )
+        reminders = list(result.scalars().all())
+
+    now = datetime.now(UTC)
+    job_ids = _scheduled_reminder_ids()
+    overdue_index = 0
+
+    for reminder in reminders:
+        run_at = local_run_at(reminder.next_run_at, reminder.timezone)
+        if run_at is None:
+            continue
+        run_at_utc = run_at.astimezone(UTC)
+        has_job = reminder.id in job_ids
+
+        if run_at_utc <= now:
+            restore_at = compute_restore_run_at(now, overdue_index)
+            schedule_reminder(bot, reminder.id, restore_at, timezone=reminder.timezone)
+            stats.overdue_rescheduled += 1
+            overdue_index += 1
+            logger.info(
+                "Repair overdue reminder %s at %s",
+                reminder.id,
+                restore_at.isoformat(),
+            )
+        elif not has_job:
+            schedule_reminder(bot, reminder.id, run_at, timezone=reminder.timezone)
+            stats.missing_job_fixed += 1
+            logger.info("Repair missing job for reminder %s", reminder.id)
+
+    return stats
+
+
 async def restore_scheduled_reminders(bot: Bot) -> None:
     async with async_session() as session:
         result = await session.execute(
@@ -275,4 +329,4 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
 
 
 def count_scheduled_reminder_jobs() -> int:
-    return len([j for j in scheduler.get_jobs() if j.id.startswith("reminder_")])
+    return len(_scheduled_reminder_ids())

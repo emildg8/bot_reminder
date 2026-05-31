@@ -1,8 +1,8 @@
+"""HTML-текст напоминания с опциональным упоминанием."""
+
 from html import escape
 
-
-def is_group_chat(chat_id: int) -> bool:
-    return chat_id < 0
+from bot.services.timezone_ctx import is_group_chat
 
 
 def format_reminder_message(
@@ -14,7 +14,6 @@ def format_reminder_message(
     creator_username: str | None = None,
     chat_id: int,
 ) -> str:
-    """HTML-текст напоминания с опциональным упоминанием."""
     prefix = ""
     target_id = mention_user_id
     target_username = mention_username

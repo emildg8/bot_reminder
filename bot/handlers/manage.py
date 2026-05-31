@@ -16,7 +16,7 @@ from bot.db.repository import (
     get_or_create_user,
 )
 from bot.keyboards.inline import clear_confirm_keyboard
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_permissions import can_manage_group_reminders
 from bot.services.export_import import parse_import_item
 from bot.services.reminder_display import reminder_to_export_dict
@@ -60,7 +60,7 @@ async def cmd_clear(message: Message, bot: Bot) -> None:
     if not await can_manage_group_reminders(bot, message.chat.id, message.from_user.id):
         await message.answer(
             "В группе удалять все напоминания могут только администраторы чата.",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 
@@ -111,7 +111,7 @@ async def cmd_pause(message: Message, bot: Bot) -> None:
     if not await can_manage_group_reminders(bot, message.chat.id, message.from_user.id):
         await message.answer(
             "В группе ставить на паузу могут только администраторы чата.",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 
@@ -122,7 +122,7 @@ async def cmd_pause(message: Message, bot: Bot) -> None:
     await message.answer(
         f"⏸ Напоминания на паузе ({count} шт.).\n"
         "Срабатывания остановлены. Возобновить: /resume",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
 
 
@@ -133,14 +133,14 @@ async def cmd_resume(message: Message, bot: Bot) -> None:
     if not await can_manage_group_reminders(bot, message.chat.id, message.from_user.id):
         await message.answer(
             "В группе возобновлять могут только администраторы чата.",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 
     count = await resume_chat_reminders(bot, message.chat.id)
     await message.answer(
         f"▶️ Напоминания возобновлены ({count} в расписании).",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
 
 
@@ -224,4 +224,4 @@ async def cmd_import(message: Message, bot: Bot) -> None:
         if len(skip_reasons) > MAX_SKIP_REASONS:
             lines.append(f"• … и ещё {len(skip_reasons) - MAX_SKIP_REASONS}")
 
-    await message.answer("\n".join(lines), reply_markup=main_menu_keyboard())
+    await message.answer("\n".join(lines), reply_markup=menu_keyboard_for_chat(message.chat.id))

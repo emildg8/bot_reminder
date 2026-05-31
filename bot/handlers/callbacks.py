@@ -8,7 +8,6 @@ from bot.config import settings
 from bot.db.models import ReminderEventKind
 from bot.db.repository import (
     async_session,
-    create_reminder,
     deactivate_reminder,
     get_or_create_user,
     get_reminder,
@@ -24,11 +23,11 @@ from bot.keyboards.inline import (
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.drafts import discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
+from bot.services.reminder_create import create_and_schedule_items
 from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
-from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
-from bot.services.timezone_ctx import is_group_chat
+from bot.services.timezone_ctx import get_effective_timezone, is_group_chat
 from bot.services.user_prefs import (
     clamp_snooze_minutes,
     format_snooze_minutes,
@@ -45,9 +44,28 @@ from bot.texts.messages import (
 )
 from bot.services.reminder_display import format_parsed_when_label
 from bot.services.scheduler import schedule_reminder, scheduler
-from bot.services.timezone_ctx import get_effective_timezone
 
 router = Router()
+
+
+async def _reply_after_create(
+    callback: CallbackQuery,
+    bot: Bot,
+    created: list[tuple[int, str, str]],
+) -> None:
+    chat_id = callback.message.chat.id
+    in_group = is_group_chat(chat_id)
+    if len(created) == 1:
+        rid, when, text = created[0]
+        await callback.message.edit_text(format_created(rid, when, text, in_group=in_group))
+    else:
+        await callback.message.edit_text(format_batch_created(created, in_group=in_group))
+    if in_group:
+        me = await bot.get_me()
+        await callback.message.answer(format_group_reminder_hint(me.username))
+    elif kb := menu_keyboard_for_chat(chat_id):
+        await callback.message.answer("Меню:", reply_markup=kb)
+    await callback.answer()
 
 
 async def _create_from_draft(
@@ -100,50 +118,18 @@ async def _create_from_draft(
                 await callback.answer()
                 return
 
-        created: list[tuple[int, str, str]] = []
-        for parsed in entry.parsed_items:
-            next_run = compute_next_run(parsed, tz)
-            reminder = await create_reminder(
-                session,
-                user_id=user.id,
-                chat_id=callback.message.chat.id,
-                created_by_telegram_id=callback.from_user.id,
-                timezone=tz,
-                text=parsed.text,
-                kind=parsed.kind,
-                next_run_at=next_run,
-                interval_seconds=parsed.interval_seconds,
-                daily_time=parsed.daily_time,
-                weekdays_mask=weekdays_to_mask(parsed.weekdays) if parsed.weekdays else None,
-                mention_telegram_id=entry.mention_telegram_id,
-            )
-            await log_reminder_event(
-                session,
-                reminder=reminder,
-                chat_id=callback.message.chat.id,
-                user_telegram_id=callback.from_user.id,
-                text=parsed.text,
-                kind=ReminderEventKind.CREATED,
-            )
-            schedule_reminder(bot, reminder.id, next_run, timezone=tz)
-            when = format_parsed_when_label(parsed, tz)
-            created.append((reminder.id, when, parsed.text))
+        created = await create_and_schedule_items(
+            session,
+            bot,
+            user_id=user.id,
+            chat_id=callback.message.chat.id,
+            created_by_telegram_id=callback.from_user.id,
+            timezone=tz,
+            parsed_items=entry.parsed_items,
+            mention_telegram_id=entry.mention_telegram_id,
+        )
 
-    chat_id = callback.message.chat.id
-    in_group = is_group_chat(chat_id)
-
-    if len(created) == 1:
-        rid, when, text = created[0]
-        await callback.message.edit_text(format_created(rid, when, text, in_group=in_group))
-    else:
-        await callback.message.edit_text(format_batch_created(created, in_group=in_group))
-
-    if in_group:
-        me = await bot.get_me()
-        await callback.message.answer(format_group_reminder_hint(me.username))
-    elif kb := menu_keyboard_for_chat(chat_id):
-        await callback.message.answer("Меню:", reply_markup=kb)
-    await callback.answer()
+    await _reply_after_create(callback, bot, created)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("confirm:"))
@@ -202,34 +188,16 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
             await callback.message.edit_text(format_updated(reminder_id, when))
         else:
             await deactivate_reminder(session, reminder)
-            created: list[tuple[int, str, str]] = []
-            for parsed in entry.parsed_items:
-                next_run = compute_next_run(parsed, tz)
-                new_reminder = await create_reminder(
-                    session,
-                    user_id=user.id,
-                    chat_id=chat_id,
-                    created_by_telegram_id=callback.from_user.id,
-                    timezone=tz,
-                    text=parsed.text,
-                    kind=parsed.kind,
-                    next_run_at=next_run,
-                    interval_seconds=parsed.interval_seconds,
-                    daily_time=parsed.daily_time,
-                    weekdays_mask=weekdays_to_mask(parsed.weekdays) if parsed.weekdays else None,
-                    mention_telegram_id=entry.mention_telegram_id,
-                )
-                await log_reminder_event(
-                    session,
-                    reminder=new_reminder,
-                    chat_id=chat_id,
-                    user_telegram_id=callback.from_user.id,
-                    text=parsed.text,
-                    kind=ReminderEventKind.CREATED,
-                )
-                schedule_reminder(bot, new_reminder.id, next_run, timezone=tz)
-                when = format_parsed_when_label(parsed, tz)
-                created.append((new_reminder.id, when, parsed.text))
+            created = await create_and_schedule_items(
+                session,
+                bot,
+                user_id=user.id,
+                chat_id=chat_id,
+                created_by_telegram_id=callback.from_user.id,
+                timezone=tz,
+                parsed_items=entry.parsed_items,
+                mention_telegram_id=entry.mention_telegram_id,
+            )
             await callback.message.edit_text(
                 format_edit_replaced(reminder_id, created, in_group=in_group)
             )
