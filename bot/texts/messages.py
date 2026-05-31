@@ -39,16 +39,23 @@ WELCOME_BACK = (
     "🕐 Часовой пояс ({tz_scope}): <b>{tz_label}</b>"
 )
 
-GROUP_WELCOME = (
-    f"👋 <b>{BOT_NAME}</b> теперь в этой группе!\n\n"
-    "Напиши, например:\n"
-    "• <code>через 30 минут созвон</code>\n"
-    "• <code>через 3-4 часа обед</code>\n"
-    "• <code>по будням в 09:00 стендап</code>\n"
-    "• <code>@username через 1 час задача</code>\n\n"
-    "🕐 Часовой пояс группы: /timezone\n"
-    "📋 Список: /list · 📜 История: /history"
-)
+def format_group_welcome(bot_username: str | None = None) -> str:
+    at = f"@{bot_username}" if bot_username else "@бот"
+    return (
+        f"👋 <b>{BOT_NAME}</b> теперь в этой группе!\n\n"
+        f"В группе бот видит только сообщения с {at} или команды (/list и т.д.).\n"
+        f"Каждую фразу начинай с {at}:\n"
+        f"• <code>{at} через 30 минут созвон</code>\n"
+        f"• <code>{at} по будням в 09:00 стендап</code>\n"
+        f"• <code>@username {at} через 1 час задача</code>\n\n"
+        "💡 «Не имеет доступа к сообщениям» в профиле бота — нормально: "
+        f"без {at} он не увидит текст.\n\n"
+        "🕐 Часовой пояс группы: /timezone\n"
+        "📋 Список: /list · 📜 История: /history"
+    )
+
+
+GROUP_WELCOME = format_group_welcome()
 
 CREATE_HINT = (
     "✍️ <b>Создать напоминание</b>\n\n"
@@ -196,7 +203,9 @@ HELP_TEXT = f"""\
 Кнопка «⏰ Отложить» открывает счётчик − / + и быстрые варианты. Настройки: /settings
 
 <b>Группы</b>
-<code>@username через 1 час задача</code> — напомнить участнику.
+В группе каждую фразу начинай с <code>@бот</code> (или команда /list).
+• <code>@бот через 1 час созвон</code>
+• <code>@username @бот через 1 час задача</code> — напомнить участнику.
 Кнопки управления приходят создателю в личку с ботом."""
 
 EXAMPLE_PHRASES: list[tuple[str, str]] = [
