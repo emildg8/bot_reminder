@@ -87,15 +87,22 @@ async def _process_text_and_reply(
     parsed_items = await parse_all_reminders(phrase, timezone)
 
     if not parsed_items:
+        chat_kind = chat_kind_from_chat(message.chat)
+        fail_kwargs = {
+            "source": source_label,
+            "heard": text if source_label else "",
+            "chat_kind": chat_kind,
+            "bot_username": me.username,
+        }
         if looks_like_task_only(phrase):
             store_pending_task(user_id, phrase)
             await message.answer(
-                format_parse_fail(phrase, source=source_label, heard=text if source_label else ""),
+                format_parse_fail(phrase, **fail_kwargs),
                 reply_markup=task_time_keyboard(),
             )
         else:
             await message.answer(
-                format_parse_fail(phrase, source=source_label, heard=text if source_label else ""),
+                format_parse_fail(phrase, **fail_kwargs),
                 reply_markup=menu_keyboard_for_chat(message.chat.id),
             )
         return

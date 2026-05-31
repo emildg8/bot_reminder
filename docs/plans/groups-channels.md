@@ -39,15 +39,15 @@
 - [x] Список напоминаний читаемый в группе (без лишних кнопок)
 - [x] Onboarding TZ для новой группы (inline после welcome) — v3.10.0
 
-### Фаза 5 — групповой UX (v3.16+) 🚧
+### Фаза 5 — групповой UX (v3.16+) ✅
 
 Подробно: [`groups-phase5-ux.md`](groups-phase5-ux.md)
 
-- [ ] Компактное inline-меню для групп (не как в личке)
-- [ ] Навигация через `edit_message`, кнопка «◀️ Меню»
-- [ ] Дневник/статистика → только в личке
-- [ ] Fix «Назад» и примеров в collective
-- [ ] Wispbyte: `bash start.sh`, dismiss «Missing Package bot»
+- [x] Компактное inline-меню для групп (не как в личке)
+- [x] Навигация через `edit_message`, кнопка «◀️ Меню»
+- [x] Дневник/статистика → только в личке
+- [x] Fix «Назад» и примеров в collective
+- [x] Wispbyte: `bash start.sh`, dismiss «Missing Package bot»
 
 ## Матрица поведения
 

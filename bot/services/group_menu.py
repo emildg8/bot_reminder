@@ -20,10 +20,16 @@ from bot.texts.messages import (
     format_group_private_only,
 )
 
+_last_menu_message: dict[int, int] = {}
+
 
 def is_group_menu_chat(chat) -> bool:
     kind = chat_kind_from_chat(chat)
     return kind in (ChatKind.GROUP, ChatKind.SUPERGROUP)
+
+
+def remember_group_menu_message(chat_id: int, message_id: int) -> None:
+    _last_menu_message[chat_id] = message_id
 
 
 def group_screen_content(screen: str, *, bot_username: str | None = None) -> tuple[str, object]:
@@ -41,6 +47,16 @@ def group_screen_content(screen: str, *, bot_username: str | None = None) -> tup
     return format_group_menu_home(bot_username), group_home_keyboard()
 
 
+async def _drop_previous_menu(bot: Bot, chat_id: int) -> None:
+    message_id = _last_menu_message.pop(chat_id, None)
+    if message_id is None:
+        return
+    try:
+        await bot.delete_message(chat_id, message_id)
+    except TelegramBadRequest:
+        pass
+
+
 async def _send_or_edit(
     target: Message,
     text: str,
@@ -51,10 +67,12 @@ async def _send_or_edit(
     if edit:
         try:
             await target.edit_text(text, reply_markup=reply_markup)
+            remember_group_menu_message(target.chat.id, target.message_id)
             return
         except TelegramBadRequest:
             pass
-    await target.answer(text, reply_markup=reply_markup)
+    sent = await target.answer(text, reply_markup=reply_markup)
+    remember_group_menu_message(target.chat.id, sent.message_id)
 
 
 async def show_group_menu_screen(
@@ -75,9 +93,11 @@ async def send_group_menu_home(message: Message, bot: Bot) -> None:
 
 
 async def send_group_menu_to_chat(bot: Bot, chat_id: int) -> None:
+    await _drop_previous_menu(bot, chat_id)
     me = await bot.get_me()
     text, kb = group_screen_content("home", bot_username=me.username)
-    await bot.send_message(chat_id, text, reply_markup=kb)
+    sent = await bot.send_message(chat_id, text, reply_markup=kb)
+    remember_group_menu_message(chat_id, sent.message_id)
 
 
 async def answer_group_private_only(callback: CallbackQuery) -> None:

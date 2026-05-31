@@ -1,3 +1,7 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
 from aiogram.enums import ChatType
 from aiogram.types import Chat
 
@@ -7,7 +11,7 @@ from bot.keyboards.inline import (
     group_timezone_keyboard,
     group_timezone_offset_keyboard,
 )
-from bot.services.group_menu import group_screen_content, is_group_menu_chat
+from bot.services.group_menu import group_screen_content, is_group_menu_chat, send_group_menu_to_chat
 from bot.texts.messages import format_group_private_only
 
 
@@ -60,3 +64,16 @@ def test_group_tz_offset_back():
 
 def test_private_only_message():
     assert "личке" in format_group_private_only()
+
+
+@pytest.mark.asyncio
+async def test_send_group_menu_replaces_previous():
+    bot = AsyncMock()
+    bot.get_me.return_value = SimpleNamespace(username="mybot")
+    first = SimpleNamespace(message_id=10)
+    second = SimpleNamespace(message_id=11)
+    bot.send_message = AsyncMock(side_effect=[first, second])
+    bot.delete_message = AsyncMock()
+    await send_group_menu_to_chat(bot, -100123)
+    await send_group_menu_to_chat(bot, -100123)
+    bot.delete_message.assert_awaited_once_with(-100123, 10)

@@ -141,12 +141,17 @@ async def _parse_and_confirm_edit(
     parsed_items = await parse_all_reminders(phrase_text, timezone)
     if not parsed_items:
         set_edit_pending(user_id, reminder_id)
+        kind = chat_kind_from_chat(message.chat)
+        fail_kwargs = {"chat_kind": kind, "bot_username": me.username}
         if looks_like_task_only(phrase_text):
             store_pending_task(user_id, phrase_text, edit_reminder_id=reminder_id)
-            await message.answer(format_parse_fail(phrase_text), reply_markup=task_time_keyboard())
+            await message.answer(
+                format_parse_fail(phrase_text, **fail_kwargs),
+                reply_markup=task_time_keyboard(),
+            )
         else:
             await message.answer(
-                format_parse_fail(phrase_text),
+                format_parse_fail(phrase_text, **fail_kwargs),
                 reply_markup=menu_keyboard_for_chat(message.chat.id),
             )
         return

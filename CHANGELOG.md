@@ -2,6 +2,14 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.18.0] — 2026-05-31
+
+### Группы: меньше шума и понятнее ошибки
+- **Group-меню** — повторный `/menu` удаляет предыдущее меню в чате
+- **Parse fail в группе** — подсказка `/remind@бот …` при непонятной фразе
+- **Callbacks** — ранний answer в list/search и личном inline-меню
+- **`/health`** — строка Group Privacy (как в `/sysinfo`)
+
 ## [3.17.0] — 2026-05-31
 
 ### Надёжность callbacks и collective (фаза 5B)

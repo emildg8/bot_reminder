@@ -63,6 +63,7 @@ def format_health_message(
     uptime: str,
     deploy_line: str,
     repair: RepairStats | None = None,
+    privacy_line: str | None = None,
 ) -> str:
     if snapshot.drift <= 2:
         status_label = "✅ норма"
@@ -83,6 +84,7 @@ def format_health_message(
         f"Версия: <b>{version}</b>\n"
         f"{deploy_line}"
         f"Аптайм: <b>{uptime}</b>\n"
+        f"{privacy_line + chr(10) if privacy_line else ''}"
         f"Пользователей: <b>{snapshot.users_count}</b>\n"
         f"Активных напоминаний: <b>{snapshot.active_count}</b>\n"
         f"С расписанием: <b>{snapshot.with_schedule}</b>\n"

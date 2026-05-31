@@ -174,7 +174,14 @@ def looks_like_task_only(text: str) -> bool:
     return bool(text.strip()) and not _TIME_HINT.search(text)
 
 
-def format_parse_fail(phrase: str, *, source: str = "", heard: str = "") -> str:
+def format_parse_fail(
+    phrase: str,
+    *,
+    source: str = "",
+    heard: str = "",
+    chat_kind: ChatKind = ChatKind.PRIVATE,
+    bot_username: str | None = None,
+) -> str:
     task = " ".join(phrase.strip().split()[:6]) or "задача"
     is_voice = source in ("voice", "video_note")
     if looks_like_task_only(phrase):
@@ -188,7 +195,10 @@ def format_parse_fail(phrase: str, *, source: str = "", heard: str = "") -> str:
     else:
         body = PARSE_FAIL
     if is_voice and heard.strip():
-        return f"🎤 Распознано: {heard.strip()}\n\n{body}"
+        body = f"🎤 Распознано: {heard.strip()}\n\n{body}"
+    if chat_kind in (ChatKind.GROUP, ChatKind.SUPERGROUP):
+        uname = bot_username or "бот"
+        body += f"\n\n💡 В группе: <code>/remind@{uname} через час …</code>"
     return body
 
 CONFIRM_CREATE_HEADER = "📌 <b>Проверь напоминание</b>"

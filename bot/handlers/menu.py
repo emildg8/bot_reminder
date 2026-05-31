@@ -122,19 +122,19 @@ async def handle_menu_buttons(message: Message, bot) -> None:
 
 @router.callback_query(F.data == "menu:list")
 async def menu_list(callback: CallbackQuery) -> None:
+    await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
     await send_active_reminders(callback.message)
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:home")
 async def menu_home(callback: CallbackQuery) -> None:
+    await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
     await callback.message.edit_text(
         "⌨️ <b>Меню</b>",
         reply_markup=main_menu_inline_keyboard(),
     )
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:create")
@@ -143,8 +143,8 @@ async def menu_create(callback: CallbackQuery, bot) -> None:
     if is_group_menu_chat(callback.message.chat):
         await show_group_menu_screen(callback, "hint", bot)
         return
+    await safe_callback_answer(callback)
     await callback.message.answer(CREATE_HINT)
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:more")
@@ -153,26 +153,26 @@ async def menu_more(callback: CallbackQuery, bot) -> None:
     if is_group_menu_chat(callback.message.chat):
         await show_group_menu_screen(callback, "home", bot)
         return
+    await safe_callback_answer(callback)
     await callback.message.edit_text("Дополнительно:", reply_markup=more_menu_keyboard())
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:status")
 async def menu_status(callback: CallbackQuery, bot) -> None:
+    await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
     await _send_status(callback.message, bot)
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:search")
 async def menu_search(callback: CallbackQuery) -> None:
+    await safe_callback_answer(callback)
     clear_edit_pending(callback.from_user.id)
     set_search_pending(callback.from_user.id)
     await callback.message.answer(
         "🔍 <b>Поиск</b>\n\nНапиши слово или фразу.\nОтмена: /cancel",
         reply_markup=menu_keyboard_for_chat(callback.message.chat.id),
     )
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:timezone")
@@ -181,9 +181,9 @@ async def menu_timezone(callback: CallbackQuery, bot) -> None:
     if is_group_menu_chat(callback.message.chat):
         await show_group_menu_screen(callback, "tz", bot)
         return
+    await safe_callback_answer(callback)
     label = tz_scope_label(chat_kind_from_chat(callback.message.chat))
     await callback.message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:help")
@@ -192,17 +192,17 @@ async def menu_help(callback: CallbackQuery, bot) -> None:
     if is_group_menu_chat(callback.message.chat):
         await show_group_menu_screen(callback, "help", bot)
         return
+    await safe_callback_answer(callback)
     await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:about")
 async def menu_about(callback: CallbackQuery) -> None:
     from bot.texts.messages import format_about
 
+    await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
     await callback.message.answer(format_about(__version__))
-    await callback.answer()
 
 
 @router.callback_query(F.data == "menu:examples")
@@ -211,8 +211,8 @@ async def menu_examples(callback: CallbackQuery, bot) -> None:
     if is_group_menu_chat(callback.message.chat):
         await show_group_menu_screen(callback, "examples", bot)
         return
+    await safe_callback_answer(callback)
     await callback.message.edit_text(EXAMPLES_INTRO, reply_markup=examples_keyboard(back_callback="menu:home"))
-    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("ex:"))
@@ -247,7 +247,7 @@ async def task_time_picked(callback: CallbackQuery, bot) -> None:
         await callback.answer("Задача устарела — отправь текст заново.", show_alert=True)
         return
     phrase = phrase_from_task_preset(pending.text, code)
-    await callback.answer()
+    await safe_callback_answer(callback)
     if pending.edit_reminder_id is not None:
         async with async_session() as session:
             reminder = await get_reminder(session, pending.edit_reminder_id)

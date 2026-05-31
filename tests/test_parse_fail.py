@@ -1,3 +1,4 @@
+from bot.services.chat_ctx import ChatKind
 from bot.texts.messages import format_parse_fail, looks_like_task_only, phrase_from_task_preset
 
 
@@ -17,6 +18,15 @@ def test_format_parse_fail_task_only():
 def test_phrase_from_task_preset():
     assert "30 минут" in phrase_from_task_preset("почистить зубы", "30m")
     assert "завтра" in phrase_from_task_preset("почистить зубы", "tom14")
+
+
+def test_format_parse_fail_group_hint():
+    msg = format_parse_fail(
+        "созвон завтра",
+        chat_kind=ChatKind.SUPERGROUP,
+        bot_username="mybot",
+    )
+    assert "/remind@mybot" in msg
 
 
 def test_parse_fail_generic_constant():
