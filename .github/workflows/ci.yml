@@ -24,6 +24,9 @@ jobs:
       - name: Ruff
         run: ruff check bot tests
 
+      - name: Syntax check
+        run: python -m compileall -q bot tests scripts
+
       - name: Pytest
         env:
           BOT_TOKEN: "0:ci-test-token"
