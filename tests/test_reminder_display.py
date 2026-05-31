@@ -4,10 +4,12 @@ from zoneinfo import ZoneInfo
 
 from bot.services.reminder_display import (
     format_interval_seconds,
+    format_parsed_when_label,
     format_reminder_list_line,
     format_weekdays_label,
     reminder_to_export_dict,
 )
+from bot.services.nlp.schemas import ParsedReminder
 
 
 def _reminder(**kwargs):
@@ -36,8 +38,18 @@ def test_format_interval():
 
 
 def test_format_weekdays_mask():
-    assert format_weekdays_label(mask=0b10101) == "пн ср пт"
+    assert format_weekdays_label(mask=0b10101) == "пн, ср, пт"
     assert format_weekdays_label(mask=0b11111) == "по будням"
+
+
+def test_format_parsed_when_label_weekly():
+    parsed = ParsedReminder(
+        text="Экспа",
+        kind="weekly",
+        daily_time=time(10, 55),
+        weekdays=[1, 2, 4, 5],
+    )
+    assert format_parsed_when_label(parsed, "Europe/Moscow") == "вт, ср, пт, сб в 10:55"
 
 
 def test_list_line_interval():

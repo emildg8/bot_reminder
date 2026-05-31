@@ -36,6 +36,7 @@ from bot.services.user_prefs import (
     get_snooze_step,
 )
 from bot.texts.messages import format_batch_created, format_created, format_updated
+from bot.services.reminder_display import format_parsed_when_label
 from bot.services.scheduler import schedule_reminder, scheduler
 from bot.services.timezone_ctx import get_effective_timezone
 
@@ -116,7 +117,7 @@ async def _create_from_draft(
                 kind=ReminderEventKind.CREATED,
             )
             schedule_reminder(bot, reminder.id, next_run)
-            when = next_run.astimezone(ZoneInfo(tz)).strftime("%d.%m.%Y %H:%M")
+            when = format_parsed_when_label(parsed, tz)
             created.append((reminder.id, when, parsed.text))
 
     if len(created) == 1:
@@ -176,7 +177,7 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
             await session.commit()
 
     schedule_reminder(bot, reminder_id, next_run)
-    when = next_run.astimezone(ZoneInfo(reminder.timezone)).strftime("%d.%m.%Y %H:%M")
+    when = format_parsed_when_label(entry.parsed, reminder.timezone)
     await callback.message.edit_text(format_updated(reminder_id, when))
     await callback.message.answer("Меню:", reply_markup=main_menu_keyboard())
     await callback.answer()

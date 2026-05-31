@@ -49,7 +49,25 @@ def format_weekdays_label(weekdays: list[int] | None = None, mask: int | None = 
         return "по будням"
     if wd == {5, 6}:
         return "по выходным"
-    return " ".join(WEEKDAY_NAMES[d] for d in sorted(wd))
+    names = [WEEKDAY_NAMES[d] for d in sorted(wd)]
+    return ", ".join(names) if len(names) > 2 else " ".join(names)
+
+
+def format_parsed_when_label(parsed: ParsedReminder, timezone: str) -> str:
+    """Краткая подпись расписания для сообщений «создано» / «обновлено»."""
+    tz = ZoneInfo(timezone)
+    if parsed.kind == "weekly" and parsed.daily_time and parsed.weekdays:
+        days = format_weekdays_label(weekdays=parsed.weekdays)
+        return f"{days} в {parsed.daily_time.strftime('%H:%M')}"
+    if parsed.kind == "daily" and parsed.daily_time:
+        return f"ежедневно в {parsed.daily_time.strftime('%H:%M')}"
+    if parsed.kind == "interval":
+        nxt = compute_next_run(parsed, timezone).astimezone(tz)
+        base = format_interval_seconds(parsed.interval_seconds)
+        return f"{base}, след. {nxt.strftime('%d.%m %H:%M')}"
+    if parsed.run_at:
+        return parsed.run_at.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+    return compute_next_run(parsed, timezone).astimezone(tz).strftime("%d.%m.%Y %H:%M")
 
 
 def format_reminder_schedule(reminder: Reminder, timezone: str) -> str:

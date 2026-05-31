@@ -66,6 +66,7 @@ def parse_weekday_tokens(text: str) -> list[int]:
     normalized = text.lower()
     normalized = re.sub(r"[,]", " ", normalized)
     normalized = re.sub(r"\s+и\s+", " ", normalized)
+    normalized = re.sub(r"^(?:во|в|по)\s+", "", normalized)
     tokens = [t for t in normalized.split() if t]
     weekdays: list[int] = []
     for token in tokens:
@@ -73,6 +74,16 @@ def parse_weekday_tokens(text: str) -> list[int]:
         if key in WEEKDAY_MAP:
             weekdays.append(WEEKDAY_MAP[key])
     return sorted(set(weekdays))
+
+
+def _weekdays_before_times(text: str, time_matches: list[re.Match]) -> list[int]:
+    if not time_matches:
+        return parse_weekday_tokens(text)
+    chunk = text[: time_matches[-1].start()]
+    weekdays = parse_weekday_tokens(chunk)
+    if weekdays:
+        return weekdays
+    return parse_weekday_tokens(text)
 
 
 DEFAULT_WEEKLY_HOUR = 9
@@ -102,8 +113,7 @@ def find_weekly_schedules(text: str) -> list[tuple[list[int], int, int, str]]:
 
     time_matches = list(TIME_PATTERN.finditer(text))
     if time_matches:
-        before = text[: time_matches[0].start()]
-        weekdays = parse_weekday_tokens(before)
+        weekdays = _weekdays_before_times(text, time_matches)
         if weekdays:
             task = _task_after_last_time(text, time_matches)
             return [
@@ -114,9 +124,18 @@ def find_weekly_schedules(text: str) -> list[tuple[list[int], int, int, str]]:
     if match := IN_WEEKDAY_PATTERN.search(text):
         day_token = match.group("day").lower()
         hour, minute = int(match.group(2)), int(match.group(3))
-        weekdays = parse_weekday_tokens(day_token)
+        time_matches = list(TIME_PATTERN.finditer(text, match.end()))
+        weekdays = _weekdays_before_times(text, [match, *time_matches])
+        if not weekdays:
+            weekdays = parse_weekday_tokens(day_token)
         if not weekdays:
             return []
+        if len(time_matches) > 1:
+            task = _task_after_last_time(text, time_matches)
+            return [
+                (weekdays, int(tm.group(1)), int(tm.group(2)), task)
+                for tm in time_matches
+            ]
         task_text = _remove_span(text, match).strip(" ,.")
         if not task_text:
             task_text = text[match.end() :].strip(" ,.")
