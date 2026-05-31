@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from openai import AsyncOpenAI
 
 from bot.config import settings
-from bot.services.nlp.rule_parser import parse_all_with_rules, parse_with_rules
+from bot.services.nlp.rule_parser import parse_all_with_rules
 from bot.services.nlp.schemas import ParsedReminder
 
 logger = logging.getLogger(__name__)

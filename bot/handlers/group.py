@@ -3,7 +3,6 @@ from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from aiogram.types import ChatMemberUpdated
 
 from bot.keyboards.inline import main_menu_inline_keyboard
-from bot.keyboards.reply import main_menu_keyboard
 from bot.texts.messages import format_group_welcome
 
 router = Router()
@@ -18,7 +17,6 @@ async def on_bot_added(event: ChatMemberUpdated) -> None:
     await event.bot.send_message(
         event.chat.id,
         format_group_welcome(me.username),
-        reply_markup=main_menu_keyboard(),
     )
     await event.bot.send_message(
         event.chat.id,

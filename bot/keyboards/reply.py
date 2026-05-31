@@ -38,3 +38,10 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
         input_field_placeholder="Например: через 3-4 часа созвон…",
         is_persistent=True,
     )
+
+
+def menu_keyboard_for_chat(chat_id: int) -> ReplyKeyboardMarkup | None:
+    """В группах reply-клавиатура не нужна (и не видна без @бот)."""
+    from bot.services.timezone_ctx import is_group_chat
+
+    return None if is_group_chat(chat_id) else main_menu_keyboard()

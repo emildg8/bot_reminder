@@ -9,10 +9,11 @@ from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
-from bot.keyboards.reply import MENU_BUTTON_TEXTS, main_menu_keyboard
+from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
+from bot.services.timezone_ctx import is_group_chat
 from bot.services.drafts import pop_search_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
-from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
+from bot.services.reminder_display import format_batch_parsed_summary_html
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 from bot.services.media import download_telegram_file, transcribe_audio
@@ -75,7 +76,7 @@ async def _process_text_and_reply(
         else:
             await message.answer(
                 format_parse_fail(phrase, source=source_label, heard=text if source_label else ""),
-                reply_markup=main_menu_keyboard(),
+                reply_markup=menu_keyboard_for_chat(message.chat.id),
             )
         return
 
@@ -129,7 +130,20 @@ async def _route_user_phrase(
 
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_text(message: Message, bot: Bot) -> None:
-    await _route_user_phrase(message, message.text.strip(), bot)
+    try:
+        if is_group_chat(message.chat.id):
+            logger.info(
+                "Group text chat=%s user=%s: %s",
+                message.chat.id,
+                message.from_user.id if message.from_user else "?",
+                (message.text or "")[:120],
+            )
+        await _route_user_phrase(message, message.text.strip(), bot)
+    except Exception:
+        logger.exception("Failed to handle text in chat %s", message.chat.id)
+        await message.answer(
+            "⚠️ Не удалось обработать сообщение. Попробуй ещё раз или <code>/ping</code>."
+        )
 
 
 async def _handle_audio_message(

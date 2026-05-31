@@ -1,4 +1,4 @@
-from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
+from bot.services.mention_parse import extract_leading_username
 
 
 def test_extract_leading_username():
