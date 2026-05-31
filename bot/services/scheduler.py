@@ -20,6 +20,7 @@ from bot.db.repository import (
     get_reminder,
     is_chat_paused,
     update_reminder_next_run,
+    update_reminder_telegram_schedule,
 )
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
@@ -167,16 +168,21 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
 
         group_sent = False
         dm_sent = False
+        used_tg_schedule = bool(reminder.telegram_schedule_message_id)
 
         if in_collective:
-            group_sent = await _send_to_collective_chat(
-                bot,
-                chat_id=reminder.chat_id,
-                reminder_id=reminder_id,
-                text=body,
-                collective_hint=collective_hint,
-                plain_text=reminder.text,
-            )
+            if used_tg_schedule and chat_type == ChatType.CHANNEL:
+                group_sent = True
+                await update_reminder_telegram_schedule(session, reminder, None)
+            else:
+                group_sent = await _send_to_collective_chat(
+                    bot,
+                    chat_id=reminder.chat_id,
+                    reminder_id=reminder_id,
+                    text=body,
+                    collective_hint=collective_hint,
+                    plain_text=reminder.text,
+                )
 
             try:
                 await bot.send_message(
@@ -327,7 +333,7 @@ async def repair_reminder_jobs(bot: Bot) -> RepairStats:
 
         if run_at_utc <= now:
             restore_at = compute_restore_run_at(now, overdue_index)
-            schedule_reminder(bot, reminder.id, restore_at, timezone=reminder.timezone)
+            await _schedule_with_channel(bot, reminder.id, restore_at, reminder.timezone)
             stats.overdue_rescheduled += 1
             overdue_index += 1
             logger.info(
@@ -336,7 +342,7 @@ async def repair_reminder_jobs(bot: Bot) -> RepairStats:
                 restore_at.isoformat(),
             )
         elif not has_job:
-            schedule_reminder(bot, reminder.id, run_at, timezone=reminder.timezone)
+            await _schedule_with_channel(bot, reminder.id, run_at, reminder.timezone)
             stats.missing_job_fixed += 1
             logger.info("Repair missing job for reminder %s", reminder.id)
 
@@ -362,7 +368,7 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
 
         if run_at_utc <= now:
             restore_at = compute_restore_run_at(now, overdue_index)
-            schedule_reminder(bot, reminder.id, restore_at, timezone=reminder.timezone)
+            await _schedule_with_channel(bot, reminder.id, restore_at, reminder.timezone)
             overdue_index += 1
             logger.info(
                 "Overdue reminder %s (%s), restore at %s",
@@ -371,7 +377,7 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
                 restore_at.isoformat(),
             )
         else:
-            schedule_reminder(bot, reminder.id, run_at, timezone=reminder.timezone)
+            await _schedule_with_channel(bot, reminder.id, run_at, reminder.timezone)
             future_count += 1
 
     logger.info(
@@ -384,3 +390,14 @@ async def restore_scheduled_reminders(bot: Bot) -> None:
 
 def count_scheduled_reminder_jobs() -> int:
     return len(_scheduled_reminder_ids())
+
+
+async def _schedule_with_channel(
+    bot: Bot,
+    reminder_id: int,
+    run_at: datetime,
+    timezone: str,
+) -> None:
+    from bot.services.reminder_jobs import schedule_reminder_with_channel
+
+    await schedule_reminder_with_channel(bot, reminder_id, run_at, timezone=timezone)

@@ -66,6 +66,7 @@ class Reminder(Base):
     daily_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     weekdays_mask: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    telegram_schedule_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="reminders")

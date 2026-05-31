@@ -2,6 +2,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.14.0] — 2026-05-31
+
+### Каналы — native scheduled posts
+- **Разовые напоминания в канале** — публикация через Telegram `schedule_date`
+- **DM при срабатывании** — кнопки управления в личке; в канал повторно не дублируется
+- **Snooze / done / delete / pause / clear / edit** — отмена и пересоздание scheduled post
+- **Restore / repair** — восстановление APScheduler + Telegram schedule после рестарта
+- **Discussion group** — подсказка «добавь бота в канал», если связь ещё не установлена
+
 ## [3.13.0] — 2026-05-31
 
 ### Collective ops — единый чат доставки

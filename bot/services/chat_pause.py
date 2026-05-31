@@ -14,9 +14,9 @@ from bot.db.repository import (
     set_chat_paused,
     update_reminder_next_run,
 )
-from bot.services.reminder_jobs import cancel_reminder_job
+from bot.services.channel_schedule import cancel_reminder_telegram_schedule
+from bot.services.reminder_jobs import cancel_reminder_job, schedule_reminder_with_channel
 from bot.services.reminder_utils import resolve_next_run_on_resume
-from bot.services.scheduler import schedule_reminder
 
 
 async def pause_chat_reminders(bot: Bot, chat_id: int) -> int:
@@ -26,6 +26,10 @@ async def pause_chat_reminders(bot: Bot, chat_id: int) -> int:
 
     for reminder in reminders:
         cancel_reminder_job(reminder.id)
+        async with async_session() as session:
+            db_reminder = await get_reminder(session, reminder.id)
+            if db_reminder is not None:
+                await cancel_reminder_telegram_schedule(bot, session, db_reminder)
 
     return len(reminders)
 
@@ -49,6 +53,8 @@ async def resume_chat_reminders(bot: Bot, chat_id: int) -> int:
                 if db_reminder is not None:
                     await update_reminder_next_run(session, db_reminder, next_run)
 
-        schedule_reminder(bot, reminder.id, next_run, timezone=reminder.timezone)
+        await schedule_reminder_with_channel(
+            bot, reminder.id, next_run, timezone=reminder.timezone
+        )
         count += 1
     return count

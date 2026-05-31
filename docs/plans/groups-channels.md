@@ -30,7 +30,7 @@
 ### Фаза 3 — каналы advanced (v3.11.0) ✅
 
 - [x] Discussion group: `/remind` в группе обсуждений → публикация в канале
-- [ ] Планируемые посты канала (scheduled messages API)
+- [x] Планируемые посты канала (scheduled messages API) — v3.14.0
 - [x] Подпись «от канала» в format_reminder_message
 
 ### Фаза 4 — группы advanced (v3.11.0) ✅

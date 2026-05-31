@@ -22,7 +22,7 @@ from bot.services.export_import import parse_import_item
 from bot.services.reminder_display import reminder_to_export_dict
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
-from bot.services.reminder_jobs import cancel_reminder_job
+from bot.services.reminder_jobs import teardown_reminder_schedule
 
 from bot.services.scheduler import schedule_reminder
 
@@ -113,10 +113,9 @@ async def clear_confirm(callback: CallbackQuery, bot: Bot) -> None:
             session, callback.message.chat.id, callback.message.chat.type
         )
         reminders = await get_active_chat_reminders(session, ops_id)
+        for reminder in reminders:
+            await teardown_reminder_schedule(bot, session, reminder)
         count = await deactivate_all_chat_reminders(session, ops_id)
-
-    for reminder in reminders:
-        cancel_reminder_job(reminder.id)
 
     note = format_ops_target_note(callback.message.chat.id, ops_id)
     await callback.message.edit_text(f"🗑 Удалено напоминаний: {count}{note}")

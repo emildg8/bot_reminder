@@ -72,6 +72,17 @@ async def init_db() -> None:
                     text("ALTER TABLE chat_settings ADD COLUMN linked_chat_id BIGINT")
                 )
 
+            reminder_cols = {
+                row[1]
+                for row in (await conn.execute(text("PRAGMA table_info(reminders)"))).fetchall()
+            }
+            if "telegram_schedule_message_id" not in reminder_cols:
+                await conn.execute(
+                    text(
+                        "ALTER TABLE reminders ADD COLUMN telegram_schedule_message_id BIGINT"
+                    )
+                )
+
             await conn.execute(
                 text(
                     """
@@ -281,6 +292,15 @@ async def update_reminder_next_run(
     if next_run_at is not None:
         next_run_at = storage_next_run_at(next_run_at, reminder.timezone)
     reminder.next_run_at = next_run_at
+    await session.commit()
+    await session.refresh(reminder)
+    return reminder
+
+
+async def update_reminder_telegram_schedule(
+    session: AsyncSession, reminder: Reminder, message_id: int | None
+) -> Reminder:
+    reminder.telegram_schedule_message_id = message_id
     await session.commit()
     await session.refresh(reminder)
     return reminder

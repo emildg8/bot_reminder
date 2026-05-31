@@ -48,7 +48,11 @@ from bot.texts.messages import (
     format_updated,
 )
 from bot.services.reminder_display import format_parsed_when_label
-from bot.services.reminder_jobs import cancel_reminder_job
+from bot.services.channel_schedule import (
+    cancel_reminder_telegram_schedule,
+    setup_channel_telegram_schedule,
+)
+from bot.services.reminder_jobs import cancel_reminder_job, teardown_reminder_schedule
 from bot.services.scheduler import schedule_reminder, scheduler
 
 router = Router()
@@ -265,9 +269,13 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
                 reminder.mention_telegram_id = entry.mention_telegram_id
                 await session.commit()
             schedule_reminder(bot, reminder_id, next_run, timezone=tz)
+            refreshed = await get_reminder(session, reminder_id)
+            if refreshed is not None:
+                await setup_channel_telegram_schedule(bot, session, refreshed)
             when = format_parsed_when_label(entry.parsed, tz)
             await callback.message.edit_text(format_updated(reminder_id, when))
         else:
+            await teardown_reminder_schedule(bot, session, reminder)
             await deactivate_reminder(session, reminder)
             created = await create_and_schedule_items(
                 session,
@@ -450,6 +458,7 @@ async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, min
 
         tz = ZoneInfo(reminder.timezone)
         next_run = datetime.now(tz) + timedelta(minutes=minutes)
+        await cancel_reminder_telegram_schedule(bot, session, reminder)
         await update_reminder_next_run(session, reminder, next_run)
         await log_reminder_event(
             session,
@@ -461,7 +470,12 @@ async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, min
             extra={"minutes": minutes},
         )
 
+    cancel_reminder_job(reminder_id)
     schedule_reminder(bot, reminder_id, next_run, timezone=reminder.timezone)
+    async with async_session() as session:
+        refreshed = await get_reminder(session, reminder_id)
+        if refreshed is not None:
+            await setup_channel_telegram_schedule(bot, session, refreshed)
     when = next_run.strftime("%d.%m.%Y %H:%M")
     await callback.message.edit_text(
         f"⏰ Отложено на <b>{format_snooze_minutes(minutes)}</b> (до {when})\n"
@@ -472,7 +486,7 @@ async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, min
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("done:"))
-async def done_reminder(callback: CallbackQuery) -> None:
+async def done_reminder(callback: CallbackQuery, bot: Bot) -> None:
     reminder_id = int(callback.data.split(":", 1)[1])
 
     async with async_session() as session:
@@ -485,6 +499,7 @@ async def done_reminder(callback: CallbackQuery) -> None:
             await callback.answer("Нет доступа.", show_alert=True)
             return
 
+        await teardown_reminder_schedule(bot, session, reminder)
         await deactivate_reminder(session, reminder)
         await log_reminder_event(
             session,
@@ -494,8 +509,6 @@ async def done_reminder(callback: CallbackQuery) -> None:
             text=reminder.text,
             kind=ReminderEventKind.DONE,
         )
-
-    cancel_reminder_job(reminder_id)
 
     await callback.message.edit_text("✅ Готово. Напоминание закрыто.")
     await callback.answer()
@@ -535,7 +548,7 @@ async def delete_cancel(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("delete:"))
-async def delete_reminder(callback: CallbackQuery) -> None:
+async def delete_reminder(callback: CallbackQuery, bot: Bot) -> None:
     reminder_id = int(callback.data.split(":", 1)[1])
 
     async with async_session() as session:
@@ -548,6 +561,7 @@ async def delete_reminder(callback: CallbackQuery) -> None:
             await callback.answer("Нет доступа.", show_alert=True)
             return
 
+        await teardown_reminder_schedule(bot, session, reminder)
         await deactivate_reminder(session, reminder)
         await log_reminder_event(
             session,
@@ -557,8 +571,6 @@ async def delete_reminder(callback: CallbackQuery) -> None:
             text=reminder.text,
             kind=ReminderEventKind.DELETED,
         )
-
-    cancel_reminder_job(reminder_id)
 
     await callback.message.edit_text("🗑 Напоминание удалено.")
     await callback.answer()

@@ -374,6 +374,15 @@ def format_group_reminder_hint(bot_username: str | None = None) -> str:
     )
 
 
+def format_discussion_channel_hint(bot_username: str | None = None) -> str:
+    link = f"@{bot_username}" if bot_username else "бота"
+    return (
+        "💡 Похоже, это <b>группа обсуждений</b> канала.\n"
+        f"Добавь {link} в канал как администратора с правом публикации — "
+        "тогда напоминания из этой группы будут уходить в канал."
+    )
+
+
 def format_dm_failed_in_group(
     creator_user_id: int,
     *,

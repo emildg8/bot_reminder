@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db.models import ReminderEventKind
 from bot.db.repository import create_reminder
+from bot.services.channel_schedule import setup_channel_telegram_schedule
 from bot.services.nlp.schemas import ParsedReminder
 from bot.services.reminder_display import format_parsed_when_label
 from bot.services.reminder_history import log_reminder_event
@@ -53,6 +54,7 @@ async def create_and_schedule_items(
             kind=ReminderEventKind.CREATED,
         )
         schedule_reminder(bot, reminder.id, next_run, timezone=timezone)
+        await setup_channel_telegram_schedule(bot, session, reminder)
         when = format_parsed_when_label(parsed, timezone)
         created.append((reminder.id, when, parsed.text))
     return created
