@@ -67,6 +67,10 @@ IN_WEEK = re.compile(
     r"через\s+(?:(\d+)\s+)?(?:недел(?:ю|и|ь)|нед)\b",
     re.IGNORECASE,
 )
+IN_MONTH = re.compile(
+    r"через\s+(?:(\d+)\s+)?(?:месяц(?:а|ев)?|мес\.?)\b",
+    re.IGNORECASE,
+)
 DAILY_ALT_PATTERN = re.compile(
     r"ежедневно\s+(?:в\s+)?(\d{1,2})[:.](\d{2})",
     re.IGNORECASE,
@@ -94,9 +98,10 @@ def _once_relative(
     seconds: int = 0,
     minutes: int = 0,
     hours: int = 0,
+    days: int = 0,
     weeks: int = 0,
 ) -> ParsedReminder:
-    delay = seconds + minutes * 60 + hours * 3600 + weeks * 7 * 86400
+    delay = seconds + minutes * 60 + hours * 3600 + days * 86400 + weeks * 7 * 86400
     return ParsedReminder(
         text=task or "Напоминание",
         kind="once",
@@ -213,6 +218,12 @@ def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
         weeks = int(match.group(1)) if match.group(1) else 1
         return _once_relative(
             now, _task_without_pattern(cleaned, IN_WEEK), weeks=weeks
+        )
+
+    if match := IN_MONTH.search(cleaned):
+        months = int(match.group(1)) if match.group(1) else 1
+        return _once_relative(
+            now, _task_without_pattern(cleaned, IN_MONTH), days=months * 30
         )
 
     if match := IN_PATTERN.search(cleaned):

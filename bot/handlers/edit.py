@@ -6,13 +6,14 @@ from aiogram.types import CallbackQuery, Message
 from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, get_reminder
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
-from bot.keyboards.reply import main_menu_keyboard
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
-from bot.services.nlp.llm_parser import parse_reminder
-from bot.services.reminder_display import format_parsed_summary_html
+from bot.services.nlp.llm_parser import parse_all_reminders
+from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
+from bot.services.timezone_ctx import is_group_chat
 from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 
 router = Router()
@@ -30,7 +31,7 @@ async def cmd_edit(message: Message, bot: Bot) -> None:
             "Формат:\n"
             "<code>/edit 3 через 2 часа новый текст</code>\n\n"
             "Или нажми ✏️ в списке /list",
-            reply_markup=main_menu_keyboard(),
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return
 
@@ -77,7 +78,7 @@ async def _start_edit_flow(
         "<code>через 1 час новый текст</code>\n"
         "<code>@user через 1 час задача</code>\n\n"
         "Отмена: /cancel",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
 
 
@@ -131,19 +132,26 @@ async def _parse_and_confirm_edit(
         bot_id=me.id,
     )
     mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
-    parsed = await parse_reminder((clean_text or phrase).strip(), timezone)
-    if parsed is None:
+    phrase_text = (clean_text or phrase).strip()
+    parsed_items = await parse_all_reminders(phrase_text, timezone)
+    if not parsed_items:
         set_edit_pending(user_id, reminder_id)
-        phrase_text = (clean_text or phrase).strip()
         if looks_like_task_only(phrase_text):
             store_pending_task(user_id, phrase_text, edit_reminder_id=reminder_id)
             await message.answer(format_parse_fail(phrase_text), reply_markup=task_time_keyboard())
         else:
-            await message.answer(format_parse_fail(phrase_text), reply_markup=main_menu_keyboard())
+            await message.answer(
+                format_parse_fail(phrase_text),
+                reply_markup=menu_keyboard_for_chat(message.chat.id),
+            )
         return
 
     clear_edit_pending(user_id)
-    summary = format_parsed_summary_html(parsed, timezone)
+    summary = (
+        format_batch_parsed_summary_html(parsed_items, timezone)
+        if len(parsed_items) > 1
+        else format_parsed_summary_html(parsed_items[0], timezone)
+    )
     prefix = ""
     if mention_username and not mention_telegram_id:
         prefix = f"⚠️ @{mention_username} не найден — упоминание сброшено.\n\n"
@@ -151,15 +159,20 @@ async def _parse_and_confirm_edit(
         who = f"@{mention_username}" if mention_username else "участнику"
         prefix = f"👤 Упоминание: {who}\n\n"
 
+    if is_group_chat(message.chat.id):
+        prefix += "📣 Напоминание в группе · кнопки управления — в личке.\n\n"
+
     mention_provided = bool(mention_username or mention_id)
     draft_id = store_draft(
         user_id,
-        parsed,
+        parsed_items=parsed_items,
         mention_telegram_id=mention_telegram_id,
         mention_provided=mention_provided,
         edit_reminder_id=reminder_id,
     )
     body = format_confirm_card(summary, is_edit=True)
+    if len(parsed_items) > 1:
+        body = body.replace("Подтверди действие:", "Подтверди замену:")
     if prefix:
         body = prefix + body
     await message.answer(

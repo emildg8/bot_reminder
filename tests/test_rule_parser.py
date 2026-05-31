@@ -75,6 +75,20 @@ def test_cherez_2_nedeli():
     assert parsed.kind == "once"
 
 
+def test_cherez_mesyac():
+    parsed = parse_with_rules("через месяц оплатить", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert parsed.delay_seconds == 30 * 86400
+    assert "оплатить" in parsed.text.lower()
+
+
+def test_cherez_2_mesyaca():
+    parsed = parse_with_rules("через 2 месяца отчёт", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.delay_seconds == 60 * 86400
+
+
 def test_kazhdye_polchasa():
     parsed = parse_with_rules("каждые полчаса встать", "Europe/Moscow")
     assert parsed is not None

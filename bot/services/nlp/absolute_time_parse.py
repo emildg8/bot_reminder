@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -81,6 +82,31 @@ DAY_OFFSETS: dict[str, int] = {
     "послезавтра": 2,
     "после завтра": 2,
 }
+
+MONTH_GENITIVE: dict[str, int] = {
+    "января": 1,
+    "февраля": 2,
+    "марта": 3,
+    "апреля": 4,
+    "мая": 5,
+    "июня": 6,
+    "июля": 7,
+    "августа": 8,
+    "сентября": 9,
+    "октября": 10,
+    "ноября": 11,
+    "декабря": 12,
+}
+
+_month_words = "|".join(sorted(MONTH_GENITIVE.keys(), key=len, reverse=True))
+NAMED_DATE_AT_TIME = re.compile(
+    rf"(?P<d>\d{{1,2}})\s+(?P<month>{_month_words})\s+(?:в\s+)?(?P<h>\d{{1,2}})[:.](?P<m>\d{{2}})\b",
+    re.IGNORECASE,
+)
+NAMED_DATE = re.compile(
+    rf"(?P<d>\d{{1,2}})\s+(?P<month>{_month_words})\b",
+    re.IGNORECASE,
+)
 
 HOUR_WORDS: dict[str, int] = {
     "один": 1,
@@ -341,6 +367,21 @@ def _build_run_at(now: datetime, day_offset: int, hour: int, minute: int) -> dat
     return base
 
 
+def _build_named_date(now: datetime, day: int, month: int, hour: int, minute: int) -> datetime:
+    year = now.year
+    max_day = calendar.monthrange(year, month)[1]
+    safe_day = min(day, max_day)
+    candidate = now.replace(
+        year=year, month=month, day=safe_day, hour=hour, minute=minute, second=0, microsecond=0
+    )
+    if candidate <= now:
+        year += 1
+        max_day = calendar.monthrange(year, month)[1]
+        safe_day = min(day, max_day)
+        candidate = candidate.replace(year=year, day=safe_day)
+    return candidate
+
+
 def _extract_task(full: str, match: re.Match) -> str:
     task = (full[: match.start()] + full[match.end() :]).strip(" ,.—–-")
     task = NOISE_PREFIX.sub("", task).strip()
@@ -355,6 +396,24 @@ def parse_absolute_datetime(text: str, timezone: str) -> ParsedReminder | None:
 
     tz = ZoneInfo(timezone)
     now = datetime.now(tz)
+
+    if match := NAMED_DATE_AT_TIME.search(normalized):
+        day = int(match.group("d"))
+        month = MONTH_GENITIVE[match.group("month").lower()]
+        hour, minute = int(match.group("h")), int(match.group("m"))
+        if 1 <= day <= 31 and 0 <= hour <= 23 and 0 <= minute <= 59:
+            run_at = _build_named_date(now, day, month, hour, minute)
+            task = _extract_task(normalized, match)
+            return ParsedReminder(text=task, kind="once", run_at=run_at)
+
+    if match := NAMED_DATE.search(normalized):
+        day = int(match.group("d"))
+        month_key = match.group("month").lower()
+        if month_key in MONTH_GENITIVE and 1 <= day <= 31:
+            month = MONTH_GENITIVE[month_key]
+            run_at = _build_named_date(now, day, month, DEFAULT_DAY_HOUR, DEFAULT_DAY_MINUTE)
+            task = _extract_task(normalized, match)
+            return ParsedReminder(text=task, kind="once", run_at=run_at)
 
     for pattern in (DAY_AT_TIME, TIME_THEN_DAY):
         if match := pattern.search(normalized):

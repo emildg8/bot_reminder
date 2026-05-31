@@ -245,6 +245,17 @@ def format_group_reminder_hint(bot_username: str | None = None) -> str:
     )
 
 
+def format_dm_failed_in_group(
+    creator_user_id: int,
+    *,
+    creator_username: str | None = None,
+    bot_username: str | None = None,
+) -> str:
+    who = f"@{creator_username}" if creator_username else f'<a href="tg://user?id={creator_user_id}">создатель</a>'
+    hint = format_group_reminder_hint(bot_username)
+    return f"👤 {who}, {hint}"
+
+
 GROUP_CREATED_SUFFIX = "\n\n📣 Сработает в группе · кнопки — в личке"
 
 
@@ -275,6 +286,20 @@ def format_batch_created(items: list[tuple[int, str, str]], *, in_group: bool = 
 
 def format_updated(reminder_id: int, when: str) -> str:
     return f"✏️ Напоминание #{reminder_id} обновлено.\n🕐 Следующий раз: <b>{when}</b>"
+
+
+def format_edit_replaced(
+    old_id: int,
+    items: list[tuple[int, str, str]],
+    *,
+    in_group: bool = False,
+) -> str:
+    lines = [f"✅ Напоминание #{old_id} заменено на <b>{len(items)}</b>:\n"]
+    for reminder_id, when, text in items:
+        lines.append(f"• #{reminder_id} · {when} · {text}")
+    if in_group:
+        lines.append(GROUP_CREATED_SUFFIX)
+    return "\n".join(lines)
 
 
 def format_status(

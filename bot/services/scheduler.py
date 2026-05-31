@@ -22,6 +22,7 @@ from bot.db.repository import (
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
 from bot.services.telegram_format import format_reminder_message, is_group_chat
+from bot.texts.messages import format_dm_failed_in_group
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             scheduler.remove_job(job_id)
 
         sent = False
+        dm_sent = False
 
         if in_group:
             try:
@@ -131,6 +133,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                     f"⏰ Напоминание в группе (#{reminder.id}):\n{body}",
                     reply_markup=reminder_actions_keyboard(reminder.id),
                 )
+                dm_sent = True
                 sent = True
             except Exception as dm_exc:
                 logger.warning(
@@ -139,6 +142,24 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
                     reminder_id,
                     dm_exc,
                 )
+
+            if sent and not dm_sent:
+                try:
+                    me = await bot.get_me()
+                    await bot.send_message(
+                        reminder.chat_id,
+                        format_dm_failed_in_group(
+                            reminder.created_by_telegram_id,
+                            creator_username=creator_username,
+                            bot_username=me.username,
+                        ),
+                    )
+                except Exception as hint_exc:
+                    logger.warning(
+                        "Cannot send DM-fail hint for reminder %s: %s",
+                        reminder_id,
+                        hint_exc,
+                    )
         else:
             try:
                 await bot.send_message(

@@ -229,3 +229,21 @@ def test_polovina_chetvertogo_dnya():
 
 def test_normalize_polovina_chetvertogo():
     assert "03:30" in normalize_phrase("завтра в половине четвертого")
+
+
+def test_named_date_with_time():
+    parsed = parse_absolute_datetime("15 июня в 10:00 созвон", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.day == 15
+    assert parsed.run_at.month == 6
+    assert parsed.run_at.hour == 10
+    assert "созвон" in parsed.text.lower()
+
+
+def test_named_date_default_morning():
+    parsed = parse_absolute_datetime("20 декабря подарки", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.run_at.day == 20
+    assert parsed.run_at.month == 12
+    assert parsed.run_at.hour == 9
+    assert "подарки" in parsed.text.lower()

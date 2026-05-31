@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from openai import AsyncOpenAI
 
 from bot.config import settings
+from bot.services.nlp.relative_delay import apply_relative_delay
 from bot.services.nlp.rule_parser import parse_all_with_rules
 from bot.services.nlp.schemas import ParsedReminder
 
@@ -129,7 +130,7 @@ async def _try_llm(
         content = response.choices[0].message.content or ""
         parsed = _parse_llm_json(content)
         if parsed and parsed.text:
-            return parsed
+            return apply_relative_delay(parsed, user_text, timezone)
     except Exception as exc:
         logger.warning("LLM parse failed (%s): %s", model, exc)
     return None
