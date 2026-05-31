@@ -25,6 +25,7 @@ async def setup_bot_commands(bot: Bot) -> None:
         BotCommand(command="import", description="Импорт из JSON"),
         BotCommand(command="about", description="О боте"),
         BotCommand(command="help", description="Справка"),
+        BotCommand(command="remind", description="Создать напоминание (группы)"),
         BotCommand(command="ping", description="Проверка работы"),
         BotCommand(command="sysinfo", description="Системная статистика (админ)"),
     ]

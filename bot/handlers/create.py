@@ -2,9 +2,11 @@ import logging
 from pathlib import Path
 
 from aiogram import Bot, F, Router
+from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 
 from bot.db.repository import async_session
+from bot.services.bot_mention import should_handle_group_text
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.handlers.edit import process_edit_phrase
@@ -128,9 +130,32 @@ async def _route_user_phrase(
     await _process_text_and_reply(message, text, bot, source_label=source_label)
 
 
+@router.message(Command("remind"))
+async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None:
+    phrase = (command.args or "").strip()
+    if not phrase:
+        me = await bot.get_me()
+        uname = me.username or "бот"
+        await message.answer(
+            "✍️ <b>Создать напоминание в группе</b>\n\n"
+            f"<code>/remind@{uname} завтра в 14:00 созвон</code>\n"
+            f"<code>/remind@{uname} через 30 минут таблетки</code>\n\n"
+            f"💡 Если пишешь через @ — выбери <code>@{uname}</code> из списка, "
+            "не набирай @ вручную."
+        )
+        return
+    await _route_user_phrase(message, phrase, bot)
+
+
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_text(message: Message, bot: Bot) -> None:
     try:
+        me = await bot.get_me()
+        if not should_handle_group_text(
+            message, bot_username=me.username, bot_id=me.id
+        ):
+            return
+
         if is_group_chat(message.chat.id):
             logger.info(
                 "Group text chat=%s user=%s: %s",
