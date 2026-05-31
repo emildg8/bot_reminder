@@ -81,3 +81,18 @@ def test_detect_zavtra_v_dva_slovom():
     assert amb is not None
     assert amb.hour == 2
     assert amb.task == "созвон"
+
+
+def test_detect_suffix_sozvon_zavtra_v_2():
+    amb = detect_ambiguous_day_hour("созвон завтра в 2")
+    assert amb is not None
+    assert amb.task == "созвон"
+    assert amb.day == "завтра"
+    assert amb.hour == 2
+
+
+def test_detect_suffix_napomni():
+    amb = detect_ambiguous_day_hour("напомни созвон завтра в два")
+    assert amb is not None
+    assert amb.task == "созвон"
+    assert amb.hour == 2

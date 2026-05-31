@@ -17,12 +17,13 @@ from bot.services.chat_permissions import bot_can_post_reminders, format_bot_can
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.drafts import pop_search_pending, store_draft
-from bot.services.pending_tasks import store_pending_task
+from bot.services.pending_tasks import get_pending_task, store_pending_task
 from bot.services.reminder_display import format_batch_parsed_summary_html
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import (
     format_confirm_card,
     format_parse_fail,
+    format_pending_ambiguous_hint,
     looks_like_task_only,
 )
 from bot.services.ambiguous_prompt import offer_ambiguous_time_choice
@@ -183,6 +184,10 @@ async def _route_user_phrase(
 ) -> None:
     if pop_search_pending(message.from_user.id):
         await send_search_results(message, text)
+        return
+    pending = get_pending_task(message.from_user.id)
+    if pending and pending.ambiguous_day is not None:
+        await message.answer(format_pending_ambiguous_hint())
         return
     if await process_edit_phrase(message, text, bot):
         return

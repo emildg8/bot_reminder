@@ -27,14 +27,16 @@
 | 19 | /cancel сбрасывает pending-уточнение | v3.23 |
 | 20 | Edit-сессия при ambiguous-кнопках | v3.23 |
 | 21 | «напомни …» / «в два» для ambiguous | v3.23 |
+| 22 | «созвон завтра в 2» (суффикс дня) | v3.24 |
+| 23 | Подсказка при тексте вместо кнопки ambiguous | v3.24 |
+| 24 | Тесты ambiguous_prompt | v3.24 |
 
 ## Дальше (идеи)
 
 | # | Улучшение | Impact | Effort |
 |---|-----------|--------|--------|
-| A | Handler tests (callbacks, create) | medium | medium |
+| A | Handler tests (callbacks confirm) | medium | medium |
 | B | Поднять coverage gate постепенно | low | ongoing |
-| C | «созвон завтра в 2» (суффикс дня) | low | small |
 
 ## Отменено / не актуально
 

@@ -21,6 +21,10 @@ _AMBIGUOUS = re.compile(
     rf"^(?P<day>{_DAY})\s+(?:в\s+)?(?P<h>{HOUR_WORD_PATTERN}|\d{{1,2}})\s+(?P<task>.+)$",
     re.IGNORECASE,
 )
+_AMBIGUOUS_SUFFIX = re.compile(
+    rf"^(?P<task>.+?)\s+(?P<day>{_DAY})\s+(?:в\s+)?(?P<h>{HOUR_WORD_PATTERN}|\d{{1,2}})\s*$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -36,25 +40,35 @@ class AmbiguousDayOnly:
     task: str
 
 
+def _match_ambiguous_day_hour(phrase: str) -> re.Match[str] | None:
+    match = _AMBIGUOUS.match(phrase)
+    if match:
+        return match
+    return _AMBIGUOUS_SUFFIX.match(phrase)
+
+
 def detect_ambiguous_day_hour(text: str) -> AmbiguousDayHour | None:
     phrase = NOISE_PREFIX.sub("", text.strip()).strip()
     if not phrase or HOUR_PART_OF_DAY.search(phrase):
         return None
     if re.search(r"\d{1,2}[:.]\d{2}", phrase):
         return None
-    match = _AMBIGUOUS.match(phrase)
+    match = _match_ambiguous_day_hour(phrase)
     if not match:
         return None
     hour = _parse_hour_token(match.group("h"))
     if hour is None or not (1 <= hour <= 11):
         return None
     day = match.group("day").lower().replace("после завтра", "послезавтра")
-    return AmbiguousDayHour(day=day, hour=hour, task=match.group("task").strip())
+    task = match.group("task").strip()
+    if not task:
+        return None
+    return AmbiguousDayHour(day=day, hour=hour, task=task)
 
 
 def detect_ambiguous_day_only(text: str) -> AmbiguousDayOnly | None:
     phrase = NOISE_PREFIX.sub("", text.strip()).strip()
-    if not phrase or detect_ambiguous_day_hour(text):
+    if not phrase or detect_ambiguous_day_hour(phrase):
         return None
     if DAY_PART_PERIOD.search(phrase) or HOUR_PART_OF_DAY.search(phrase):
         return None

@@ -186,6 +186,10 @@ def format_ambiguous_day_prompt(task: str, day: str) -> str:
     )
 
 
+def format_pending_ambiguous_hint() -> str:
+    return "🕐 Сначала выбери время кнопкой ↑ или отмени: /cancel"
+
+
 def phrase_from_task_preset(task: str, code: str) -> str:
     templates = {
         "30m": "через 30 минут {task}",
