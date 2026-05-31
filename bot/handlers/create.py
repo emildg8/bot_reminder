@@ -10,6 +10,7 @@ from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
 from bot.services.bot_mention import should_handle_collective_message
+from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
@@ -107,16 +108,38 @@ async def _process_text_and_reply(
         prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
 
     mention_provided = bool(mention_username or mention_id)
+    chat_kind = chat_kind_from_chat(message.chat)
     draft_id = store_draft(
         user_id,
         parsed_items=parsed_items,
         mention_telegram_id=mention_telegram_id,
         mention_provided=mention_provided,
+        collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,
+        collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
     )
 
     body = format_confirm_card(summary)
     if prefix:
         body = prefix + body
+
+    if chat_kind != ChatKind.PRIVATE:
+        me = await bot.get_me()
+        sent_dm = await send_collective_confirm(
+            bot,
+            user_id=user_id,
+            collective_chat_id=message.chat.id,
+            collective_kind=chat_kind,
+            chat_title=message.chat.title,
+            body=body,
+            reply_markup=confirm_reminder_keyboard(draft_id),
+        )
+        if not sent_dm:
+            await message.answer(
+                body + collective_dm_failed_suffix(me.username),
+                reply_markup=confirm_reminder_keyboard(draft_id),
+            )
+        return
+
     await message.answer(
         body,
         reply_markup=confirm_reminder_keyboard(draft_id),

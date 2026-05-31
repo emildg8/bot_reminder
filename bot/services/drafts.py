@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import logging
 import uuid
 
+from bot.services.chat_ctx import ChatKind
 from bot.services.nlp.schemas import ParsedReminder
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,8 @@ class DraftEntry:
     mention_telegram_id: int | None = None
     mention_provided: bool = False
     edit_reminder_id: int | None = None
+    collective_chat_id: int | None = None
+    collective_chat_kind: ChatKind | None = None
 
     @property
     def parsed(self) -> ParsedReminder:
@@ -39,6 +42,8 @@ def store_draft(
     mention_telegram_id: int | None = None,
     mention_provided: bool = False,
     edit_reminder_id: int | None = None,
+    collective_chat_id: int | None = None,
+    collective_chat_kind: ChatKind | None = None,
 ) -> str:
     items = parsed_items if parsed_items is not None else ([parsed] if parsed else [])
     if not items:
@@ -53,6 +58,8 @@ def store_draft(
         mention_telegram_id=mention_telegram_id,
         mention_provided=mention_provided,
         edit_reminder_id=edit_reminder_id,
+        collective_chat_id=collective_chat_id,
+        collective_chat_kind=collective_chat_kind,
     )
     return draft_id
 

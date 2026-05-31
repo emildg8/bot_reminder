@@ -7,6 +7,7 @@ from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, get_reminder
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
+from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
@@ -163,18 +164,40 @@ async def _parse_and_confirm_edit(
         prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
 
     mention_provided = bool(mention_username or mention_id)
+    chat_kind = chat_kind_from_chat(message.chat)
     draft_id = store_draft(
         user_id,
         parsed_items=parsed_items,
         mention_telegram_id=mention_telegram_id,
         mention_provided=mention_provided,
         edit_reminder_id=reminder_id,
+        collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,
+        collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
     )
     body = format_confirm_card(summary, is_edit=True)
     if len(parsed_items) > 1:
         body = body.replace("Подтверди действие:", "Подтверди замену:")
     if prefix:
         body = prefix + body
+
+    if chat_kind != ChatKind.PRIVATE:
+        sent_dm = await send_collective_confirm(
+            bot,
+            user_id=user_id,
+            collective_chat_id=message.chat.id,
+            collective_kind=chat_kind,
+            chat_title=message.chat.title,
+            body=body,
+            reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),
+        )
+        if not sent_dm:
+            me = await bot.get_me()
+            await message.answer(
+                body + collective_dm_failed_suffix(me.username),
+                reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),
+            )
+        return
+
     await message.answer(
         body,
         reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),

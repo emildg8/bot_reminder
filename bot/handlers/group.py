@@ -3,10 +3,12 @@ from aiogram.enums import ChatType
 from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from aiogram.types import ChatMemberUpdated
 
-from bot.keyboards.inline import main_menu_inline_keyboard
+from bot.db.repository import async_session, get_or_create_chat
+from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard
 from bot.services.bot_menu import setup_channel_commands
 from bot.services.chat_ctx import ChatKind, chat_kind_from_type
-from bot.texts.messages import format_collective_welcome
+from bot.config import settings
+from bot.texts.messages import format_collective_welcome, format_group_tz_onboarding
 
 router = Router()
 
@@ -31,3 +33,11 @@ async def on_bot_added(event: ChatMemberUpdated) -> None:
             "⚡️ Быстрые действия:",
             reply_markup=main_menu_inline_keyboard(),
         )
+        async with async_session() as session:
+            chat = await get_or_create_chat(session, event.chat.id, settings.default_timezone)
+            if not chat.timezone_confirmed:
+                await event.bot.send_message(
+                    event.chat.id,
+                    format_group_tz_onboarding(),
+                    reply_markup=timezone_keyboard(),
+                )

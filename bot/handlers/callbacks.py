@@ -21,13 +21,15 @@ from bot.keyboards.inline import (
     snooze_picker_keyboard,
 )
 from bot.keyboards.reply import menu_keyboard_for_chat
-from bot.services.drafts import discard_draft, pop_draft, store_draft
+from bot.services.drafts import DraftEntry, discard_draft, pop_draft, store_draft
 from bot.services.duplicates import find_duplicate_reminder
 from bot.services.reminder_create import create_and_schedule_items
 from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
 from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
+from bot.services.collective_confirm import send_collective_duplicate_confirm
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.user_prefs import (
     clamp_snooze_minutes,
@@ -38,6 +40,8 @@ from bot.services.user_prefs import (
 )
 from bot.texts.messages import (
     format_batch_created,
+    format_collective_batch_notice,
+    format_collective_created_notice,
     format_created,
     format_edit_replaced,
     format_group_reminder_hint,
@@ -49,29 +53,78 @@ from bot.services.scheduler import schedule_reminder, scheduler
 router = Router()
 
 
+def _draft_target(entry: DraftEntry, callback: CallbackQuery) -> tuple[int, ChatKind | None]:
+    if entry.collective_chat_id is not None:
+        return entry.collective_chat_id, entry.collective_chat_kind
+    kind = chat_kind_from_chat(callback.message.chat)
+    collective = kind if kind != ChatKind.PRIVATE else None
+    return callback.message.chat.id, collective
+
+
 async def _reply_after_create(
     callback: CallbackQuery,
     bot: Bot,
     created: list[tuple[int, str, str]],
+    *,
+    entry: DraftEntry | None = None,
 ) -> None:
-    chat_id = callback.message.chat.id
-    kind = chat_kind_from_chat(callback.message.chat)
-    collective = kind if kind != ChatKind.PRIVATE else None
+    target_chat_id, collective = _draft_target(entry, callback) if entry else (
+        callback.message.chat.id,
+        chat_kind_from_chat(callback.message.chat)
+        if chat_kind_from_chat(callback.message.chat) != ChatKind.PRIVATE
+        else None,
+    )
+    if collective is None and entry and entry.collective_chat_kind:
+        collective = entry.collective_chat_kind
+
     if len(created) == 1:
         rid, when, text = created[0]
-        await callback.message.edit_text(
-            format_created(rid, when, text, collective=collective)
-        )
+        await callback.message.edit_text(format_created(rid, when, text, collective=collective))
     else:
-        await callback.message.edit_text(
-            format_batch_created(created, collective=collective)
-        )
-    if collective is not None:
+        await callback.message.edit_text(format_batch_created(created, collective=collective))
+
+    if collective is not None and entry and entry.collective_chat_id:
+        user = callback.from_user
+        if len(created) == 1:
+            rid, when, text = created[0]
+            notice = format_collective_created_notice(
+                creator_username=user.username,
+                creator_user_id=user.id,
+                reminder_id=rid,
+                when=when,
+                text=text,
+                chat_kind=collective,
+            )
+        else:
+            notice = format_collective_batch_notice(
+                creator_username=user.username,
+                creator_user_id=user.id,
+                count=len(created),
+                chat_kind=collective,
+            )
+        try:
+            await bot.send_message(entry.collective_chat_id, notice)
+        except Exception:
+            pass
+        me = await bot.get_me()
+        if not await bot_can_post_reminders(bot, target_chat_id):
+            try:
+                await bot.send_message(entry.collective_chat_id, format_bot_cannot_post_hint())
+            except Exception:
+                pass
+        try:
+            await bot.send_message(
+                callback.from_user.id,
+                format_group_reminder_hint(me.username),
+            )
+        except Exception:
+            pass
+    elif collective is not None:
         me = await bot.get_me()
         await callback.message.answer(format_group_reminder_hint(me.username))
-        if not await bot_can_post_reminders(bot, chat_id):
+        if not await bot_can_post_reminders(bot, target_chat_id):
             await callback.message.answer(format_bot_cannot_post_hint())
-    elif kb := menu_keyboard_for_chat(chat_id):
+    elif kb := menu_keyboard_for_chat(callback.message.chat.id):
         await callback.message.answer("Меню:", reply_markup=kb)
     await callback.answer()
 
@@ -90,6 +143,7 @@ async def _create_from_draft(
 
     batch = len(entry.parsed_items) > 1
     check_duplicate = not skip_duplicate and not batch
+    target_chat_id, collective_kind = _draft_target(entry, callback)
 
     async with async_session() as session:
         user = await get_or_create_user(
@@ -98,13 +152,13 @@ async def _create_from_draft(
             timezone=settings.default_timezone,
         )
         tz = await get_effective_timezone(
-            session, callback.message.chat.id, callback.from_user.id
+            session, target_chat_id, callback.from_user.id
         )
 
         if check_duplicate:
             duplicate = await find_duplicate_reminder(
                 session,
-                callback.message.chat.id,
+                target_chat_id,
                 entry.parsed.text,
                 entry.parsed.kind,
                 parsed=entry.parsed,
@@ -117,12 +171,30 @@ async def _create_from_draft(
                     parsed_items=entry.parsed_items,
                     mention_telegram_id=entry.mention_telegram_id,
                     mention_provided=entry.mention_provided,
+                    collective_chat_id=entry.collective_chat_id,
+                    collective_chat_kind=entry.collective_chat_kind,
                 )
-                await callback.message.edit_text(
+                dup_body = (
                     f"⚠️ Похожее напоминание уже есть (#{duplicate.id}).\n"
-                    f"📝 {entry.parsed.text}",
-                    reply_markup=duplicate_confirm_keyboard(new_draft_id, duplicate.id),
+                    f"📝 {entry.parsed.text}"
                 )
+                dup_kb = duplicate_confirm_keyboard(new_draft_id, duplicate.id)
+                if entry.collective_chat_id and collective_kind:
+                    sent = await send_collective_duplicate_confirm(
+                        bot,
+                        user_id=callback.from_user.id,
+                        collective_chat_id=entry.collective_chat_id,
+                        collective_kind=collective_kind,
+                        chat_title=None,
+                        body=dup_body,
+                        reply_markup=dup_kb,
+                    )
+                    if sent:
+                        await callback.message.edit_text("⚠️ Дубликат — подтверди в сообщении выше.")
+                    else:
+                        await callback.message.edit_text(dup_body, reply_markup=dup_kb)
+                else:
+                    await callback.message.edit_text(dup_body, reply_markup=dup_kb)
                 await callback.answer()
                 return
 
@@ -130,14 +202,14 @@ async def _create_from_draft(
             session,
             bot,
             user_id=user.id,
-            chat_id=callback.message.chat.id,
+            chat_id=target_chat_id,
             created_by_telegram_id=callback.from_user.id,
             timezone=tz,
             parsed_items=entry.parsed_items,
             mention_telegram_id=entry.mention_telegram_id,
         )
 
-    await _reply_after_create(callback, bot, created)
+    await _reply_after_create(callback, bot, created, entry=entry)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("confirm:"))
@@ -162,9 +234,8 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
         await callback.answer("Черновик не найден или устарел.", show_alert=True)
         return
 
-    chat_id = callback.message.chat.id
-    kind = chat_kind_from_chat(callback.message.chat)
-    collective = kind if kind != ChatKind.PRIVATE else None
+    chat_id = entry.collective_chat_id or callback.message.chat.id
+    _, collective = _draft_target(entry, callback)
 
     async with async_session() as session:
         user = await get_or_create_user(
@@ -211,10 +282,25 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
                 format_edit_replaced(reminder_id, created, collective=collective)
             )
 
-    if collective is not None and len(entry.parsed_items) > 1:
+    if entry.collective_chat_id and collective is not None and len(entry.parsed_items) > 1:
         me = await bot.get_me()
-        await callback.message.answer(format_group_reminder_hint(me.username))
-    elif kb := menu_keyboard_for_chat(chat_id):
+        try:
+            await bot.send_message(callback.from_user.id, format_group_reminder_hint(me.username))
+        except Exception:
+            pass
+        try:
+            await bot.send_message(
+                entry.collective_chat_id,
+                format_collective_batch_notice(
+                    creator_username=callback.from_user.username,
+                    creator_user_id=callback.from_user.id,
+                    count=len(entry.parsed_items),
+                    chat_kind=collective,
+                ),
+            )
+        except Exception:
+            pass
+    elif kb := menu_keyboard_for_chat(callback.message.chat.id):
         await callback.message.answer("Меню:", reply_markup=kb)
     await callback.answer()
 

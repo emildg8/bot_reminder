@@ -57,6 +57,17 @@ async def init_db() -> None:
                     text("ALTER TABLE users ADD COLUMN snooze_step INTEGER DEFAULT 15")
                 )
 
+            chat_cols = {
+                row[1]
+                for row in (await conn.execute(text("PRAGMA table_info(chat_settings)"))).fetchall()
+            }
+            if "timezone_confirmed" not in chat_cols:
+                await conn.execute(
+                    text(
+                        "ALTER TABLE chat_settings ADD COLUMN timezone_confirmed BOOLEAN DEFAULT 1"
+                    )
+                )
+
             await conn.execute(
                 text(
                     """
@@ -127,7 +138,7 @@ async def get_or_create_chat(session: AsyncSession, chat_id: int, timezone: str)
     chat = result.scalar_one_or_none()
     if chat is not None:
         return chat
-    chat = ChatSettings(chat_id=chat_id, timezone=timezone)
+    chat = ChatSettings(chat_id=chat_id, timezone=timezone, timezone_confirmed=False)
     session.add(chat)
     try:
         await session.commit()
@@ -141,6 +152,7 @@ async def get_or_create_chat(session: AsyncSession, chat_id: int, timezone: str)
 
 async def update_chat_timezone(session: AsyncSession, chat: ChatSettings, timezone: str) -> ChatSettings:
     chat.timezone = timezone
+    chat.timezone_confirmed = True
     await session.commit()
     await session.refresh(chat)
     return chat

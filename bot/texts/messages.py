@@ -2,7 +2,7 @@
 
 import re
 
-from bot.services.chat_ctx import ChatKind, collective_place_label, is_group_chat
+from bot.services.chat_ctx import ChatKind, collective_noun, collective_place_label, is_group_chat
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
@@ -201,6 +201,78 @@ def collective_created_suffix(chat_kind: ChatKind) -> str:
 def format_collective_confirm_prefix(chat_kind: ChatKind) -> str:
     place = collective_place_label(chat_kind)
     return f"📣 Напоминание в {place} · кнопки управления — в личке.\n\n"
+
+
+def format_collective_dm_confirm_header(chat_kind: ChatKind, chat_title: str | None) -> str:
+    noun = collective_noun(chat_kind)
+    title = chat_title or noun
+    return f"📣 Подтверждение для {noun}: <b>{title}</b>\n\n"
+
+
+def format_collective_check_dm(chat_kind: ChatKind, chat_title: str | None) -> str:
+    place = collective_place_label(chat_kind)
+    title = f" «{chat_title}»" if chat_title else ""
+    return (
+        f"📲 Подтверди напоминание в <b>личке с ботом</b> "
+        f"(кнопки отправлены создателю).\n"
+        f"<i>Чат{title} · {place}</i>"
+    )
+
+
+def format_collective_dm_failed_fallback(bot_username: str | None) -> str:
+    uname = bot_username or "бот"
+    return (
+        f"⚠️ Не удалось написать в личку. Нажми /start у @{uname}, "
+        "затем повтори команду.\n"
+        "Подтверждение ниже — в этом чате:"
+    )
+
+
+def format_collective_created_notice(
+    *,
+    creator_username: str | None,
+    creator_user_id: int,
+    reminder_id: int,
+    when: str,
+    text: str,
+    chat_kind: ChatKind,
+) -> str:
+    if creator_username:
+        who = f"@{creator_username}"
+    else:
+        who = f'<a href="tg://user?id={creator_user_id}">участник</a>'
+    place = collective_place_label(chat_kind)
+    return (
+        f"✅ {who} · #{reminder_id} · {when} · <b>{text}</b>\n"
+        f"<i>Напоминание в {place} · кнопки — в личке</i>"
+    )
+
+
+def format_collective_batch_notice(
+    *,
+    creator_username: str | None,
+    creator_user_id: int,
+    count: int,
+    chat_kind: ChatKind,
+) -> str:
+    if creator_username:
+        who = f"@{creator_username}"
+    else:
+        who = f'<a href="tg://user?id={creator_user_id}">участник</a>'
+    place = collective_place_label(chat_kind)
+    return (
+        f"✅ {who} создал <b>{count}</b> напоминания · /list\n"
+        f"<i>Сработают в {place} · кнопки — в личке</i>"
+    )
+
+
+def format_group_tz_onboarding() -> str:
+    return (
+        "🕐 <b>Часовой пояс группы</b>\n\n"
+        "От него зависят «завтра в 10:00» и другие напоминания.\n"
+        "Выбери город (только админы):"
+    )
+
 
 
 HELP_TEXT_PRIVATE = f"""\
