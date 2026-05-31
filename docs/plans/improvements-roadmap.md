@@ -30,13 +30,14 @@
 | 22 | «созвон завтра в 2» (суффикс дня) | v3.24 |
 | 23 | Подсказка при тексте вместо кнопки ambiguous | v3.24 |
 | 24 | Тесты ambiguous_prompt | v3.24 |
+| 25 | Handler tests callbacks (confirm/edit/done) | v3.25 |
 
 ## Дальше (идеи)
 
 | # | Улучшение | Impact | Effort |
 |---|-----------|--------|--------|
-| A | Handler tests (callbacks confirm) | medium | medium |
 | B | Поднять coverage gate постепенно | low | ongoing |
+| C | Snooze/delete handler tests | low | small |
 
 ## Отменено / не актуально
 

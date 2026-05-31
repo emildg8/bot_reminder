@@ -2,6 +2,16 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.25.0] — 2026-05-31
+
+### Тесты callbacks
+- **confirm** — создание напоминания из черновика
+- **duplicate** — предупреждение о похожем; **confirm_force** — создать всё равно
+- **confirm_edit** — замена текста/времени
+- **cancel** — отмена черновика
+- **done** — закрытие напоминания
+- Общая fixture `tests/db_helpers.py` (shared in-memory session)
+
 ## [3.24.0] — 2026-05-31
 
 ### NLP и UX
