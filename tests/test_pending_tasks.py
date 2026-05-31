@@ -1,4 +1,4 @@
-from bot.services.pending_tasks import pop_pending_task, store_pending_task
+from bot.services.pending_tasks import clear_pending_task, pop_pending_task, store_pending_task
 
 
 def test_pending_task_with_edit_id():
@@ -14,3 +14,9 @@ def test_pending_task_create_only():
     entry = pop_pending_task(99)
     assert entry is not None
     assert entry.edit_reminder_id is None
+
+
+def test_clear_pending_task():
+    store_pending_task(7, "тест")
+    clear_pending_task(7)
+    assert pop_pending_task(7) is None

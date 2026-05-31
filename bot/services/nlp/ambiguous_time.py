@@ -37,7 +37,7 @@ class AmbiguousDayOnly:
 
 
 def detect_ambiguous_day_hour(text: str) -> AmbiguousDayHour | None:
-    phrase = text.strip()
+    phrase = NOISE_PREFIX.sub("", text.strip()).strip()
     if not phrase or HOUR_PART_OF_DAY.search(phrase):
         return None
     if re.search(r"\d{1,2}[:.]\d{2}", phrase):
@@ -53,8 +53,8 @@ def detect_ambiguous_day_hour(text: str) -> AmbiguousDayHour | None:
 
 
 def detect_ambiguous_day_only(text: str) -> AmbiguousDayOnly | None:
-    phrase = text.strip()
-    if not phrase or detect_ambiguous_day_hour(phrase):
+    phrase = NOISE_PREFIX.sub("", text.strip()).strip()
+    if not phrase or detect_ambiguous_day_hour(text):
         return None
     if DAY_PART_PERIOD.search(phrase) or HOUR_PART_OF_DAY.search(phrase):
         return None

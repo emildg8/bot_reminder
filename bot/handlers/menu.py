@@ -36,7 +36,7 @@ from bot.services.drafts import clear_edit_pending, clear_search_pending, set_se
 from bot.services.reminders_ui import send_active_reminders
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, tz_scope_label
 from bot.services.chat_status import build_status_text
-from bot.services.pending_tasks import pop_pending_task
+from bot.services.pending_tasks import clear_pending_task, pop_pending_task
 from bot.services.nlp.ambiguous_time import phrase_from_ambiguous_choice, phrase_from_day_only_choice
 from bot.texts.messages import (
     CREATE_HINT,
@@ -55,6 +55,7 @@ router = Router()
 def _clear_modes(user_id: int) -> None:
     clear_edit_pending(user_id)
     clear_search_pending(user_id)
+    clear_pending_task(user_id)
 
 
 @router.message(Command("help"))
@@ -94,6 +95,7 @@ async def handle_menu_buttons(message: Message, bot) -> None:
     text = message.text
     if text == BTN_SEARCH:
         clear_edit_pending(message.from_user.id)
+        clear_pending_task(message.from_user.id)
         set_search_pending(message.from_user.id)
         await message.answer(
             "🔍 <b>Поиск</b>\n\nНапиши слово или фразу — найду среди активных напоминаний.\n"
@@ -176,6 +178,7 @@ async def menu_status(callback: CallbackQuery, bot) -> None:
 async def menu_search(callback: CallbackQuery) -> None:
     await safe_callback_answer(callback)
     clear_edit_pending(callback.from_user.id)
+    clear_pending_task(callback.from_user.id)
     set_search_pending(callback.from_user.id)
     await callback.message.answer(
         "🔍 <b>Поиск</b>\n\nНапиши слово или фразу.\nОтмена: /cancel",

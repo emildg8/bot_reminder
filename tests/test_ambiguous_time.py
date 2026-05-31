@@ -67,3 +67,17 @@ def test_ambiguous_hour_keyboard_two_choices():
     labels = [btn.text for row in ambiguous_hour_keyboard().inline_keyboard for btn in row]
     assert len(labels) == 2
     assert all("09:00" not in label for label in labels)
+
+
+def test_detect_napomni_prefix():
+    amb = detect_ambiguous_day_hour("напомни завтра в 2 созвон")
+    assert amb is not None
+    assert amb.task == "созвон"
+    assert amb.hour == 2
+
+
+def test_detect_zavtra_v_dva_slovom():
+    amb = detect_ambiguous_day_hour("завтра в два созвон")
+    assert amb is not None
+    assert amb.hour == 2
+    assert amb.task == "созвон"

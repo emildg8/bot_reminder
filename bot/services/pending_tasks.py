@@ -38,6 +38,10 @@ def store_pending_task(
     )
 
 
+def clear_pending_task(user_id: int) -> None:
+    _pending.pop(user_id, None)
+
+
 def pop_pending_task(user_id: int) -> PendingTask | None:
     entry = _pending.pop(user_id, None)
     if entry is None:
