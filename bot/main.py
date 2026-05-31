@@ -206,6 +206,8 @@ async def main() -> None:
             kwargs={"bot": bot, "dp": dp},
         )
     await restore_scheduled_reminders(bot)
+    if settings.auto_update_enabled:
+        await _auto_update_job(bot, dp)
     await setup_bot_commands(bot)
     await setup_bot_profile(bot)
 

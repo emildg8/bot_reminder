@@ -1,27 +1,33 @@
-# Автоматический деплой (один раз настроить в GitHub)
+# Автоматический деплой (один раз настроить)
 
-После `git push` в `main`: **CI → тесты → перезапуск Wispbyte → `start.sh` (git pull + pip + run)**.
+**Push в `main` → CI (тесты) → restart Wispbyte → `start.sh` (git pull + run).**
 
-Локально ничего делать не нужно.
+## Быстрая настройка (один раз)
 
-## GitHub Secrets
+```powershell
+# 1. Скопируй шаблон и заполни значения
+copy .env.deploy.local.example .env.deploy.local
 
-Репозиторий → **Settings → Secrets and variables → Actions → New repository secret**
+# 2. Загрузи secrets в GitHub (нужен gh auth login)
+.\scripts\setup_github_deploy.ps1
+```
 
-| Secret | Обязательно | Описание |
-|--------|-------------|----------|
-| `BOT_TOKEN` | да | Токен бота (уже используется для avatar workflow) |
-| `ADMIN_TELEGRAM_IDS` | да | ID админов через запятую, напр. `250891839` |
-| `WISP_PANEL_URL` | для мгновенного деплоя | URL панели, напр. `https://panel.wispbyte.com` |
-| `WISP_API_TOKEN` | для мгновенного деплоя | Client API token (Account → Security → API Tokens) |
-| `WISP_SERVER_UUID` | для мгновенного деплоя | UUID сервера из URL панели |
+Linux/macOS: `cp .env.deploy.local.example .env.deploy.local` → `bash scripts/setup_github_deploy.sh`
 
-Альтернативные имена (совместимость с Pterodactyl): `PTERODACTYL_PANEL_URL`, `PTERODACTYL_API_TOKEN`, `PTERODACTYL_SERVER_UUID`.
+| Secret | Где взять |
+|--------|-----------|
+| `BOT_TOKEN` | BotFather + тот же токен на Wispbyte |
+| `ADMIN_TELEGRAM_IDS` | Telegram user id, напр. `250891839` |
+| `WISP_PANEL_URL` | `https://panel.wispbyte.com` |
+| `WISP_API_TOKEN` | Wispbyte → Account → Security → API Tokens |
+| `WISP_SERVER_UUID` | UUID сервера из URL панели |
 
-## Если Wisp-секреты не заданы
+Альтернативные имена (Pterodactyl): `PTERODACTYL_PANEL_URL`, `PTERODACTYL_API_TOKEN`, `PTERODACTYL_SERVER_UUID`.
 
-Бот сам проверяет GitHub каждые **3 минуты** и перезапускается при новом коммите (`AUTO_UPDATE_ENABLED=true` по умолчанию).  
-На Wispbyte при выходе процесса панель поднимает его снова → `start.sh` делает `git pull`.
+## Если Wisp API не настроен
+
+При наличии `BOT_TOKEN` + `ADMIN_TELEGRAM_IDS` CI шлёт уведомление в Telegram.  
+Бот сам проверяет GitHub **каждую минуту** и при старте — `git pull` + перезапуск (~1 мин после push).
 
 ## Wispbyte startup command
 
@@ -31,6 +37,14 @@ bash start.sh
 
 ## Проверка
 
-1. Push в `main`
-2. GitHub Actions: job **Deploy to Wispbyte** — зелёный
-3. Telegram: «Deploy … — перезапуск сервера…», затем «Бот запущен · v…»
+1. `gh secret list -R emildg8/bot_reminder` — 5 secrets
+2. Push в `main` → Actions → **Deploy to Wispbyte** — restart + Telegram
+3. `/ping` → актуальная версия
+
+## Ручной деплой
+
+```bash
+gh workflow run CI -R emildg8/bot_reminder --ref main
+```
+
+На сервере (админ): `/update`

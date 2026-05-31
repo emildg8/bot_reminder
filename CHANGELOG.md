@@ -2,6 +2,14 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.8.1] — 2026-05-31
+
+### Деплой
+- Скрипт `setup_github_deploy.ps1` / `.sh` — одна команда для GitHub Secrets
+- CI: fail если secrets не настроены; partial mode (Telegram без Wisp API)
+- Auto-update: проверка при старте + интервал **1 мин** (было 3)
+- `wisp_restart.sh`: fallback Accept header Pterodactyl
+
 ## [3.8.0] — 2026-05-31
 
 ### Добавлено

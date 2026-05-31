@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     github_repo: str = "emildg8/bot_reminder"
     github_branch: str = "main"
     auto_update_enabled: bool = True
-    auto_update_interval_minutes: int = 3
+    auto_update_interval_minutes: int = 1
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod

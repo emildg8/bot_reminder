@@ -17,13 +17,22 @@ ENDPOINT="${PANEL_URL}/api/client/servers/${SERVER_UUID}/power"
 
 echo "==> Sending restart signal to ${PANEL_URL} (server ${SERVER_UUID:0:8}...)"
 
-HTTP_CODE=$(curl -sS -o /tmp/wisp_restart_body.txt -w "%{http_code}" -X POST "$ENDPOINT" \
-  -H "Authorization: Bearer ${API_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/vnd.wisp.v1+json" \
-  -d '{"signal":"restart"}' \
-  --connect-timeout 15 \
-  --max-time 120 || echo "000")
+try_restart() {
+  local accept_header="$1"
+  HTTP_CODE=$(curl -sS -o /tmp/wisp_restart_body.txt -w "%{http_code}" -X POST "$ENDPOINT" \
+    -H "Authorization: Bearer ${API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -H "Accept: ${accept_header}" \
+    -d '{"signal":"restart"}' \
+    --connect-timeout 15 \
+    --max-time 120 || echo "000")
+}
+
+try_restart "application/vnd.wisp.v1+json"
+if [[ "$HTTP_CODE" == "000" || "$HTTP_CODE" == "404" || "$HTTP_CODE" == "406" ]]; then
+  echo "Retry with Pterodactyl Accept header..."
+  try_restart "Application/vnd.pterodactyl.v1+json"
+fi
 
 echo "HTTP ${HTTP_CODE}"
 if [[ -f /tmp/wisp_restart_body.txt ]]; then

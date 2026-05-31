@@ -28,7 +28,9 @@ docker-down:
 	docker compose down
 
 deploy:
-	@echo "Deploy is automated: push to main triggers GitHub Actions (see .github/DEPLOY.md)"
+	@echo "One-time: copy .env.deploy.local.example → .env.deploy.local, then:"
+	@echo "  .\\scripts\\setup_github_deploy.ps1"
+	@echo "Push to main triggers CI deploy (see .github/DEPLOY.md)"
 
 avatar:
 	python scripts/set_bot_avatar.py

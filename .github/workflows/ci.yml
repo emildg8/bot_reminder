@@ -50,35 +50,55 @@ jobs:
           PTERODACTYL_SERVER_UUID: ${{ secrets.PTERODACTYL_SERVER_UUID }}
         run: |
           missing=()
+          wisp_missing=()
           [[ -z "$BOT_TOKEN" ]] && missing+=("BOT_TOKEN")
           [[ -z "$ADMIN_TELEGRAM_IDS" ]] && missing+=("ADMIN_TELEGRAM_IDS")
           panel="${WISP_PANEL_URL:-$PTERODACTYL_PANEL_URL}"
           token="${WISP_API_TOKEN:-$PTERODACTYL_API_TOKEN}"
           uuid="${WISP_SERVER_UUID:-$PTERODACTYL_SERVER_UUID}"
-          [[ -z "$panel" ]] && missing+=("WISP_PANEL_URL")
-          [[ -z "$token" ]] && missing+=("WISP_API_TOKEN")
-          [[ -z "$uuid" ]] && missing+=("WISP_SERVER_UUID")
+          [[ -z "$panel" ]] && wisp_missing+=("WISP_PANEL_URL")
+          [[ -z "$token" ]] && wisp_missing+=("WISP_API_TOKEN")
+          [[ -z "$uuid" ]] && wisp_missing+=("WISP_SERVER_UUID")
+
           if ((${#missing[@]} > 0)); then
             echo "missing=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Deploy secrets not configured: ${missing[*]}"
-            echo "### Deploy skipped" >> "$GITHUB_STEP_SUMMARY"
-            echo "Secrets not set: \`${missing[*]}\`" >> "$GITHUB_STEP_SUMMARY"
-            echo "See [.github/DEPLOY.md](.github/DEPLOY.md). Bot will auto-update via GitHub polling (~3 min)." >> "$GITHUB_STEP_SUMMARY"
+            echo "wisp_missing=true" >> "$GITHUB_OUTPUT"
+            echo "has_bot=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Deploy secrets not configured: ${missing[*]} ${wisp_missing[*]}"
+            echo "### Deploy failed — secrets missing" >> "$GITHUB_STEP_SUMMARY"
+            echo "Run \`scripts/setup_github_deploy.ps1\` (see \`.env.deploy.local.example\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing: \`${missing[*]} ${wisp_missing[*]}\`" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "has_bot=true" >> "$GITHUB_OUTPUT"
+          if ((${#wisp_missing[@]} > 0)); then
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+            echo "wisp_missing=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Wisp secrets missing — Telegram notify only; bot auto-update ~1 min"
+            echo "### Deploy: Wisp API not configured" >> "$GITHUB_STEP_SUMMARY"
+            echo "Push notified via Telegram. Bot will pull from GitHub on next auto-update check." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "missing=false" >> "$GITHUB_OUTPUT"
+            echo "wisp_missing=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Notify deploy start
-        if: steps.secrets.outputs.missing != 'true'
+        if: steps.secrets.outputs.has_bot == 'true'
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_TELEGRAM_IDS: ${{ secrets.ADMIN_TELEGRAM_IDS }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
           SHORT_SHA="${GITHUB_SHA:0:7}"
-          bash scripts/notify_telegram.sh "🚀 Deploy <code>${SHORT_SHA}</code> — перезапуск сервера…"
+          if [[ "${{ steps.secrets.outputs.wisp_missing }}" == "true" ]]; then
+            bash scripts/notify_telegram.sh "🚀 Push <code>${SHORT_SHA}</code> — Wisp API не настроен, бот подтянет код сам (~1 мин) или Restart в панели"
+          else
+            bash scripts/notify_telegram.sh "🚀 Deploy <code>${SHORT_SHA}</code> — перезапуск сервера…"
+          fi
 
       - name: Restart Wispbyte server
-        if: steps.secrets.outputs.missing != 'true'
+        if: steps.secrets.outputs.wisp_missing != 'true'
         env:
           WISP_PANEL_URL: ${{ secrets.WISP_PANEL_URL }}
           WISP_API_TOKEN: ${{ secrets.WISP_API_TOKEN }}
@@ -87,3 +107,10 @@ jobs:
           PTERODACTYL_API_TOKEN: ${{ secrets.PTERODACTYL_API_TOKEN }}
           PTERODACTYL_SERVER_UUID: ${{ secrets.PTERODACTYL_SERVER_UUID }}
         run: bash scripts/wisp_restart.sh
+
+      - name: Notify deploy queued
+        if: steps.secrets.outputs.wisp_missing != 'true'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_TELEGRAM_IDS: ${{ secrets.ADMIN_TELEGRAM_IDS }}
+        run: bash scripts/notify_telegram.sh "⏳ Restart отправлен — жди «Бот запущен · v…» в Telegram"

@@ -109,7 +109,9 @@ docker compose up -d --build
 
 **Startup command на Wispbyte:** `bash start.sh`
 
-Без Wisp-секретов бот сам подтягивает обновления с GitHub каждые 3 мин (auto-update).
+Без Wisp-секретов бот сам подтягивает обновления с GitHub каждую **1 мин** (auto-update) и при каждом старте.
+
+**Первый раз:** `copy .env.deploy.local.example .env.deploy.local` → заполни → `.\scripts\setup_github_deploy.ps1`
 
 ---
 
