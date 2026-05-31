@@ -37,7 +37,14 @@ from bot.services.reminders_ui import send_active_reminders
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, tz_scope_label
 from bot.services.chat_status import build_status_text
 from bot.services.pending_tasks import pop_pending_task
-from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, format_help, phrase_from_task_preset
+from bot.services.nlp.ambiguous_time import phrase_from_ambiguous_choice
+from bot.texts.messages import (
+    CREATE_HINT,
+    EXAMPLES_INTRO,
+    EXAMPLE_PHRASES,
+    format_help,
+    phrase_from_task_preset,
+)
 from bot.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -273,6 +280,29 @@ async def task_time_picked(callback: CallbackQuery, bot) -> None:
             bot,
         )
         return
+    await _process_text_and_reply(
+        callback.message,
+        phrase,
+        bot,
+        actor_user_id=callback.from_user.id,
+        use_phrase_text=True,
+    )
+
+
+@router.callback_query(F.data.startswith("ah:"))
+async def ambiguous_hour_picked(callback: CallbackQuery, bot) -> None:
+    choice = callback.data.split(":", 1)[1]
+    pending = pop_pending_task(callback.from_user.id)
+    if not pending or pending.ambiguous_day is None or pending.ambiguous_hour is None:
+        await safe_callback_answer(callback, "Уточнение устарело — напиши фразу заново.", show_alert=True)
+        return
+    phrase = phrase_from_ambiguous_choice(
+        task=pending.text,
+        day=pending.ambiguous_day,
+        hour=pending.ambiguous_hour,
+        choice=choice,
+    )
+    await safe_callback_answer(callback)
     await _process_text_and_reply(
         callback.message,
         phrase,

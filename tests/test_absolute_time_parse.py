@@ -143,14 +143,13 @@ def test_stt_v_dva_slovom():
     assert "фильм" in parsed.text.lower()
 
 
-def test_napomnyu_zavtra_v_2():
-    from bot.services.nlp.rule_parser import parse_with_rules
+def test_napomnyu_zavtra_v_2_ambiguous():
+    from bot.services.nlp.ambiguous_time import detect_ambiguous_day_hour
 
-    parsed = parse_with_rules("Напомню завтра в 2 создать бота", "Europe/Moscow")
-    assert parsed is not None
-    assert parsed.text.lower() == "создать бота"
-    assert parsed.run_at.hour == 2
-    assert parsed.run_at.minute == 0
+    amb = detect_ambiguous_day_hour("завтра в 2 создать бота")
+    assert amb is not None
+    assert amb.hour == 2
+    assert "бот" in amb.task.lower()
 
 
 def test_napomnyu_with_comma():

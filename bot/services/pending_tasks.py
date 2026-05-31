@@ -13,6 +13,8 @@ class PendingTask:
     text: str
     created_at: datetime
     edit_reminder_id: int | None = None
+    ambiguous_day: str | None = None
+    ambiguous_hour: int | None = None
 
 
 _pending: dict[int, PendingTask] = {}
@@ -23,12 +25,16 @@ def store_pending_task(
     task: str,
     *,
     edit_reminder_id: int | None = None,
+    ambiguous_day: str | None = None,
+    ambiguous_hour: int | None = None,
 ) -> None:
     _prune()
     _pending[user_id] = PendingTask(
         text=task.strip(),
         created_at=datetime.now(timezone.utc),
         edit_reminder_id=edit_reminder_id,
+        ambiguous_day=ambiguous_day,
+        ambiguous_hour=ambiguous_hour,
     )
 
 

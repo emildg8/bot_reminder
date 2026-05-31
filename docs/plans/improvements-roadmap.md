@@ -14,12 +14,15 @@
 | 6 | Collective notice errors → лог + DM создателю | v3.19 |
 | 7 | Авто-alarm админу при repair scheduler | v3.19 |
 | 8 | Тесты chat_permissions, collective list | v3.19 |
+| 9 | Группы без inline-меню | v3.19.1 |
+| 10 | NLP: уточнение «завтра в 2» кнопками | v3.20 |
+| 11 | Удалён мёртвый код group_* keyboards | v3.20 |
 
 ## Дальше (backlog)
 
 | # | Улучшение | Impact | Effort |
 |---|-----------|--------|--------|
-| A | NLP: уточнение «завтра в 2» / дефолт 9:00 — кнопки | high | medium |
+| A | ~~NLP: уточнение «завтра в 2»~~ | high | done v3.20 |
 | B | E2E-тесты confirm → create → schedule (мок Bot) | medium | medium |
 | C | Coverage gate в CI | low | small |
 | D | Auto-delete group menu через 30 с | low | small |

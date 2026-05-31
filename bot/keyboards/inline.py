@@ -281,63 +281,16 @@ def examples_keyboard(*, back_callback: str | None = None) -> InlineKeyboardMark
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def group_home_keyboard() -> InlineKeyboardMarkup:
+def ambiguous_hour_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="📋 Список", callback_data="gmenu:list"),
-                InlineKeyboardButton(text="➕ Как создать", callback_data="gmenu:hint"),
+                InlineKeyboardButton(text="☀️ 14:00 (дня)", callback_data="ah:day"),
+                InlineKeyboardButton(text="🌙 02:00 (ночи)", callback_data="ah:night"),
             ],
-            [
-                InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="gmenu:tz"),
-                InlineKeyboardButton(text="❓ Помощь", callback_data="gmenu:help"),
-            ],
-            [
-                InlineKeyboardButton(text="💡 Примеры", callback_data="gmenu:examples"),
-            ],
+            [InlineKeyboardButton(text="🌅 09:00", callback_data="ah:morn")],
         ]
     )
-
-
-def group_examples_keyboard() -> InlineKeyboardMarkup:
-    rows: list[list[InlineKeyboardButton]] = []
-    row: list[InlineKeyboardButton] = []
-    for idx, (label, _) in enumerate(EXAMPLE_PHRASES[:4]):
-        row.append(InlineKeyboardButton(text=label, callback_data=f"ex:{idx}"))
-        if len(row) == 2:
-            rows.append(row)
-            row = []
-    if row:
-        rows.append(row)
-    rows.append([InlineKeyboardButton(text="◀️ Меню", callback_data="gmenu:home")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
-def group_timezone_keyboard() -> InlineKeyboardMarkup:
-    rows = [
-        [InlineKeyboardButton(text=label, callback_data=f"tz:{value}")]
-        for value, label in TIMEZONE_OPTIONS
-    ]
-    rows.append([InlineKeyboardButton(text="Другой пояс (UTC)…", callback_data="tz_menu:offset")])
-    rows.append([InlineKeyboardButton(text="⬅ Назад", callback_data="gmenu:home")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
-def group_timezone_offset_keyboard() -> InlineKeyboardMarkup:
-    offsets = list(range(-12, 15))
-    rows: list[list[InlineKeyboardButton]] = []
-    row: list[InlineKeyboardButton] = []
-    for off in offsets:
-        sign = "+" if off >= 0 else ""
-        label = f"UTC{sign}{off}"
-        row.append(InlineKeyboardButton(text=label, callback_data=f"tz_off:{off}"))
-        if len(row) == 4:
-            rows.append(row)
-            row = []
-    if row:
-        rows.append(row)
-    rows.append([InlineKeyboardButton(text="◀️ Меню", callback_data="gmenu:home")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:

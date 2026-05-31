@@ -168,6 +168,15 @@ TASK_TIME_PRESETS: list[tuple[str, str]] = [
 ]
 
 
+def format_ambiguous_hour_prompt(task: str, day: str, hour: int) -> str:
+    day_label = day.capitalize()
+    return (
+        f"🕐 <b>Уточни время</b>\n\n"
+        f"«{day_label} в {hour}» — это день или ночь?\n\n"
+        f"Задача: <b>{task}</b>"
+    )
+
+
 def phrase_from_task_preset(task: str, code: str) -> str:
     templates = {
         "30m": "через 30 минут {task}",
