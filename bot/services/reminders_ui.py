@@ -13,10 +13,17 @@ from bot.db.repository import (
     is_chat_paused,
 )
 from bot.keyboards.inline import list_page_keyboard, list_tabs_keyboard
+from bot.services.chat_ctx import is_collective_chat
+from bot.services.chat_delivery import resolve_delivery_chat_id
 from bot.services.reminder_display import format_reminder_list_line
 from bot.services.reminder_history import _day_bounds, _event_label
 
 LIST_PAGE_SIZE = 8
+
+COLLECTIVE_LIST_HINT = (
+    "\n\n<i>✏️ /edit N — свои · ⏸ /pause · 🕐 /timezone (админы)\n"
+    "Кнопки управления — в личке с ботом.</i>"
+)
 
 
 def _paginate(items: list, page: int) -> tuple[list, int, int]:
@@ -37,6 +44,20 @@ def _merge_keyboards(
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def _collective_nav_keyboard(page: int, total_pages: int) -> InlineKeyboardMarkup | None:
+    if total_pages <= 1:
+        return None
+    from aiogram.types import InlineKeyboardButton
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav.append(InlineKeyboardButton(text="◀️", callback_data=f"list:page:{page - 1}"))
+    nav.append(InlineKeyboardButton(text=f"{page + 1}/{total_pages}", callback_data="list:noop"))
+    if page < total_pages - 1:
+        nav.append(InlineKeyboardButton(text="▶️", callback_data=f"list:page:{page + 1}"))
+    return InlineKeyboardMarkup(inline_keyboard=[nav])
+
+
 async def build_list_message(
     chat_id: int,
     viewer_id: int,
@@ -44,7 +65,11 @@ async def build_list_message(
     *,
     tab: str = "active",
     timezone: str = settings.default_timezone,
+    source_chat_id: int | None = None,
 ) -> tuple[str, object | None]:
+    ui_chat_id = source_chat_id if source_chat_id is not None else chat_id
+    collective_ui = is_collective_chat(ui_chat_id)
+
     async with async_session() as session:
         paused = await is_chat_paused(session, chat_id)
 
@@ -110,31 +135,52 @@ async def build_list_message(
     lines = [format_reminder_list_line(r, r.timezone) for r in page_items]
 
     header = f"📋 <b>Активные</b> · {len(reminders)}"
+    if chat_id != ui_chat_id:
+        header += " · <i>канал</i>"
     if paused:
         header += " · ⏸ <i>на паузе</i>"
     if total_pages > 1:
         header += f" · стр. {page + 1}/{total_pages}"
 
     body = header + "\n\n" + "\n".join(lines)
-    hint = ""
-    if chat_id < 0:
-        hint = "\n\n<i>Кнопки ✏️/🗑 — только для своих.</i>"
+    tabs = list_tabs_keyboard(active=True, page=page)
+
+    if collective_ui:
+        nav_kb = _collective_nav_keyboard(page, total_pages)
+        return body + COLLECTIVE_LIST_HINT, _merge_keyboards(nav_kb, tabs)
 
     keyboard = list_page_keyboard(page_items, viewer_id, page, total_pages)
-    tabs = list_tabs_keyboard(active=True, page=page)
-    return body + hint, _merge_keyboards(keyboard, tabs)
+    return body, _merge_keyboards(keyboard, tabs)
 
 
 async def send_active_reminders(message: Message, page: int = 0, tab: str = "active") -> None:
     async with async_session() as session:
         await get_or_create_user(session, message.from_user.id, settings.default_timezone)
+        list_chat_id = await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
 
-    text, keyboard = await build_list_message(message.chat.id, message.from_user.id, page, tab=tab)
+    text, keyboard = await build_list_message(
+        list_chat_id,
+        message.from_user.id,
+        page,
+        tab=tab,
+        source_chat_id=message.chat.id,
+    )
     await message.answer(text, reply_markup=keyboard)
 
 
 async def edit_list_message(callback: CallbackQuery, page: int, tab: str = "active") -> None:
+    async with async_session() as session:
+        list_chat_id = await resolve_delivery_chat_id(
+            session, callback.message.chat.id, callback.message.chat.type
+        )
+
     text, keyboard = await build_list_message(
-        callback.message.chat.id, callback.from_user.id, page, tab=tab
+        list_chat_id,
+        callback.from_user.id,
+        page,
+        tab=tab,
+        source_chat_id=callback.message.chat.id,
     )
     await callback.message.edit_text(text, reply_markup=keyboard)

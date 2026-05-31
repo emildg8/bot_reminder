@@ -23,6 +23,7 @@ class DraftEntry:
     edit_reminder_id: int | None = None
     collective_chat_id: int | None = None
     collective_chat_kind: ChatKind | None = None
+    delivery_chat_id: int | None = None
 
     @property
     def parsed(self) -> ParsedReminder:
@@ -44,6 +45,7 @@ def store_draft(
     edit_reminder_id: int | None = None,
     collective_chat_id: int | None = None,
     collective_chat_kind: ChatKind | None = None,
+    delivery_chat_id: int | None = None,
 ) -> str:
     items = parsed_items if parsed_items is not None else ([parsed] if parsed else [])
     if not items:
@@ -60,6 +62,7 @@ def store_draft(
         edit_reminder_id=edit_reminder_id,
         collective_chat_id=collective_chat_id,
         collective_chat_kind=collective_chat_kind,
+        delivery_chat_id=delivery_chat_id,
     )
     return draft_id
 

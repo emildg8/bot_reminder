@@ -12,6 +12,7 @@ from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
 from bot.services.bot_mention import should_handle_collective_message
 from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
+from bot.services.chat_delivery import resolve_delivery_chat_id
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.drafts import pop_search_pending, store_draft
@@ -43,6 +44,13 @@ async def _get_parse_timezone(chat_id: int, user_id: int) -> str:
         return await get_effective_timezone(session, chat_id, user_id)
 
 
+async def _resolve_delivery(message: Message) -> int:
+    async with async_session() as session:
+        return await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
+
+
 async def _process_text_and_reply(
     message: Message,
     text: str,
@@ -68,10 +76,14 @@ async def _process_text_and_reply(
             bot_id=me.id,
         )
 
-    mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
+    mention_telegram_id = await resolve_mention_user_id(
+        bot, mention_id, mention_username, chat_id=message.chat.id
+    )
     phrase = (clean_text or text).strip()
 
-    timezone = await _get_parse_timezone(message.chat.id, user_id)
+    delivery_chat_id = await _resolve_delivery(message)
+    async with async_session() as session:
+        timezone = await get_effective_timezone(session, delivery_chat_id, user_id)
     parsed_items = await parse_all_reminders(phrase, timezone)
 
     if not parsed_items:
@@ -97,8 +109,8 @@ async def _process_text_and_reply(
         prefix = ""
     if mention_username and not mention_telegram_id:
         prefix += (
-            f"⚠️ Не удалось найти @{mention_username} — "
-            "в группе напомню создателю.\n\n"
+            f"⚠️ @{mention_username} не в этом чате или не найден — "
+            "напомню создателю.\n\n"
         )
     elif mention_telegram_id or mention_username:
         who = f"@{mention_username}" if mention_username else "участнику"
@@ -106,6 +118,8 @@ async def _process_text_and_reply(
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
         prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
+        if delivery_chat_id != message.chat.id:
+            prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
 
     mention_provided = bool(mention_username or mention_id)
     chat_kind = chat_kind_from_chat(message.chat)
@@ -116,6 +130,7 @@ async def _process_text_and_reply(
         mention_provided=mention_provided,
         collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,
         collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
+        delivery_chat_id=delivery_chat_id if chat_kind != ChatKind.PRIVATE else None,
     )
 
     body = format_confirm_card(summary)

@@ -67,6 +67,10 @@ async def init_db() -> None:
                         "ALTER TABLE chat_settings ADD COLUMN timezone_confirmed BOOLEAN DEFAULT 1"
                     )
                 )
+            if "linked_chat_id" not in chat_cols:
+                await conn.execute(
+                    text("ALTER TABLE chat_settings ADD COLUMN linked_chat_id BIGINT")
+                )
 
             await conn.execute(
                 text(
@@ -156,6 +160,31 @@ async def update_chat_timezone(session: AsyncSession, chat: ChatSettings, timezo
     await session.commit()
     await session.refresh(chat)
     return chat
+
+
+async def update_channel_linked_chat(
+    session: AsyncSession, channel_id: int, linked_chat_id: int | None
+) -> None:
+    result = await session.execute(
+        select(ChatSettings).where(ChatSettings.chat_id == channel_id)
+    )
+    chat = result.scalar_one_or_none()
+    if chat is None:
+        return
+    chat.linked_chat_id = linked_chat_id
+    await session.commit()
+
+
+async def find_channel_by_linked_chat(
+    session: AsyncSession, discussion_chat_id: int
+) -> int | None:
+    result = await session.execute(
+        select(ChatSettings.chat_id).where(
+            ChatSettings.linked_chat_id == discussion_chat_id
+        )
+    )
+    row = result.scalar_one_or_none()
+    return int(row) if row is not None else None
 
 
 async def set_chat_paused(session: AsyncSession, chat_id: int, paused: bool) -> ChatSettings:

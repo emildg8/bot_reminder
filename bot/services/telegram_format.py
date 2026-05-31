@@ -2,7 +2,9 @@
 
 from html import escape
 
-from bot.services.timezone_ctx import is_group_chat
+from aiogram.enums import ChatType
+
+from bot.services.chat_ctx import ChatKind, chat_kind_from_type, is_group_chat
 
 
 def format_reminder_message(
@@ -13,7 +15,14 @@ def format_reminder_message(
     creator_user_id: int | None = None,
     creator_username: str | None = None,
     chat_id: int,
+    chat_type: str | ChatType | None = None,
+    chat_title: str | None = None,
 ) -> str:
+    kind = chat_kind_from_type(chat_type)
+    if kind == ChatKind.CHANNEL:
+        title = escape(chat_title) if chat_title else "Канал"
+        return f"📢 <b>{title}</b>\n⏰ <b>{escape(text)}</b>"
+
     prefix = ""
     target_id = mention_user_id
     target_username = mention_username

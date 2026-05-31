@@ -45,6 +45,7 @@ class ChatSettings(Base):
     chat_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
     timezone_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    linked_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     is_paused: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

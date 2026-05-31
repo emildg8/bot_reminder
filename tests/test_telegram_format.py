@@ -33,3 +33,15 @@ def test_explicit_mention():
     )
     assert "tg://user?id=42" in text
     assert "@alice" in text
+
+
+def test_channel_signature():
+    text = format_reminder_message(
+        "новый пост",
+        chat_id=-100200,
+        chat_type="channel",
+        chat_title="Мой канал",
+    )
+    assert "Мой канал" in text
+    assert "новый пост" in text
+    assert "tg://user" not in text

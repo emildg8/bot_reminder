@@ -54,8 +54,10 @@ router = Router()
 
 
 def _draft_target(entry: DraftEntry, callback: CallbackQuery) -> tuple[int, ChatKind | None]:
-    if entry.collective_chat_id is not None:
-        return entry.collective_chat_id, entry.collective_chat_kind
+    delivery = entry.delivery_chat_id or entry.collective_chat_id
+    if delivery is not None:
+        kind = entry.collective_chat_kind
+        return delivery, kind
     kind = chat_kind_from_chat(callback.message.chat)
     collective = kind if kind != ChatKind.PRIVATE else None
     return callback.message.chat.id, collective
@@ -173,6 +175,7 @@ async def _create_from_draft(
                     mention_provided=entry.mention_provided,
                     collective_chat_id=entry.collective_chat_id,
                     collective_chat_kind=entry.collective_chat_kind,
+                    delivery_chat_id=entry.delivery_chat_id,
                 )
                 dup_body = (
                     f"⚠️ Похожее напоминание уже есть (#{duplicate.id}).\n"
@@ -234,8 +237,7 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
         await callback.answer("Черновик не найден или устарел.", show_alert=True)
         return
 
-    chat_id = entry.collective_chat_id or callback.message.chat.id
-    _, collective = _draft_target(entry, callback)
+    target_chat_id, collective = _draft_target(entry, callback)
 
     async with async_session() as session:
         user = await get_or_create_user(
@@ -272,7 +274,7 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
                 session,
                 bot,
                 user_id=user.id,
-                chat_id=chat_id,
+                chat_id=target_chat_id,
                 created_by_telegram_id=callback.from_user.id,
                 timezone=tz,
                 parsed_items=entry.parsed_items,

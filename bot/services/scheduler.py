@@ -112,6 +112,8 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
 
         mention_username: str | None = None
         creator_username: str | None = None
+        chat_type: ChatType | None = None
+        chat_title: str | None = None
         if reminder.mention_telegram_id:
             try:
                 chat = await bot.get_chat(reminder.mention_telegram_id)
@@ -124,6 +126,18 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         except Exception:
             pass
 
+        in_collective = is_group_chat(reminder.chat_id)
+        place = "группе"
+        if in_collective:
+            try:
+                chat = await bot.get_chat(reminder.chat_id)
+                chat_type = chat.type
+                chat_title = chat.title
+                if chat.type == ChatType.CHANNEL:
+                    place = "канале"
+            except Exception:
+                pass
+
         body = format_reminder_message(
             reminder.text,
             mention_user_id=reminder.mention_telegram_id,
@@ -131,17 +145,10 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
             creator_user_id=reminder.created_by_telegram_id,
             creator_username=creator_username,
             chat_id=reminder.chat_id,
+            chat_type=chat_type,
+            chat_title=chat_title,
         )
 
-        in_collective = is_group_chat(reminder.chat_id)
-        place = "группе"
-        if in_collective:
-            try:
-                chat = await bot.get_chat(reminder.chat_id)
-                if chat.type == ChatType.CHANNEL:
-                    place = "канале"
-            except Exception:
-                pass
         collective_hint = ""
         if in_collective:
             collective_hint = f"\n\n<i>Управление — в личке с ботом.</i>"

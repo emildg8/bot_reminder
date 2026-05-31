@@ -3,11 +3,12 @@ from aiogram.enums import ChatType
 from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from aiogram.types import ChatMemberUpdated
 
+from bot.config import settings
 from bot.db.repository import async_session, get_or_create_chat
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard
 from bot.services.bot_menu import setup_channel_commands
 from bot.services.chat_ctx import ChatKind, chat_kind_from_type
-from bot.config import settings
+from bot.services.chat_delivery import sync_channel_linked_chat
 from bot.texts.messages import format_collective_welcome, format_group_tz_onboarding
 
 router = Router()
@@ -27,6 +28,13 @@ async def on_bot_added(event: ChatMemberUpdated) -> None:
 
     if kind == ChatKind.CHANNEL:
         await setup_channel_commands(event.bot, event.chat.id)
+        async with async_session() as session:
+            await sync_channel_linked_chat(
+                event.bot,
+                session,
+                event.chat.id,
+                default_timezone=settings.default_timezone,
+            )
     else:
         await event.bot.send_message(
             event.chat.id,

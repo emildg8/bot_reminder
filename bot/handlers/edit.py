@@ -7,6 +7,7 @@ from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, get_reminder
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
+from bot.services.chat_delivery import resolve_delivery_chat_id
 from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
@@ -132,7 +133,9 @@ async def _parse_and_confirm_edit(
         bot_username=me.username,
         bot_id=me.id,
     )
-    mention_telegram_id = await resolve_mention_user_id(bot, mention_id, mention_username)
+    mention_telegram_id = await resolve_mention_user_id(
+        bot, mention_id, mention_username, chat_id=message.chat.id
+    )
     phrase_text = (clean_text or phrase).strip()
     parsed_items = await parse_all_reminders(phrase_text, timezone)
     if not parsed_items:
@@ -148,6 +151,10 @@ async def _parse_and_confirm_edit(
         return
 
     clear_edit_pending(user_id)
+    async with async_session() as session:
+        delivery_chat_id = await resolve_delivery_chat_id(
+            session, message.chat.id, message.chat.type
+        )
     summary = (
         format_batch_parsed_summary_html(parsed_items, timezone)
         if len(parsed_items) > 1
@@ -155,13 +162,15 @@ async def _parse_and_confirm_edit(
     )
     prefix = ""
     if mention_username and not mention_telegram_id:
-        prefix = f"⚠️ @{mention_username} не найден — упоминание сброшено.\n\n"
+        prefix = f"⚠️ @{mention_username} не в этом чате или не найден — упоминание сброшено.\n\n"
     elif mention_telegram_id:
         who = f"@{mention_username}" if mention_username else "участнику"
         prefix = f"👤 Упоминание: {who}\n\n"
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
         prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
+        if delivery_chat_id != message.chat.id:
+            prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
 
     mention_provided = bool(mention_username or mention_id)
     chat_kind = chat_kind_from_chat(message.chat)
@@ -173,6 +182,7 @@ async def _parse_and_confirm_edit(
         edit_reminder_id=reminder_id,
         collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,
         collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
+        delivery_chat_id=delivery_chat_id if chat_kind != ChatKind.PRIVATE else None,
     )
     body = format_confirm_card(summary, is_edit=True)
     if len(parsed_items) > 1:
