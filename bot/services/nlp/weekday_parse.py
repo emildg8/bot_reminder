@@ -49,9 +49,35 @@ IN_WEEKDAY_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+WEEKLY_NOISE_PREFIX = re.compile(
+    r"^(?:еженедельно|раз\s+в\s+неделю|каждую\s+неделю)\s+",
+    re.IGNORECASE,
+)
+
+DAY_LIST_PREFIX = re.compile(
+    rf"^(?:\b(?:во|в|по)\s+)?"
+    rf"(?:(?:{_DAY_TOKEN})\b\s*(?:[,]\s*|\s+и\s+))*"
+    rf"(?:{_DAY_TOKEN})\b\s*",
+    re.IGNORECASE,
+)
+
 
 def _remove_span(text: str, match: re.Match) -> str:
     return (text[: match.start()] + text[match.end() :]).strip(" ,.")
+
+
+def _strip_weekly_noise(text: str) -> str:
+    return WEEKLY_NOISE_PREFIX.sub("", text.strip()).strip()
+
+
+def _strip_weekday_leading(text: str) -> str:
+    result = text.strip()
+    while True:
+        new = DAY_LIST_PREFIX.sub("", result, count=1).strip()
+        if new == result:
+            break
+        result = new
+    return re.sub(r"^(?:и\s+)+", "", result, flags=re.IGNORECASE).strip()
 
 
 def _task_after_last_time(text: str, time_matches: list[re.Match]) -> str:
@@ -59,6 +85,8 @@ def _task_after_last_time(text: str, time_matches: list[re.Match]) -> str:
         return "Напоминание"
     task = text[time_matches[-1].end() :].strip(" ,.—-")
     task = re.sub(r"^(?:и\s+)*(?:в\s+)?", "", task, flags=re.IGNORECASE).strip()
+    task = _strip_weekday_leading(task)
+    task = _strip_weekly_noise(task)
     return task or "Напоминание"
 
 
@@ -92,12 +120,17 @@ DEFAULT_WEEKLY_MINUTE = 0
 
 def find_weekly_schedules(text: str) -> list[tuple[list[int], int, int, str]]:
     """Несколько расписаний: одни дни недели × несколько времён."""
+    text = _strip_weekly_noise(text)
+
     if match := EACH_WEEKDAY_PATTERN.search(text):
-        day_token = match.group("day").lower()
-        weekdays = parse_weekday_tokens(day_token)
+        time_matches = list(TIME_PATTERN.finditer(text, match.end()))
+        if time_matches:
+            chunk = text[match.start() : time_matches[0].start()]
+        else:
+            chunk = text[match.start() :]
+        weekdays = parse_weekday_tokens(chunk)
         if not weekdays:
             return []
-        time_matches = list(TIME_PATTERN.finditer(text, match.end()))
         if time_matches:
             task = _task_after_last_time(text, time_matches)
             return [
@@ -107,6 +140,7 @@ def find_weekly_schedules(text: str) -> list[tuple[list[int], int, int, str]]:
         task_text = _remove_span(text, match)
         if not task_text:
             task_text = text[match.end() :].strip(" ,.")
+        task_text = _strip_weekly_noise(_strip_weekday_leading(task_text))
         return [
             (weekdays, DEFAULT_WEEKLY_HOUR, DEFAULT_WEEKLY_MINUTE, task_text or "Напоминание")
         ]
@@ -139,6 +173,7 @@ def find_weekly_schedules(text: str) -> list[tuple[list[int], int, int, str]]:
         task_text = _remove_span(text, match).strip(" ,.")
         if not task_text:
             task_text = text[match.end() :].strip(" ,.")
+        task_text = _strip_weekly_noise(_strip_weekday_leading(task_text))
         return [(weekdays, hour, minute, task_text or "Напоминание")]
 
     return []

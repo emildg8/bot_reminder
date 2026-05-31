@@ -286,13 +286,41 @@ def normalize_bare_hours(text: str) -> str:
     return BARE_HOUR.sub(repl, text)
 
 
+def normalize_comma_hours(text: str) -> str:
+    """«в 10, 16 и 21» → «в 10:00, 16:00 и 21:00»."""
+
+    def expand(match: re.Match) -> str:
+        hours = [int(x) for x in re.findall(r"\d{1,2}", match.group(0))]
+        if len(hours) < 2:
+            return match.group(0)
+        formatted = [f"{h}:00" for h in hours]
+        if re.search(r"\s+и\s+", match.group(0)):
+            if len(formatted) == 2:
+                return f"в {formatted[0]} и {formatted[1]}"
+            return "в " + ", ".join(formatted[:-1]) + " и " + formatted[-1]
+        return "в " + ", ".join(formatted)
+
+    pattern = re.compile(
+        r"\bв\s+\d{1,2}(?:\s*[,]\s*\d{1,2}|\s+и\s+(?:в\s+)?\d{1,2})+\b",
+        re.IGNORECASE,
+    )
+    return pattern.sub(expand, text)
+
+
 def normalize_phrase(text: str) -> str:
-    text = normalize_time_dots(text.strip())
+    text = re.sub(
+        r"^(?:еженедельно|раз\s+в\s+неделю|каждую\s+неделю)\s+",
+        "",
+        text.strip(),
+        flags=re.IGNORECASE,
+    )
+    text = normalize_time_dots(text)
     text = normalize_spaced_time(text)
     text = normalize_spoken_zero_time(text)
     text = normalize_k_time(text)
     text = normalize_half_ordinal(text)
     text = normalize_part_of_day(text)
+    text = normalize_comma_hours(text)
     return normalize_bare_hours(text)
 
 

@@ -82,3 +82,51 @@ def test_multi_weekday_multi_time():
     times = sorted(p.daily_time.strftime("%H:%M") for p in results)
     assert times == ["10:55", "16:10", "21:00"]
 
+
+def test_weekly_prefix_and_each_multi_day():
+    from bot.services.nlp.rule_parser import parse_all_with_rules
+
+    text = "Еженедельно Во вторник, среду, пятницу и субботу в 10.55, 16.10 и в 21.00 Экспа"
+    results = parse_all_with_rules(text, "Europe/Moscow")
+    assert len(results) == 3
+    assert all(p.text == "Экспа" for p in results)
+    assert all(p.weekdays == [1, 2, 4, 5] for p in results)
+
+    text2 = "каждый вторник, среду и пятницу в 10:00 и 18:00 обед"
+    results2 = parse_all_with_rules(text2, "Europe/Moscow")
+    assert len(results2) == 2
+    assert all(p.weekdays == [1, 2, 4] for p in results2)
+    assert all(p.text == "обед" for p in results2)
+
+
+def test_times_before_weekdays():
+    from bot.services.nlp.rule_parser import parse_all_with_rules
+
+    text = "в 10.55 и 16.10 во вторник, среду и пятницу тренировка"
+    results = parse_all_with_rules(text, "Europe/Moscow")
+    assert len(results) == 2
+    assert all(p.weekdays == [1, 2, 4] for p in results)
+    assert all(p.text == "тренировка" for p in results)
+
+
+def test_comma_bare_hours_with_weekdays():
+    from bot.services.nlp.rule_parser import parse_all_with_rules
+
+    text = "в 10, 16 и 21 по пн, ср, пт задача"
+    results = parse_all_with_rules(text, "Europe/Moscow")
+    assert len(results) == 3
+    assert all(p.weekdays == [0, 2, 4] for p in results)
+    assert all(p.text == "задача" for p in results)
+    times = sorted(p.daily_time.strftime("%H:%M") for p in results)
+    assert times == ["10:00", "16:00", "21:00"]
+
+
+def test_weekly_by_weekdays_pattern():
+    from bot.services.nlp.rule_parser import parse_all_with_rules
+
+    parsed = parse_all_with_rules("еженедельно по будням в 9:00 зарядка", "Europe/Moscow")
+    assert len(parsed) == 1
+    assert parsed[0].kind == "weekly"
+    assert parsed[0].weekdays == [0, 1, 2, 3, 4]
+    assert parsed[0].text == "зарядка"
+
