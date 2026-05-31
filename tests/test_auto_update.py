@@ -138,9 +138,30 @@ async def test_apply_git_update_success(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_apply_git_update_fails_without_git(tmp_path, monkeypatch):
     monkeypatch.setattr("bot.services.auto_update.BASE_DIR", tmp_path)
-    success, sha = await apply_git_update()
+    with patch("bot.services.auto_update._reclone_repo", return_value=False):
+        success, sha = await apply_git_update()
     assert success is False
     assert sha is None
+
+
+@pytest.mark.asyncio
+async def test_apply_git_update_reclone_fallback(tmp_path, monkeypatch):
+    monkeypatch.setattr("bot.services.auto_update.BASE_DIR", tmp_path)
+    (tmp_path / "requirements.txt").write_text("", encoding="utf-8")
+    monkeypatch.setattr(
+        "bot.services.auto_update.record_deploy_sha_from_git",
+        lambda: "clonedsha123456789",
+    )
+    pip = MagicMock(returncode=0, stdout="", stderr="")
+
+    with (
+        patch("bot.services.auto_update._reclone_repo", return_value=True),
+        patch("bot.services.auto_update._run_pip_install", return_value=pip),
+    ):
+        success, sha = await apply_git_update()
+
+    assert success is True
+    assert sha == "clonedsha123456789"
 
 
 @pytest.mark.asyncio

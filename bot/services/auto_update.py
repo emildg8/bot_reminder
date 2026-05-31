@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import shutil
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
 
 from bot.config import BASE_DIR, settings
 from bot.services.deploy_meta import read_deploy_sha, record_deploy_sha_from_git, write_deploy_sha
@@ -13,6 +17,7 @@ from bot.services.deploy_meta import read_deploy_sha, record_deploy_sha_from_git
 logger = logging.getLogger(__name__)
 
 _reexec_after_update = False
+_preserve_on_reclone = {"data", ".env"}
 
 
 def consume_reexec_flag() -> bool:
@@ -112,16 +117,65 @@ def _run_pip_install() -> subprocess.CompletedProcess[str]:
     )
 
 
-async def apply_git_update() -> tuple[bool, str | None]:
-    """git pull + pip install. Возвращает (успех, новый sha)."""
-    if not (BASE_DIR / ".git").is_dir():
-        logger.warning("No .git directory — cannot auto-pull")
-        return False, None
+def _reclone_repo() -> bool:
+    """Полное обновление как start.sh, если git pull недоступен."""
+    branch = settings.github_branch
+    repo = settings.github_repo
+    tmp = Path(tempfile.mkdtemp(prefix="bot_reminder_update_"))
+    try:
+        clone = subprocess.run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "-b",
+                branch,
+                f"https://github.com/{repo}.git",
+                str(tmp),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if clone.returncode != 0:
+            logger.warning(
+                "git clone failed: %s",
+                (clone.stderr or clone.stdout).strip(),
+            )
+            return False
 
-    pull = await asyncio.to_thread(_run_git_pull)
-    if pull.returncode != 0:
-        logger.warning("git pull failed: %s", (pull.stderr or pull.stdout).strip())
-        return False, None
+        for item in tmp.iterdir():
+            if item.name in _preserve_on_reclone:
+                continue
+            dest = BASE_DIR / item.name
+            if item.is_dir():
+                if dest.exists():
+                    shutil.rmtree(dest)
+                shutil.copytree(item, dest)
+            else:
+                shutil.copy2(item, dest)
+        return True
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+async def apply_git_update() -> tuple[bool, str | None]:
+    """git pull (+ reclone fallback) + pip install. Возвращает (успех, новый sha)."""
+    pulled = False
+    if (BASE_DIR / ".git").is_dir():
+        pull = await asyncio.to_thread(_run_git_pull)
+        if pull.returncode == 0:
+            pulled = True
+        else:
+            logger.warning("git pull failed: %s", (pull.stderr or pull.stdout).strip())
+    else:
+        logger.warning("No .git directory — trying fresh clone")
+
+    if not pulled:
+        cloned = await asyncio.to_thread(_reclone_repo)
+        if not cloned:
+            return False, None
 
     pip = await asyncio.to_thread(_run_pip_install)
     if pip.returncode != 0:
@@ -129,11 +183,46 @@ async def apply_git_update() -> tuple[bool, str | None]:
 
     new_sha = record_deploy_sha_from_git()
     if not new_sha:
-        logger.warning("Could not record deploy sha after pull")
+        logger.warning("Could not record deploy sha after update")
         return False, None
 
     logger.info("Auto-update applied: %s", new_sha[:7])
     return True, new_sha
+
+
+async def force_update() -> tuple[bool, str, str | None]:
+    """Принудительное обновление. Возвращает (успех, сообщение, новый sha)."""
+    local_sha = _bootstrap_local_sha()
+    remote_sha = await fetch_remote_sha()
+    if not remote_sha:
+        return False, "❌ Не удалось проверить GitHub. Попробуй Restart в панели Wispbyte.", None
+
+    if local_sha and remote_sha == local_sha:
+        from bot.version import __version__
+
+        return True, f"✅ Уже актуально · v{__version__} · <code>{local_sha[:7]}</code>", local_sha
+
+    success, new_sha = await apply_git_update_to_sha(remote_sha)
+    if not success or not new_sha:
+        return (
+            False,
+            "❌ Не удалось скачать обновление. Сделай <b>Restart</b> сервера в панели Wispbyte.",
+            None,
+        )
+
+    return (
+        True,
+        f"✅ Обновлено до <code>{new_sha[:7]}</code> — перезапуск…",
+        new_sha,
+    )
+
+
+def schedule_process_restart(delay_seconds: float = 1.5) -> None:
+    async def _restart() -> None:
+        await asyncio.sleep(delay_seconds)
+        os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
+
+    asyncio.get_running_loop().create_task(_restart())
 
 
 async def apply_git_update_to_sha(remote_sha: str) -> tuple[bool, str | None]:

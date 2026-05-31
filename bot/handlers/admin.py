@@ -6,7 +6,8 @@ from sqlalchemy import func, select
 from bot.config import settings
 from bot.db.models import Reminder, User
 from bot.db.repository import async_session, get_all_active_reminders
-from bot.services.bot_avatar import ensure_bot_avatar
+from bot.services.auto_update import fetch_remote_sha, force_update, schedule_process_restart
+from bot.services.deploy_meta import read_deploy_sha
 from bot.services.media import describe_stt_backends, is_ffmpeg_available
 from bot.services.runtime import format_uptime, uptime_seconds
 from bot.services.scheduler import scheduler
@@ -34,10 +35,18 @@ async def cmd_sysinfo(message: Message) -> None:
     scheduled_jobs = len([j for j in scheduler.get_jobs() if j.id.startswith("reminder_")])
     ffmpeg_ok = is_ffmpeg_available()
     stt_chain = describe_stt_backends()
+    local_sha = read_deploy_sha()
+    remote_sha = await fetch_remote_sha()
+    sha_line = ""
+    if local_sha or remote_sha:
+        local_label = local_sha[:7] if local_sha else "—"
+        remote_label = remote_sha[:7] if remote_sha else "—"
+        sha_line = f"Deploy: <code>{local_label}</code> → GitHub <code>{remote_label}</code>\n"
 
     await message.answer(
         "🛠 <b>Системная статистика</b>\n\n"
         f"Версия: <b>{__version__}</b>\n"
+        f"{sha_line}"
         f"Аптайм: <b>{format_uptime(uptime_seconds())}</b>\n"
         f"Пользователей: <b>{users_count}</b>\n"
         f"Напоминаний всего: <b>{reminders_total}</b>\n"
@@ -60,3 +69,17 @@ async def cmd_setavatar(message: Message, bot: Bot) -> None:
         await message.answer("✅ Аватар обновлён. Проверь профиль бота.")
     except Exception as exc:
         await message.answer(f"❌ Не удалось: {exc}")
+
+
+@router.message(Command("update"))
+async def cmd_update(message: Message) -> None:
+    if not _is_admin(message.from_user.id):
+        await message.answer("Команда доступна только администраторам бота.")
+        return
+
+    await message.answer("⏳ Проверяю обновления на GitHub…")
+    local_before = read_deploy_sha()
+    ok, text, new_sha = await force_update()
+    await message.answer(text)
+    if ok and new_sha and new_sha != local_before:
+        schedule_process_restart()
