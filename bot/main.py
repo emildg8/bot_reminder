@@ -82,10 +82,24 @@ def _heartbeat_job() -> None:
     write_heartbeat(scheduler_running=scheduler.running)
 
 
-async def _auto_update_job(bot: Bot, dp: Dispatcher) -> None:
+async def _stop_polling_safe(dp: Dispatcher) -> None:
+    try:
+        await dp.stop_polling()
+    except RuntimeError as exc:
+        if "not started" not in str(exc).lower():
+            raise
+
+
+async def _auto_update_job(
+    bot: Bot,
+    dp: Dispatcher,
+    *,
+    polling_active: bool = True,
+) -> bool:
+    """Проверяет GitHub и обновляет код. True → нужен re-exec."""
     need_restart, local_sha, remote_sha = await should_restart_for_update()
     if not need_restart or not remote_sha:
-        return
+        return False
 
     short = remote_sha[:7]
     await _notify_admins(
@@ -100,7 +114,7 @@ async def _auto_update_job(bot: Bot, dp: Dispatcher) -> None:
             bot,
             f"⚠️ Не удалось обновиться до <code>{short}</code>. Проверь логи или перезапусти сервер.",
         )
-        return
+        return False
 
     applied = (new_sha or remote_sha)[:7]
     await _notify_admins(
@@ -108,7 +122,16 @@ async def _auto_update_job(bot: Bot, dp: Dispatcher) -> None:
         f"✅ Обновлено до <code>{applied}</code> — перезапуск процесса…",
     )
     request_process_reexec()
-    await dp.stop_polling()
+    if polling_active:
+        await _stop_polling_safe(dp)
+    return True
+
+
+async def _shutdown_bot(bot: Bot, lock_path: Path) -> None:
+    scheduler.shutdown(wait=True)
+    await bot.session.close()
+    await dispose_engine()
+    _release_instance_lock(lock_path)
 
 
 async def main() -> None:
@@ -214,7 +237,14 @@ async def main() -> None:
         )
     await restore_scheduled_reminders(bot)
     if settings.auto_update_enabled:
-        await _auto_update_job(bot, dp)
+        if await _auto_update_job(bot, dp, polling_active=False):
+            scheduler.shutdown(wait=True)
+        await bot.session.close()
+        await dispose_engine()
+        _release_instance_lock(lock_path)
+            logger.info("Re-exec after startup auto-update")
+            os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
+            return
     await setup_bot_commands(bot)
     await setup_bot_profile(bot)
 
@@ -240,10 +270,7 @@ async def main() -> None:
                 await _notify_admins(bot, f"⏹ Бот останавливается · v{__version__}")
             except Exception:
                 pass
-        scheduler.shutdown(wait=True)
-        await bot.session.close()
-        await dispose_engine()
-        _release_instance_lock(lock_path)
+        await _shutdown_bot(bot, lock_path)
 
     if consume_reexec_flag():
         logger.info("Re-exec after auto-update")

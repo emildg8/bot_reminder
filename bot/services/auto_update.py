@@ -230,7 +230,11 @@ async def restart_bot_after_update(delay_seconds: float = 1.5) -> None:
     await asyncio.sleep(delay_seconds)
     request_process_reexec()
     if _shutdown_dispatcher is not None:
-        await _shutdown_dispatcher.stop_polling()
+        try:
+            await _shutdown_dispatcher.stop_polling()
+        except RuntimeError as exc:
+            if "not started" not in str(exc).lower():
+                raise
         return
     os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
 
