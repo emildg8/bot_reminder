@@ -59,3 +59,11 @@ def test_day_only_not_when_time_in_phrase():
 
     assert detect_ambiguous_day_only("завтра в 14:00 созвон") is None
     assert detect_ambiguous_day_only("завтра утром зарядка") is None
+
+
+def test_ambiguous_hour_keyboard_two_choices():
+    from bot.keyboards.inline import ambiguous_hour_keyboard
+
+    labels = [btn.text for row in ambiguous_hour_keyboard().inline_keyboard for btn in row]
+    assert len(labels) == 2
+    assert all("09:00" not in label for label in labels)

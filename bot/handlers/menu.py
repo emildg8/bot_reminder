@@ -296,6 +296,9 @@ async def ambiguous_hour_picked(callback: CallbackQuery, bot) -> None:
     if not pending or pending.ambiguous_day is None:
         await safe_callback_answer(callback, "Уточнение устарело — напиши фразу заново.", show_alert=True)
         return
+    if pending.ambiguous_hour is not None and choice not in ("day", "night"):
+        await safe_callback_answer(callback, "Выбери ☀️ день или 🌙 ночь.", show_alert=True)
+        return
     if pending.ambiguous_hour is None:
         phrase = phrase_from_day_only_choice(
             task=pending.text,
@@ -310,6 +313,22 @@ async def ambiguous_hour_picked(callback: CallbackQuery, bot) -> None:
             choice=choice,
         )
     await safe_callback_answer(callback)
+    if pending.edit_reminder_id is not None:
+        async with async_session() as session:
+            reminder = await get_reminder(session, pending.edit_reminder_id)
+            if reminder is None or not reminder.is_active:
+                await callback.message.answer("Напоминание не найдено.")
+                return
+            timezone = reminder.timezone
+        await _parse_and_confirm_edit(
+            callback.message,
+            pending.edit_reminder_id,
+            phrase,
+            timezone,
+            callback.from_user.id,
+            bot,
+        )
+        return
     await _process_text_and_reply(
         callback.message,
         phrase,

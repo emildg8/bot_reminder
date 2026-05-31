@@ -5,7 +5,12 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, get_reminder
-from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
+from bot.keyboards.inline import (
+    ambiguous_day_only_keyboard,
+    ambiguous_hour_keyboard,
+    confirm_reminder_keyboard,
+    task_time_keyboard,
+)
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_delivery import resolve_delivery_chat_id
 from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
@@ -14,10 +19,17 @@ from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_p
 from bot.services.pending_tasks import store_pending_task
 from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
 from bot.services.mention_resolve import resolve_mention_user_id
+from bot.services.nlp.ambiguous_time import detect_ambiguous_day_hour, detect_ambiguous_day_only
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
-from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
+from bot.texts.messages import (
+    format_ambiguous_day_prompt,
+    format_ambiguous_hour_prompt,
+    format_confirm_card,
+    format_parse_fail,
+    looks_like_task_only,
+)
 
 router = Router()
 
@@ -138,6 +150,36 @@ async def _parse_and_confirm_edit(
         bot, mention_id, mention_username, chat_id=message.chat.id
     )
     phrase_text = (clean_text or phrase).strip()
+
+    ambiguous = detect_ambiguous_day_hour(phrase_text)
+    if ambiguous:
+        store_pending_task(
+            user_id,
+            ambiguous.task,
+            ambiguous_day=ambiguous.day,
+            ambiguous_hour=ambiguous.hour,
+            edit_reminder_id=reminder_id,
+        )
+        await message.answer(
+            format_ambiguous_hour_prompt(ambiguous.task, ambiguous.day, ambiguous.hour),
+            reply_markup=ambiguous_hour_keyboard(),
+        )
+        return
+
+    day_only = detect_ambiguous_day_only(phrase_text)
+    if day_only:
+        store_pending_task(
+            user_id,
+            day_only.task,
+            ambiguous_day=day_only.day,
+            edit_reminder_id=reminder_id,
+        )
+        await message.answer(
+            format_ambiguous_day_prompt(day_only.task, day_only.day),
+            reply_markup=ambiguous_day_only_keyboard(),
+        )
+        return
+
     parsed_items = await parse_all_reminders(phrase_text, timezone)
     if not parsed_items:
         set_edit_pending(user_id, reminder_id)
