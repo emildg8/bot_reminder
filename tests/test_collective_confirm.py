@@ -53,3 +53,21 @@ async def test_send_collective_confirm():
     )
     assert ok is True
     assert bot.send_message.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_send_collective_confirm_dm_failed():
+    bot = AsyncMock()
+    bot.send_message.side_effect = [Exception("blocked"), None]
+    kb = InlineKeyboardMarkup(inline_keyboard=[])
+    ok = await send_collective_confirm(
+        bot,
+        user_id=123,
+        collective_chat_id=-100,
+        collective_kind=ChatKind.SUPERGROUP,
+        chat_title="Team",
+        body="Confirm body",
+        reply_markup=kb,
+    )
+    assert ok is False
+    assert bot.send_message.await_count == 1

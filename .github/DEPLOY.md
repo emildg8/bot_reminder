@@ -56,7 +56,18 @@ Startup Command должен быть **`bash start.sh`**, не `pip install bot
    ```
 2. Или смени **Startup Command** на `bash start.sh` и нажми **Restart**.
 
-После pull должна быть **v3.15.2+** (`grep __version__ bot/version.py`).
+После pull должна быть актуальная версия (`grep __version__ bot/version.py`).
+
+## BotFather: Group Privacy
+
+Если в группе `@бот …` **молчит**, а `/remind@бот …` работает — включён **Group Privacy**.
+
+| BotFather | Действие |
+|-----------|----------|
+| `/mybots` → бот → **Bot Settings** → **Group Privacy** | **Turn off** |
+
+После выключения бот получает все сообщения группы; ручной `@бот` тоже доходит.  
+Проверка: `/sysinfo` → `Group Privacy: выкл`.
 
 ## Проверка
 

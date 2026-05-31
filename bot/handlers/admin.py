@@ -10,7 +10,7 @@ from bot.services.auto_update import force_update, schedule_process_restart
 from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.deploy_info import format_deploy_line
 from bot.services.media import describe_stt_backends, is_ffmpeg_available
-from bot.services.runtime import format_uptime, uptime_seconds
+from bot.services.bot_privacy import format_group_privacy_status
 from bot.services.scheduler import count_scheduled_reminder_jobs
 from bot.version import __version__
 
@@ -18,10 +18,15 @@ router = Router()
 
 
 @router.message(Command("sysinfo"))
-async def cmd_sysinfo(message: Message) -> None:
+async def cmd_sysinfo(message: Message, bot: Bot) -> None:
     if not is_bot_admin(message.from_user.id):
         await message.answer("Команда доступна только администраторам бота.")
         return
+
+    me = await bot.get_me()
+    privacy_line = format_group_privacy_status(
+        can_read_all_group_messages=me.can_read_all_group_messages,
+    )
 
     async with async_session() as session:
         users_count = (await session.execute(select(func.count()).select_from(User))).scalar_one()
@@ -40,7 +45,8 @@ async def cmd_sysinfo(message: Message) -> None:
         f"Пользователей: <b>{users_count}</b>\n"
         f"Напоминаний всего: <b>{reminders_total}</b>\n"
         f"Активных: <b>{reminders_active}</b>\n"
-        f"Задач в планировщике: <b>{count_scheduled_reminder_jobs()}</b>\n\n"
+        f"Задач в планировщике: <b>{count_scheduled_reminder_jobs()}</b>\n"
+        f"{privacy_line}\n\n"
         f"ffmpeg: <b>{'да' if ffmpeg_ok else 'нет'}</b>\n"
         f"STT: <code>{stt_chain}</code>"
     )

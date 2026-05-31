@@ -50,15 +50,15 @@
 ## Блок B — Надёжность в группе (v3.16.1)
 
 ### B1. Примеры (`ex:`) в collective
-- Явный тест: callback из группы → confirm в личку + одна строка в группе
-- При ошибке DM — fallback в группе **без** traceback пользователю
+- [x] Тест DM failure → fallback без падения
+- [x] `example_picked` — try/except + текст в чат
 
 ### B2. `/list` в группе
 - Уже без лишних кнопок ✅ — проверить пагинацию и edit-кнопки только для своих
 
 ### B3. Ошибки
-- Логировать `callback.answer(..., show_alert=True)` с понятным текстом вместо «Ошибка»
-- Sentry/лог: `Cannot DM confirm` → короткая подсказка /start
+- [x] Глобальный error handler вместо «Ошибка»
+- [x] Ранний callback.answer в group-меню и confirm
 
 ---
 

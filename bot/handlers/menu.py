@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
@@ -12,6 +14,7 @@ from bot.keyboards.inline import (
     more_menu_keyboard,
     timezone_keyboard,
 )
+from bot.services.callback_utils import safe_callback_answer
 from bot.services.group_menu import (
     is_group_menu_chat,
     send_group_menu_home,
@@ -37,6 +40,8 @@ from bot.services.chat_status import build_status_text
 from bot.services.pending_tasks import pop_pending_task
 from bot.texts.messages import CREATE_HINT, EXAMPLES_INTRO, EXAMPLE_PHRASES, format_help, phrase_from_task_preset
 from bot.version import __version__
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -214,18 +219,24 @@ async def menu_examples(callback: CallbackQuery, bot) -> None:
 async def example_picked(callback: CallbackQuery, bot) -> None:
     idx = int(callback.data.split(":", 1)[1])
     if idx < 0 or idx >= len(EXAMPLE_PHRASES):
-        await callback.answer("Пример не найден", show_alert=True)
+        await safe_callback_answer(callback, "Пример не найден", show_alert=True)
         return
     _, phrase = EXAMPLE_PHRASES[idx]
     _clear_modes(callback.from_user.id)
-    await callback.answer()
-    await _process_text_and_reply(
-        callback.message,
-        phrase,
-        bot,
-        actor_user_id=callback.from_user.id,
-        use_phrase_text=True,
-    )
+    await safe_callback_answer(callback)
+    try:
+        await _process_text_and_reply(
+            callback.message,
+            phrase,
+            bot,
+            actor_user_id=callback.from_user.id,
+            use_phrase_text=True,
+        )
+    except Exception:
+        logger.exception("Example callback failed idx=%s chat=%s", idx, callback.message.chat.id)
+        await callback.message.answer(
+            "⚠️ Не удалось создать из примера. Попробуй /remind или напиши фразу заново."
+        )
 
 
 @router.callback_query(F.data.startswith("qt:"))

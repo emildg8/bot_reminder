@@ -17,6 +17,7 @@ from bot.handlers import (
     create,
     diary,
     edit,
+    errors,
     group,
     group_menu,
     health,
@@ -170,6 +171,7 @@ async def main() -> None:
 
     dp = Dispatcher()
     register_shutdown_dispatcher(dp)
+    dp.include_router(errors.router)
     dp.include_router(start.router)
     dp.include_router(group.router)
     dp.include_router(group_menu.router)

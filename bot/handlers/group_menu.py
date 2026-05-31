@@ -3,6 +3,7 @@ from aiogram.types import CallbackQuery
 
 from bot.services.group_menu import show_group_menu_screen
 from bot.services.reminders_ui import send_active_reminders
+from bot.services.callback_utils import safe_callback_answer
 
 router = Router()
 
@@ -34,5 +35,5 @@ async def gmenu_examples(callback: CallbackQuery, bot) -> None:
 
 @router.callback_query(F.data == "gmenu:list")
 async def gmenu_list(callback: CallbackQuery) -> None:
+    await safe_callback_answer(callback)
     await send_active_reminders(callback.message)
-    await callback.answer()

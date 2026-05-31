@@ -15,5 +15,13 @@ def format_group_privacy_admin_warning(*, can_read_all_group_messages: bool | No
     )
 
 
+def format_group_privacy_status(*, can_read_all_group_messages: bool | None) -> str:
+    if can_read_all_group_messages is True:
+        return "Group Privacy: <b>выкл</b> (ручной @ доходит)"
+    if can_read_all_group_messages is False:
+        return "Group Privacy: <b>вкл</b> — /remind или @ из списка"
+    return "Group Privacy: <b>?</b>"
+
+
 def format_group_at_manual_warning() -> str:
     return "⚠️ @, набранный вручную, бот может не увидеть — используй /remind@бот или @ из списка."

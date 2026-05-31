@@ -47,6 +47,7 @@ from bot.texts.messages import (
     format_updated,
 )
 from bot.services.reminder_display import format_parsed_when_label
+from bot.services.callback_utils import safe_callback_answer
 from bot.services.channel_schedule import (
     cancel_reminder_telegram_schedule,
     setup_channel_telegram_schedule,
@@ -122,7 +123,7 @@ async def _reply_after_create(
             await callback.message.answer(format_bot_cannot_post_hint())
     elif kb := menu_keyboard_for_chat(callback.message.chat.id):
         await callback.message.answer("Меню:", reply_markup=kb)
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 async def _create_from_draft(
@@ -192,7 +193,7 @@ async def _create_from_draft(
                         await callback.message.edit_text(dup_body, reply_markup=dup_kb)
                 else:
                     await callback.message.edit_text(dup_body, reply_markup=dup_kb)
-                await callback.answer()
+                await safe_callback_answer(callback)
                 return
 
         created = await create_and_schedule_items(
@@ -211,12 +212,14 @@ async def _create_from_draft(
 
 @router.callback_query(lambda c: c.data and c.data.startswith("confirm:"))
 async def confirm_reminder(callback: CallbackQuery, bot: Bot) -> None:
+    await safe_callback_answer(callback)
     draft_id = callback.data.split(":", 1)[1]
     await _create_from_draft(callback, bot, draft_id)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("confirm_force:"))
 async def confirm_force_reminder(callback: CallbackQuery, bot: Bot) -> None:
+    await safe_callback_answer(callback)
     draft_id = callback.data.split(":", 1)[1]
     await _create_from_draft(callback, bot, draft_id, skip_duplicate=True)
 
@@ -295,7 +298,7 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
             pass
     elif kb := menu_keyboard_for_chat(callback.message.chat.id):
         await callback.message.answer("Меню:", reply_markup=kb)
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("cancel:"))
@@ -303,7 +306,7 @@ async def cancel_draft(callback: CallbackQuery) -> None:
     draft_id = callback.data.split(":", 1)[1]
     discard_draft(draft_id, callback.from_user.id)
     await callback.message.edit_text("Отменено.")
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("snooze:"))
@@ -334,7 +337,7 @@ async def snooze_menu(callback: CallbackQuery) -> None:
         "Выбери быстрый вариант или измени время кнопками − / +:",
         reply_markup=snooze_picker_keyboard(reminder_id, default_mins, presets),
     )
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("szs:"))
@@ -388,7 +391,7 @@ async def snooze_dec(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "sznoop")
 async def snooze_noop(callback: CallbackQuery) -> None:
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("sza:"))
@@ -418,7 +421,7 @@ async def snooze_back(callback: CallbackQuery) -> None:
         body,
         reply_markup=reminder_actions_keyboard(reminder_id),
     )
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, minutes: int) -> None:
@@ -466,7 +469,7 @@ async def _apply_snooze(callback: CallbackQuery, bot: Bot, reminder_id: int, min
         f"📝 {reminder.text}",
         reply_markup=reminder_actions_keyboard(reminder_id),
     )
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("done:"))
@@ -495,7 +498,7 @@ async def done_reminder(callback: CallbackQuery, bot: Bot) -> None:
         )
 
     await callback.message.edit_text("✅ Готово. Напоминание закрыто.")
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("del_confirm:"))
@@ -515,7 +518,7 @@ async def delete_confirm(callback: CallbackQuery) -> None:
         f"🗑 Удалить напоминание #{reminder_id}?\n📝 {reminder.text}",
         reply_markup=delete_confirm_keyboard(reminder_id),
     )
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("del_cancel:"))
@@ -528,7 +531,7 @@ async def delete_cancel(callback: CallbackQuery) -> None:
             ]
         ),
     )
-    await callback.answer()
+    await safe_callback_answer(callback)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("delete:"))
@@ -557,4 +560,4 @@ async def delete_reminder(callback: CallbackQuery, bot: Bot) -> None:
         )
 
     await callback.message.edit_text("🗑 Напоминание удалено.")
-    await callback.answer()
+    await safe_callback_answer(callback)

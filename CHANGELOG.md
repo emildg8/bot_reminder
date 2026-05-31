@@ -2,6 +2,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.17.0] — 2026-05-31
+
+### Надёжность callbacks и collective (фаза 5B)
+- **Ранний `callback.answer`** — group-меню, confirm и примеры не показывают «Ошибка» из-за таймаута
+- **Глобальный error handler** — понятный alert вместо молчаливого падения
+- **`/sysinfo`** — строка Group Privacy (вкл/выкл)
+- **Collective confirm** — понятнее fallback, если DM заблокирован
+- **DEPLOY.md** — инструкция BotFather Group Privacy
+
 ## [3.16.1] — 2026-05-31
 
 ### Group Privacy — понятнее для пользователей и админа

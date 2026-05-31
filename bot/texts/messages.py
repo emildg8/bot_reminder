@@ -240,7 +240,10 @@ def format_collective_check_dm(chat_kind: ChatKind, chat_title: str | None) -> s
 
 def format_collective_dm_failed_fallback(bot_username: str | None) -> str:
     uname = bot_username or "бот"
-    return f"⚠️ Напиши /start у @{uname} и повтори."
+    return (
+        f"⚠️ Не могу написать в личку — нажми /start у @{uname} "
+        "и подтверди напоминание кнопкой здесь."
+    )
 
 
 def format_collective_created_notice(
