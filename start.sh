@@ -31,5 +31,8 @@ python scripts/record_deploy.py || true
 echo "==> Setting bot avatar (if missing)"
 python scripts/set_bot_avatar.py || echo "Avatar upload skipped/failed"
 
+echo "==> Check config"
+python -c "from bot.config import settings; assert settings.bot_token.strip(), 'BOT_TOKEN is empty'"
+
 echo "==> Starting bot..."
 exec python -m bot.main

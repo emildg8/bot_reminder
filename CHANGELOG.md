@@ -2,6 +2,11 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.5.4] — 2026-05-31
+
+### Исправлено
+- Старт: сброс webhook перед polling, лог `@username`, проверка `BOT_TOKEN` в `start.sh`
+
 ## [3.5.3] — 2026-05-31
 
 ### Исправлено
