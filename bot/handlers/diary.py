@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
+from bot.services.group_menu import answer_group_private_only, is_group_menu_chat
 from bot.services.reminder_history import build_journal_message, build_stats_message
 from bot.services.reminders_ui import send_active_reminders
 from bot.services.timezone_ctx import get_effective_timezone
@@ -46,6 +47,9 @@ async def cmd_history(message: Message) -> None:
 
 @router.callback_query(F.data == "menu:diary")
 async def menu_diary(callback: CallbackQuery) -> None:
+    if is_group_menu_chat(callback.message.chat):
+        await answer_group_private_only(callback)
+        return
     tz = await _tz(callback.message)
     text = await build_journal_message(callback.message.chat.id, callback.from_user.id, tz)
     await callback.message.answer(text)
@@ -54,6 +58,9 @@ async def menu_diary(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "menu:stats")
 async def menu_stats(callback: CallbackQuery) -> None:
+    if is_group_menu_chat(callback.message.chat):
+        await answer_group_private_only(callback)
+        return
     tz = await _tz(callback.message)
     text = await build_stats_message(callback.message.chat.id, callback.from_user.id, tz)
     await callback.message.answer(text)

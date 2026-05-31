@@ -111,6 +111,7 @@ def more_menu_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
                 InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
             ],
+            [InlineKeyboardButton(text="◀️ Меню", callback_data="menu:home")],
         ]
     )
 
@@ -136,7 +137,7 @@ def settings_snooze_keyboard(_presets: list[int], step: int) -> InlineKeyboardMa
                 InlineKeyboardButton(text="Короткие: 5·15·30·60", callback_data="set:pre:std"),
                 InlineKeyboardButton(text="Длинные: +1ч·3ч·4ч", callback_data="set:pre:long"),
             ],
-            [InlineKeyboardButton(text="⬅ Назад", callback_data="menu:more")],
+            [InlineKeyboardButton(text="⬅ Назад", callback_data="menu:home")],
         ]
     )
 
@@ -265,7 +266,7 @@ def clear_confirm_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def examples_keyboard() -> InlineKeyboardMarkup:
+def examples_keyboard(*, back_callback: str | None = None) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     row: list[InlineKeyboardButton] = []
     for idx, (label, _) in enumerate(EXAMPLE_PHRASES):
@@ -275,6 +276,67 @@ def examples_keyboard() -> InlineKeyboardMarkup:
             row = []
     if row:
         rows.append(row)
+    if back_callback:
+        rows.append([InlineKeyboardButton(text="◀️ Меню", callback_data=back_callback)])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def group_home_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📋 Список", callback_data="gmenu:list"),
+                InlineKeyboardButton(text="➕ Как создать", callback_data="gmenu:hint"),
+            ],
+            [
+                InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="gmenu:tz"),
+                InlineKeyboardButton(text="❓ Помощь", callback_data="gmenu:help"),
+            ],
+            [
+                InlineKeyboardButton(text="💡 Примеры", callback_data="gmenu:examples"),
+            ],
+        ]
+    )
+
+
+def group_examples_keyboard() -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for idx, (label, _) in enumerate(EXAMPLE_PHRASES[:4]):
+        row.append(InlineKeyboardButton(text=label, callback_data=f"ex:{idx}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(text="◀️ Меню", callback_data="gmenu:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def group_timezone_keyboard() -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(text=label, callback_data=f"tz:{value}")]
+        for value, label in TIMEZONE_OPTIONS
+    ]
+    rows.append([InlineKeyboardButton(text="Другой пояс (UTC)…", callback_data="tz_menu:offset")])
+    rows.append([InlineKeyboardButton(text="⬅ Назад", callback_data="gmenu:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def group_timezone_offset_keyboard() -> InlineKeyboardMarkup:
+    offsets = list(range(-12, 15))
+    rows: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for off in offsets:
+        sign = "+" if off >= 0 else ""
+        label = f"UTC{sign}{off}"
+        row.append(InlineKeyboardButton(text=label, callback_data=f"tz_off:{off}"))
+        if len(row) == 4:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(text="◀️ Меню", callback_data="gmenu:home")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

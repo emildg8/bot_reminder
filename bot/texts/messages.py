@@ -76,6 +76,33 @@ def format_collective_welcome(chat_kind: ChatKind, bot_username: str | None = No
 
 GROUP_WELCOME = format_group_welcome()
 
+GROUP_EXAMPLES_INTRO = "💡 <b>Примеры</b> — нажми, бот попросит подтвердить в личке:"
+
+
+def format_group_menu_home(bot_username: str | None = None) -> str:
+    uname = bot_username or "бот"
+    return (
+        f"📋 <b>Меню группы</b>\n\n"
+        f"Создать: <code>/remind@{uname} через 30 минут …</code>\n"
+        f"Или @{uname} из списка участников."
+    )
+
+
+def format_group_create_hint(bot_username: str | None = None) -> str:
+    uname = bot_username or "бот"
+    return (
+        "✍️ <b>Как создать</b>\n\n"
+        f"• <code>/remind@{uname} через час созвон</code>\n"
+        f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n"
+        f"• @{uname} из списка + фраза\n\n"
+        "Подтверждение и кнопки — в личке с ботом."
+    )
+
+
+def format_group_private_only() -> str:
+    return "📔 Дневник и статистика — открой бота в личке и нажми /start."
+
+
 CREATE_HINT = (
     "✍️ <b>Создать напоминание</b>\n\n"
     "Одной фразой — текстом, голосом или кружочком:\n"

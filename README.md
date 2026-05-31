@@ -1,11 +1,11 @@
-# Telegram-бот напоминалка · v3.15
+# Telegram-бот напоминалка · v3.16
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Личка, группы и каналы.
 
-> **v3.15** — меньше шума в групповом режиме: короче сообщения, без дублирующих подсказок.
+> **v3.16** — компактное меню в группах: edit-in-place, без лишних экранов из лички.
 >
 > **v3.14** — разовые напоминания в канале через native Telegram schedule; подсказка для discussion group.
 >

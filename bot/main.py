@@ -18,6 +18,7 @@ from bot.handlers import (
     diary,
     edit,
     group,
+    group_menu,
     health,
     list_callbacks,
     list_cmd,
@@ -171,6 +172,7 @@ async def main() -> None:
     register_shutdown_dispatcher(dp)
     dp.include_router(start.router)
     dp.include_router(group.router)
+    dp.include_router(group_menu.router)
     dp.include_router(menu.router)
     dp.include_router(diary.router)
     dp.include_router(settings_handler.router)

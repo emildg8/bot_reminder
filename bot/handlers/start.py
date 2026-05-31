@@ -10,7 +10,13 @@ from bot.db.repository import (
     update_chat_timezone,
     update_user_timezone,
 )
-from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
+from bot.keyboards.inline import (
+    group_timezone_keyboard,
+    group_timezone_offset_keyboard,
+    timezone_keyboard,
+    timezone_offset_keyboard,
+)
+from bot.services.group_menu import is_group_menu_chat, send_group_menu_to_chat
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat, tz_scope_label
 from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
@@ -71,10 +77,7 @@ async def cmd_start(message: Message) -> None:
             await setup_channel_commands(message.bot, message.chat.id)
         await message.answer(format_collective_welcome(kind, me.username))
         if kind != ChatKind.CHANNEL:
-            await message.answer(
-                "⚡️ Быстрые действия:",
-                reply_markup=main_menu_inline_keyboard(),
-            )
+            await send_group_menu_to_chat(message.bot, message.chat.id)
         return
 
     await message.answer(
@@ -97,10 +100,13 @@ async def cmd_timezone(message: Message) -> None:
 @router.callback_query(lambda c: c.data and c.data.startswith("tz_menu:"))
 async def tz_menu(callback: CallbackQuery) -> None:
     target = callback.data.split(":", 1)[1]
+    in_group = is_group_menu_chat(callback.message.chat)
     if target == "offset":
-        await callback.message.edit_text("🕐 Выбери смещение от UTC:", reply_markup=timezone_offset_keyboard())
+        kb = group_timezone_offset_keyboard() if in_group else timezone_offset_keyboard()
+        await callback.message.edit_text("🕐 Выбери смещение от UTC:", reply_markup=kb)
     else:
-        await callback.message.edit_text("🕐 Выбери часовой пояс:", reply_markup=timezone_keyboard())
+        kb = group_timezone_keyboard() if in_group else timezone_keyboard()
+        await callback.message.edit_text("🕐 Выбери часовой пояс:", reply_markup=kb)
     await callback.answer()
 
 

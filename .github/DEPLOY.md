@@ -37,6 +37,17 @@ bash start.sh
 
 **Не используй** `pip install && python -m bot.main` без `git pull` — код на диске не обновится, auto-update не поможет если бот не стартует.
 
+### Wispbyte: «Missing Package Detected: bot»
+
+Панель видит `python -m bot.main` и думает, что нужен пакет **`bot` с PyPI**. Это **ложное** срабатывание — `bot/` это код проекта.
+
+| Кнопка | Действие |
+|--------|----------|
+| **Dismiss** | ✅ Закрыть, ничего не менять |
+| **Add to Startup** | ❌ Не нажимать — добавит `pip install bot` и сломает деплой |
+
+Startup Command должен быть **`bash start.sh`**, не `pip install bot`.
+
 ## Застрял на старой/бroken версии (IndentationError, SyntaxError)
 
 1. **Console** в панели Wispbyte:

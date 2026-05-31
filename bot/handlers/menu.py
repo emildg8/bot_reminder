@@ -6,7 +6,17 @@ from bot.db.repository import async_session, get_reminder
 from bot.handlers.create import _process_text_and_reply
 from bot.handlers.edit import _parse_and_confirm_edit
 from bot.handlers.diary import _send_journal, _send_stats
-from bot.keyboards.inline import examples_keyboard, more_menu_keyboard, timezone_keyboard
+from bot.keyboards.inline import (
+    examples_keyboard,
+    main_menu_inline_keyboard,
+    more_menu_keyboard,
+    timezone_keyboard,
+)
+from bot.services.group_menu import (
+    is_group_menu_chat,
+    send_group_menu_home,
+    show_group_menu_screen,
+)
 from bot.keyboards.reply import (
     BTN_CREATE,
     BTN_DIARY,
@@ -49,8 +59,11 @@ async def cmd_cancel(message: Message) -> None:
 
 
 @router.message(Command("menu"))
-async def cmd_menu(message: Message) -> None:
+async def cmd_menu(message: Message, bot) -> None:
     _clear_modes(message.from_user.id)
+    if is_group_menu_chat(message.chat):
+        await send_group_menu_home(message, bot)
+        return
     await message.answer(
         "⌨️ <b>Меню</b> — кнопки внизу или команды через /",
         reply_markup=menu_keyboard_for_chat(message.chat.id),
@@ -64,6 +77,13 @@ async def _send_status(message: Message, bot) -> None:
 
 @router.message(F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_menu_buttons(message: Message, bot) -> None:
+    if is_group_menu_chat(message.chat):
+        await message.answer(
+            "В группе используй меню выше или <code>/remind@бот …</code>\n"
+            "Команда: /menu",
+        )
+        return
+
     text = message.text
     if text == BTN_SEARCH:
         clear_edit_pending(message.from_user.id)
@@ -102,17 +122,33 @@ async def menu_list(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-@router.callback_query(F.data == "menu:create")
-async def menu_create(callback: CallbackQuery) -> None:
+@router.callback_query(F.data == "menu:home")
+async def menu_home(callback: CallbackQuery) -> None:
     _clear_modes(callback.from_user.id)
+    await callback.message.edit_text(
+        "⌨️ <b>Меню</b>",
+        reply_markup=main_menu_inline_keyboard(),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu:create")
+async def menu_create(callback: CallbackQuery, bot) -> None:
+    _clear_modes(callback.from_user.id)
+    if is_group_menu_chat(callback.message.chat):
+        await show_group_menu_screen(callback, "hint", bot)
+        return
     await callback.message.answer(CREATE_HINT)
     await callback.answer()
 
 
 @router.callback_query(F.data == "menu:more")
-async def menu_more(callback: CallbackQuery) -> None:
+async def menu_more(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
-    await callback.message.answer("Дополнительно:", reply_markup=more_menu_keyboard())
+    if is_group_menu_chat(callback.message.chat):
+        await show_group_menu_screen(callback, "home", bot)
+        return
+    await callback.message.edit_text("Дополнительно:", reply_markup=more_menu_keyboard())
     await callback.answer()
 
 
@@ -135,16 +171,22 @@ async def menu_search(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(F.data == "menu:timezone")
-async def menu_timezone(callback: CallbackQuery) -> None:
+async def menu_timezone(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
+    if is_group_menu_chat(callback.message.chat):
+        await show_group_menu_screen(callback, "tz", bot)
+        return
     label = tz_scope_label(chat_kind_from_chat(callback.message.chat))
     await callback.message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
     await callback.answer()
 
 
 @router.callback_query(F.data == "menu:help")
-async def menu_help(callback: CallbackQuery) -> None:
+async def menu_help(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
+    if is_group_menu_chat(callback.message.chat):
+        await show_group_menu_screen(callback, "help", bot)
+        return
     await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
     await callback.answer()
 
@@ -159,9 +201,12 @@ async def menu_about(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(F.data == "menu:examples")
-async def menu_examples(callback: CallbackQuery) -> None:
+async def menu_examples(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
-    await callback.message.answer(EXAMPLES_INTRO, reply_markup=examples_keyboard())
+    if is_group_menu_chat(callback.message.chat):
+        await show_group_menu_screen(callback, "examples", bot)
+        return
+    await callback.message.edit_text(EXAMPLES_INTRO, reply_markup=examples_keyboard(back_callback="menu:home"))
     await callback.answer()
 
 

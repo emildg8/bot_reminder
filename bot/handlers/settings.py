@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery, Message
 from bot.config import settings
 from bot.db.repository import async_session, get_or_create_user, update_user_snooze_settings
 from bot.keyboards.inline import settings_snooze_keyboard
+from bot.services.group_menu import answer_group_private_only, is_group_menu_chat
 from bot.services.user_prefs import format_snooze_minutes, get_snooze_presets, get_snooze_step, parse_snooze_presets
 
 router = Router()
@@ -34,6 +35,9 @@ async def cmd_settings(message: Message) -> None:
 
 @router.callback_query(F.data == "menu:settings")
 async def menu_settings(callback: CallbackQuery) -> None:
+    if is_group_menu_chat(callback.message.chat):
+        await answer_group_private_only(callback)
+        return
     await cmd_settings(callback.message)
     await callback.answer()
 
