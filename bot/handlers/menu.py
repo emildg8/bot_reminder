@@ -17,8 +17,7 @@ from bot.keyboards.inline import (
 from bot.services.callback_utils import safe_callback_answer
 from bot.services.group_menu import (
     is_group_menu_chat,
-    send_group_menu_home,
-    show_group_menu_screen,
+    send_group_commands_hint,
 )
 from bot.keyboards.reply import (
     BTN_CREATE,
@@ -67,7 +66,7 @@ async def cmd_cancel(message: Message) -> None:
 async def cmd_menu(message: Message, bot) -> None:
     _clear_modes(message.from_user.id)
     if is_group_menu_chat(message.chat):
-        await send_group_menu_home(message, bot)
+        await send_group_commands_hint(message, bot)
         return
     await message.answer(
         "⌨️ <b>Меню</b> — кнопки внизу или команды через /",
@@ -83,7 +82,6 @@ async def _send_status(message: Message, bot) -> None:
 @router.message(F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_menu_buttons(message: Message, bot) -> None:
     if is_group_menu_chat(message.chat):
-        await send_group_menu_home(message, bot)
         return
 
     text = message.text
@@ -138,7 +136,12 @@ async def menu_home(callback: CallbackQuery) -> None:
 async def menu_create(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
-        await show_group_menu_screen(callback, "hint", bot)
+        await safe_callback_answer(callback)
+        me = await bot.get_me()
+        uname = me.username or "бот"
+        await callback.message.answer(
+            f"✍️ <code>/remind@{uname} через 30 минут …</code>",
+        )
         return
     await safe_callback_answer(callback)
     await callback.message.answer(CREATE_HINT)
@@ -148,7 +151,8 @@ async def menu_create(callback: CallbackQuery, bot) -> None:
 async def menu_more(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
-        await show_group_menu_screen(callback, "home", bot)
+        await safe_callback_answer(callback)
+        await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
         return
     await safe_callback_answer(callback)
     await callback.message.edit_text("Дополнительно:", reply_markup=more_menu_keyboard())
@@ -176,7 +180,9 @@ async def menu_search(callback: CallbackQuery) -> None:
 async def menu_timezone(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
-        await show_group_menu_screen(callback, "tz", bot)
+        await safe_callback_answer(callback)
+        label = tz_scope_label(chat_kind_from_chat(callback.message.chat))
+        await callback.message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
         return
     await safe_callback_answer(callback)
     label = tz_scope_label(chat_kind_from_chat(callback.message.chat))
@@ -187,7 +193,8 @@ async def menu_timezone(callback: CallbackQuery, bot) -> None:
 async def menu_help(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
-        await show_group_menu_screen(callback, "help", bot)
+        await safe_callback_answer(callback)
+        await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
         return
     await safe_callback_answer(callback)
     await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
@@ -206,7 +213,12 @@ async def menu_about(callback: CallbackQuery) -> None:
 async def menu_examples(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
-        await show_group_menu_screen(callback, "examples", bot)
+        await safe_callback_answer(callback)
+        me = await bot.get_me()
+        uname = me.username or "бот"
+        await callback.message.answer(
+            f"💡 Примеры: <code>/remind@{uname} через час созвон</code>",
+        )
         return
     await safe_callback_answer(callback)
     await callback.message.edit_text(EXAMPLES_INTRO, reply_markup=examples_keyboard(back_callback="menu:home"))

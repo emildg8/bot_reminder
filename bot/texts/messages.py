@@ -50,7 +50,7 @@ def format_group_welcome(bot_username: str | None = None) -> str:
         f"Или {at} <b>из списка</b> + фраза:\n"
         f"• <code>{at} через 30 минут созвон</code>\n\n"
         "⚠️ @, набранный вручную, бот <b>не увидит</b> — ответа не будет.\n\n"
-        "🕐 /timezone · 📋 /list · /help · /menu"
+        "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
 
 
@@ -76,6 +76,17 @@ def format_collective_welcome(chat_kind: ChatKind, bot_username: str | None = No
 GROUP_WELCOME = format_group_welcome()
 
 GROUP_EXAMPLES_INTRO = "💡 <b>Примеры</b> — нажми, бот попросит подтвердить в личке:"
+
+
+def format_group_commands_hint(bot_username: str | None = None) -> str:
+    uname = bot_username or "бот"
+    at = f"@{uname}"
+    return (
+        f"📋 <b>Команды в группе</b>\n\n"
+        f"• <code>/remind@{uname} через 30 минут …</code>\n"
+        f"• {at} <b>из списка</b> + фраза\n\n"
+        "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
+    )
 
 
 def format_group_menu_home(bot_username: str | None = None) -> str:
@@ -331,7 +342,7 @@ HELP_TEXT_GROUP = f"""\
 💬 <b>Группа обсуждений канала</b> — /remind публикует в канал, confirm в личке.
 
 <b>Команды</b>
-/list · /edit · /pause · /resume · /timezone · /status · /help · /menu
+/list · /edit · /pause · /resume · /timezone · /status · /help
 
 Срабатывание — в группу, кнопки — в личку с ботом."""
 
