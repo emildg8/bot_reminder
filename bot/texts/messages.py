@@ -303,7 +303,9 @@ HELP_TEXT_GROUP = f"""\
 Или @бот <b>из списка</b> (не печатай @ вручную):
 <code>@бот завтра в 14:00 созвон</code>
 
-Участнику: <code>@user @бот через 1 час задача</code>
+Участнику: <code>@user @бот через 1 час задача</code> (только если user в чате)
+
+💬 <b>Группа обсуждений канала</b> — /remind публикует в канал, confirm в личке.
 
 <b>Команды</b>
 /list · /edit · /pause · /resume · /timezone · /status · /help
@@ -316,6 +318,8 @@ HELP_TEXT_CHANNEL = f"""\
 <b>Создать</b> (админ канала):
 <code>/remind@бот завтра в 10:00 пост</code>
 <code>/remind@бот через 2 часа проверить</code>
+
+💬 То же работает из <b>группы обсуждений</b> — пост появится в канале.
 
 <b>Команды</b>
 /list · /pause · /resume · /timezone · /status · /help
@@ -457,15 +461,27 @@ def format_status(
     tz_scope: str,
     version: str = __version__,
     chat_kind: ChatKind = ChatKind.PRIVATE,
+    next_line: str | None = None,
+    delivery_line: str | None = None,
+    post_ok: bool | None = None,
 ) -> str:
     tz_label = format_timezone_label(tz)
     state = "⏸ на паузе" if paused else "▶️ активны"
     extra = ""
     if chat_kind == ChatKind.PRIVATE:
         extra = "\n\n📔 Дневник: /journal · 📜 История: /history"
-    return (
-        f"📊 <b>Статус</b> · v{version}\n\n"
-        f"📋 Активных: <b>{count}</b>\n"
-        f"⚡️ Состояние: {state}\n"
-        f"🕐 Часовой пояс ({tz_scope}): <b>{tz_label}</b>{extra}"
-    )
+    lines = [
+        f"📊 <b>Статус</b> · v{version}\n",
+        f"📋 Активных: <b>{count}</b>",
+        f"⚡️ Состояние: {state}",
+        f"🕐 Часовой пояс ({tz_scope}): <b>{tz_label}</b>",
+    ]
+    if delivery_line:
+        lines.append(delivery_line)
+    if next_line:
+        lines.append(next_line)
+    if post_ok is False:
+        lines.append("⚠️ Бот <b>не может писать</b> в чат доставки — дай права или сделай админом")
+    elif post_ok is True and chat_kind != ChatKind.PRIVATE:
+        lines.append("✅ Бот может публиковать напоминания")
+    return "\n".join(lines) + extra

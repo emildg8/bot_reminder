@@ -8,6 +8,7 @@ from bot.db.repository import async_session, get_or_create_user, get_reminder
 from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_delivery import resolve_delivery_chat_id
+from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
 from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
@@ -171,6 +172,8 @@ async def _parse_and_confirm_edit(
         prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
         if delivery_chat_id != message.chat.id:
             prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
+        if not await bot_can_post_reminders(bot, delivery_chat_id):
+            prefix += format_bot_cannot_post_hint() + "\n\n"
 
     mention_provided = bool(mention_username or mention_id)
     chat_kind = chat_kind_from_chat(message.chat)

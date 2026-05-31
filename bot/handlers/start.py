@@ -13,6 +13,8 @@ from bot.db.repository import (
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat, tz_scope_label
+from bot.services.chat_delivery import sync_channel_linked_chat
+from bot.services.bot_menu import setup_channel_commands
 from bot.services.timezone_labels import format_timezone_label
 from bot.texts.messages import (
     ONBOARDING_READY,
@@ -54,6 +56,15 @@ async def cmd_start(message: Message) -> None:
 
     if kind != ChatKind.PRIVATE:
         me = await message.bot.get_me()
+        if kind == ChatKind.CHANNEL:
+            async with async_session() as session:
+                await sync_channel_linked_chat(
+                    message.bot,
+                    session,
+                    message.chat.id,
+                    default_timezone=settings.default_timezone,
+                )
+            await setup_channel_commands(message.bot, message.chat.id)
         await message.answer(format_collective_welcome(kind, me.username))
         if kind != ChatKind.CHANNEL:
             await message.answer(

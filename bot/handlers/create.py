@@ -13,6 +13,7 @@ from bot.services.bot_mention import should_handle_collective_message
 from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
 from bot.services.chat_delivery import resolve_delivery_chat_id
+from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
 from bot.services.drafts import pop_search_pending, store_draft
@@ -120,6 +121,8 @@ async def _process_text_and_reply(
         prefix += format_collective_confirm_prefix(chat_kind_from_chat(message.chat))
         if delivery_chat_id != message.chat.id:
             prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
+        if not await bot_can_post_reminders(bot, delivery_chat_id):
+            prefix += format_bot_cannot_post_hint() + "\n\n"
 
     mention_provided = bool(mention_username or mention_id)
     chat_kind = chat_kind_from_chat(message.chat)

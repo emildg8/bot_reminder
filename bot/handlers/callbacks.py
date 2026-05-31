@@ -48,6 +48,7 @@ from bot.texts.messages import (
     format_updated,
 )
 from bot.services.reminder_display import format_parsed_when_label
+from bot.services.reminder_jobs import cancel_reminder_job
 from bot.services.scheduler import schedule_reminder, scheduler
 
 router = Router()
@@ -254,9 +255,7 @@ async def confirm_edit_reminder(callback: CallbackQuery, bot: Bot) -> None:
             return
 
         tz = reminder.timezone or user.timezone
-        job_id = f"reminder_{reminder_id}"
-        if scheduler.get_job(job_id):
-            scheduler.remove_job(job_id)
+        cancel_reminder_job(reminder_id)
 
         if len(entry.parsed_items) == 1:
             next_run = await apply_parsed_to_reminder(
@@ -496,9 +495,7 @@ async def done_reminder(callback: CallbackQuery) -> None:
             kind=ReminderEventKind.DONE,
         )
 
-    job_id = f"reminder_{reminder_id}"
-    if scheduler.get_job(job_id):
-        scheduler.remove_job(job_id)
+    cancel_reminder_job(reminder_id)
 
     await callback.message.edit_text("✅ Готово. Напоминание закрыто.")
     await callback.answer()
@@ -561,9 +558,7 @@ async def delete_reminder(callback: CallbackQuery) -> None:
             kind=ReminderEventKind.DELETED,
         )
 
-    job_id = f"reminder_{reminder_id}"
-    if scheduler.get_job(job_id):
-        scheduler.remove_job(job_id)
+    cancel_reminder_job(reminder_id)
 
     await callback.message.edit_text("🗑 Напоминание удалено.")
     await callback.answer()
