@@ -35,6 +35,18 @@ Linux/macOS: `cp .env.deploy.local.example .env.deploy.local` → `bash scripts/
 bash start.sh
 ```
 
+**Не используй** `pip install && python -m bot.main` без `git pull` — код на диске не обновится, auto-update не поможет если бот не стартует.
+
+## Застрял на старой/бroken версии (IndentationError, SyntaxError)
+
+1. **Console** в панели Wispbyte:
+   ```bash
+   cd /home/container && git pull origin main && bash start.sh
+   ```
+2. Или смени **Startup Command** на `bash start.sh` и нажми **Restart**.
+
+После pull должна быть **v3.15.2+** (`grep __version__ bot/version.py`).
+
 ## Проверка
 
 1. `gh secret list -R emildg8/bot_reminder` — 5 secrets
