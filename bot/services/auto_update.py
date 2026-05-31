@@ -13,6 +13,7 @@ from pathlib import Path
 
 from bot.config import BASE_DIR, settings
 from bot.services.deploy_meta import read_deploy_sha, record_deploy_sha_from_git, write_deploy_sha
+from bot.services.process_restart import exit_for_restart
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +227,7 @@ def register_shutdown_dispatcher(dp) -> None:
 
 
 async def restart_bot_after_update(delay_seconds: float = 1.5) -> None:
-    """Корректный перезапуск: stop polling, затем execv (как auto-update)."""
+    """Корректный перезапуск: stop polling → exit (панель поднимет процесс заново)."""
     await asyncio.sleep(delay_seconds)
     request_process_reexec()
     if _shutdown_dispatcher is not None:
@@ -236,7 +237,7 @@ async def restart_bot_after_update(delay_seconds: float = 1.5) -> None:
             if "not started" not in str(exc).lower():
                 raise
         return
-    os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
+    exit_for_restart("Manual restart without dispatcher")
 
 
 def schedule_process_restart(delay_seconds: float = 1.5) -> None:

@@ -2,6 +2,13 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.15.2] — 2026-05-31
+
+### Wispbyte: стабильный перезапуск после auto-update
+- **`os.execv` заменён на `sys.exit(0)`** — панель поднимает `pip install && python -m bot.main` без KeyboardInterrupt
+- **Stale lock** — мёртвый `bot.lock` удаляется автоматически; живой pid блокирует второй экземпляр
+- **Исправлен сломанный блок startup auto-update** в main.py
+
 ## [3.15.1] — 2026-05-31
 
 ### Админ и стабильность деплоя

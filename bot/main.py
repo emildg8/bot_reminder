@@ -43,27 +43,12 @@ from bot.services.auto_update import (
 from bot.services.cleanup import prune_all_caches
 from bot.services.deploy_meta import record_deploy_sha_from_git
 from bot.services.heartbeat import write_heartbeat
+from bot.services.instance_lock import acquire_instance_lock, release_instance_lock
+from bot.services.process_restart import exit_for_restart
 from bot.services.scheduler import repair_reminder_jobs, restore_scheduled_reminders, scheduler
 from bot.version import __version__
 
 logger = logging.getLogger(__name__)
-
-
-def _acquire_instance_lock(data_dir: Path) -> Path:
-    lock_path = data_dir / "bot.lock"
-    if lock_path.exists():
-        old_pid = lock_path.read_text(encoding="utf-8").strip()
-        logger.warning("Lock file exists (pid %s) — возможен второй экземпляр бота", old_pid)
-    lock_path.write_text(str(os.getpid()), encoding="utf-8")
-    return lock_path
-
-
-def _release_instance_lock(lock_path: Path) -> None:
-    try:
-        if lock_path.exists() and lock_path.read_text(encoding="utf-8").strip() == str(os.getpid()):
-            lock_path.unlink()
-    except OSError as exc:
-        logger.warning("Cannot remove lock file: %s", exc)
 
 
 async def _notify_admins(bot: Bot, text: str) -> None:
@@ -131,13 +116,13 @@ async def _shutdown_bot(bot: Bot, lock_path: Path) -> None:
     scheduler.shutdown(wait=True)
     await bot.session.close()
     await dispose_engine()
-    _release_instance_lock(lock_path)
+    release_instance_lock(lock_path)
 
 
 async def main() -> None:
     data_dir = Path(__file__).resolve().parent.parent / "data"
     data_dir.mkdir(exist_ok=True)
-    lock_path = _acquire_instance_lock(data_dir)
+    lock_path = acquire_instance_lock(data_dir)
 
     log_file = setup_logging(
         data_dir / "logs",
@@ -238,13 +223,8 @@ async def main() -> None:
     await restore_scheduled_reminders(bot)
     if settings.auto_update_enabled:
         if await _auto_update_job(bot, dp, polling_active=False):
-            scheduler.shutdown(wait=True)
-        await bot.session.close()
-        await dispose_engine()
-        _release_instance_lock(lock_path)
-            logger.info("Re-exec after startup auto-update")
-            os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
-            return
+            await _shutdown_bot(bot, lock_path)
+            exit_for_restart("Startup auto-update applied")
     await setup_bot_commands(bot)
     await setup_bot_profile(bot)
 
@@ -273,8 +253,7 @@ async def main() -> None:
         await _shutdown_bot(bot, lock_path)
 
     if consume_reexec_flag():
-        logger.info("Re-exec after auto-update")
-        os.execv(sys.executable, [sys.executable, "-m", "bot.main"])
+        exit_for_restart("Auto-update applied")
 
 
 if __name__ == "__main__":
