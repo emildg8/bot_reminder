@@ -4,8 +4,10 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from bot.db.repository import create_reminder, get_or_create_user
-from bot.handlers.list_callbacks import list_noop, list_page, list_tab
-from bot.handlers.menu import menu_home, menu_list
+from bot.handlers.list_callbacks import list_noop, list_page, list_tab, search_noop, search_page
+from bot.handlers.menu import menu_home, menu_list, menu_more, menu_search
+from bot.services.drafts import clear_search_pending, pop_search_pending
+from bot.services.search_ui import _store_cache
 from tests.callback_helpers import make_callback
 from tests.db_helpers import patched_db
 
@@ -105,5 +107,70 @@ async def test_list_noop_answers(patched_db):
     callback = make_callback("list:noop", 9106)
 
     await list_noop(callback)
+
+    callback.answer.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_menu_search_sets_pending_and_prompts(patched_db):
+    user_id = 9107
+    clear_search_pending(user_id)
+    callback = make_callback("menu:search", user_id)
+
+    await menu_search(callback)
+
+    assert pop_search_pending(user_id) is True
+    body = callback.message.answer.await_args[0][0]
+    assert "Поиск" in body
+    assert "/cancel" in body
+
+
+@pytest.mark.asyncio
+async def test_menu_more_shows_submenu(patched_db):
+    from unittest.mock import AsyncMock
+
+    callback = make_callback("menu:more", 9108)
+
+    await menu_more(callback, AsyncMock())
+
+    callback.message.edit_text.assert_awaited_once()
+    assert "Дополнительно" in callback.message.edit_text.await_args[0][0]
+    markup = callback.message.edit_text.await_args.kwargs["reply_markup"]
+    callbacks = [btn.callback_data for row in markup.inline_keyboard for btn in row]
+    assert "menu:search" in callbacks
+    assert "menu:examples" in callbacks
+
+
+@pytest.mark.asyncio
+async def test_search_page_shows_cached_results(patched_db):
+    user_id = 9109
+    first = await _seed_reminder(patched_db, user_id, "купить хлеб")
+    second = await _seed_reminder(patched_db, user_id, "купить молоко")
+    _store_cache(user_id, user_id, "купить", [first.id, second.id])
+    callback = make_callback("search:page:0", user_id)
+
+    await search_page(callback)
+
+    body = callback.message.edit_text.await_args[0][0]
+    assert "Найдено: 2" in body
+    assert "купить" in body
+
+
+@pytest.mark.asyncio
+async def test_search_page_without_cache_alerts(patched_db):
+    callback = make_callback("search:page:0", 9110)
+
+    await search_page(callback)
+
+    callback.answer.assert_awaited()
+    alert = callback.answer.await_args.kwargs.get("text") or callback.answer.await_args[0][0]
+    assert "устарел" in alert.lower()
+
+
+@pytest.mark.asyncio
+async def test_search_noop_answers(patched_db):
+    callback = make_callback("search:noop", 9111)
+
+    await search_noop(callback)
 
     callback.answer.assert_awaited()

@@ -2,6 +2,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.30.0] — 2026-05-31
+
+### Тесты menu search/more и search pagination
+- **menu:search** — режим поиска + подсказка /cancel
+- **menu:more** — подменю «Дополнительно»
+- **search:page** — результаты из кэша; alert без кэша
+- **search:noop** — callback answer
+- Coverage gate в CI: **47% → 50%**
+
 ## [3.29.0] — 2026-05-31
 
 ### Тесты menu/list handlers

@@ -39,6 +39,8 @@
 | 31 | Coverage gate 45% | v3.28 |
 | 32 | menu/list handler tests | v3.29 |
 | 33 | Coverage gate 47% | v3.29 |
+| 34 | menu:search/more + search:page tests | v3.30 |
+| 35 | Coverage gate 50% | v3.30 |
 
 ## Дальше (идеи)
 
