@@ -10,7 +10,6 @@ from bot.services.reminder_history import (
     format_day_journal,
     format_month_stats,
     get_day_events,
-    get_month_stats,
     log_reminder_event,
 )
 

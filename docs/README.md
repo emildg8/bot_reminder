@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.42.0** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.42.1** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -37,7 +37,7 @@
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
-- [releases/v3.42.0.md](releases/v3.42.0.md) — Stars, audit DB, broadcast draft
+- [releases/v3.42.1.md](releases/v3.42.1.md) — Stars, audit DB, broadcast draft
 - [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee (F3.0) закрыт
 
 ## CI / GitHub
