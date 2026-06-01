@@ -114,8 +114,18 @@ def test_relative_delay_recomputed_at_confirm():
     from bot.services.reminder_utils import compute_next_run
 
     parsed = parse_with_rules("через 1 минуту проснуться", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.text == "проснуться"
     assert parsed.delay_seconds == 60
     before = datetime.now(ZoneInfo("Europe/Moscow"))
     next_run = compute_next_run(parsed, "Europe/Moscow")
     after = datetime.now(ZoneInfo("Europe/Moscow"))
     assert before + timedelta(seconds=55) <= next_run <= after + timedelta(seconds=65)
+
+
+def test_segodnya_cherez_minutu():
+    parsed = parse_with_rules("сегодня через 1 минуту тест", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert parsed.text == "тест"
+    assert parsed.delay_seconds == 60

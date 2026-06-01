@@ -61,6 +61,14 @@ def test_day_only_not_when_time_in_phrase():
     assert detect_ambiguous_day_only("завтра утром зарядка") is None
 
 
+def test_day_only_not_when_relative_offset():
+    from bot.services.nlp.ambiguous_time import detect_ambiguous_day_only
+
+    assert detect_ambiguous_day_only("сегодня через 1 минуту тест") is None
+    assert detect_ambiguous_day_only("завтра через час созвон") is None
+    assert detect_ambiguous_day_only("сегодня через полчаса таблетки") is None
+
+
 def test_ambiguous_hour_keyboard_two_choices():
     from bot.keyboards.inline import ambiguous_hour_keyboard
 

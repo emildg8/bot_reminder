@@ -49,6 +49,17 @@ async def test_offer_ambiguous_skips_normal_phrase():
 
 
 @pytest.mark.asyncio
+async def test_offer_ambiguous_skips_day_plus_relative():
+    message = AsyncMock()
+    message.answer = AsyncMock()
+
+    handled = await offer_ambiguous_time_choice(message, "сегодня через 1 минуту тест", 46)
+
+    assert handled is False
+    message.answer.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_offer_ambiguous_keeps_edit_pending():
     message = AsyncMock()
     message.answer = AsyncMock()

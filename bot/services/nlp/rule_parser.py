@@ -124,7 +124,12 @@ def _parse_count_token(token: str) -> int | None:
 
 
 def _task_without_pattern(cleaned: str, pattern: re.Pattern) -> str:
-    return pattern.sub("", cleaned).strip(" ,.") or "Напоминание"
+    day_word = r"сегодня|завтра|послезавтра|после\s+завтра"
+    raw = pattern.sub("", cleaned).strip(" ,.")
+    raw = re.sub(r"\s+", " ", raw)
+    raw = re.sub(rf"^(?:{day_word})\s+", "", raw, flags=re.IGNORECASE)
+    raw = re.sub(rf"\s+(?:{day_word})$", "", raw, flags=re.IGNORECASE)
+    return raw.strip(" ,.") or "Напоминание"
 
 
 def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:
