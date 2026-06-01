@@ -31,13 +31,14 @@
 | 23 | Подсказка при тексте вместо кнопки ambiguous | v3.24 |
 | 24 | Тесты ambiguous_prompt | v3.24 |
 | 25 | Handler tests callbacks (confirm/edit/done) | v3.25 |
+| 26 | Snooze/delete handler tests | v3.26 |
+| 27 | Coverage gate 40% | v3.26 |
 
 ## Дальше (идеи)
 
 | # | Улучшение | Impact | Effort |
 |---|-----------|--------|--------|
 | B | Поднять coverage gate постепенно | low | ongoing |
-| C | Snooze/delete handler tests | low | small |
 
 ## Отменено / не актуально
 

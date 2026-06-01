@@ -2,6 +2,16 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.26.0] — 2026-05-31
+
+### Тесты callbacks (snooze/delete)
+- **delete** — деактивация напоминания
+- **del_confirm** — подтверждение удаления
+- **delete/done denied** — отказ чужому пользователю
+- **snooze** — меню отложить и apply (+ reschedule)
+- Общие хелперы `tests/callback_helpers.py` (рефактор confirm-тестов)
+- Coverage gate в CI: **38% → 40%**
+
 ## [3.25.0] — 2026-05-31
 
 ### Тесты callbacks
