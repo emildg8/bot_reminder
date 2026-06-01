@@ -181,9 +181,11 @@ HOUR_PART_OF_DAY = re.compile(
     re.IGNORECASE,
 )
 
-# «в два» / «в 14» без минут → «в 14:00»
+# «в два» / «в 14» без минут → «в 14:00» (не «в 2 дня»)
 BARE_HOUR = re.compile(
-    rf"(\b(?:в\s+))({HOUR_WORD_PATTERN}|\d{{1,2}})(?![:.]\d)(\b)",
+    rf"(\b(?:в\s+))({HOUR_WORD_PATTERN}|\d{{1,2}})(?![:.]\d)"
+    rf"(?!\s+(?:{PART_OF_DAY})\b)"
+    rf"(\b)",
     re.IGNORECASE,
 )
 
@@ -369,9 +371,6 @@ def normalize_part_of_day(text: str) -> str:
         before = text[: match.start()]
         if re.search(r"\bчерез\s+$", before, re.IGNORECASE):
             return match.group(0)
-        if match.group("part").lower() in ("дня", "день", "дней") and "час" not in match.group(0).lower():
-            if not re.search(r"\bв\s+$", before, re.IGNORECASE):
-                return match.group(0)
         hour_value = _parse_hour_token(match.group("h"))
         if hour_value is None:
             return match.group(0)

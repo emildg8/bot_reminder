@@ -2,7 +2,7 @@
 
 Как бот разбирает комбинации «сегодня / завтра» + время + задача.
 
-См. также: [quality-metrics.md](quality-metrics.md) · тесты `test_rule_parser.py`, `test_ambiguous_time.py`.
+См. также: [quality-metrics.md](quality-metrics.md) · тесты `test_nlp_time_priority.py`, `test_rule_parser.py`, `test_ambiguous_time.py`.
 
 ---
 
@@ -156,6 +156,8 @@
 |------------|-------|
 | «сегодня через 1 мин» → «Уточни время» 9/14/18 | сразу confirm +1 мин |
 | «через 2 дня» → normalize в «в 14:00» | offset +2 дня |
+| «завтра в 2 дня» → task «дня созвон», 02:00 | task «созвон», 14:00 |
+| «завтра каждые 2 часа» → task «завтра встать» | task «встать» |
 | задача «сегодня тест» после «через 1 мин» | задача «тест» |
 
 ---
@@ -210,4 +212,4 @@ flowchart TD
 1. Не ломает ли `normalize_part_of_day` duration («через N дня»)?
 2. Не попадает ли в `detect_ambiguous_day_only` ошибочно?
 3. Якорь дня убирается из текста задачи?
-4. Есть тест в `test_rule_parser.py` или `test_ambiguous_time.py`?
+4. Есть тест в `test_nlp_time_priority.py`, `test_rule_parser.py` или `test_ambiguous_time.py`?

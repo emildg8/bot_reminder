@@ -24,7 +24,7 @@ python scripts/verify_ops.py   # сверит docs с collect (CI)
 
 `verify_ops` сравнивает `pytest --collect-only` с шаблонами в [doc_metrics.py](../../scripts/doc_metrics.py). При расхождении обновите файлы ниже (одно и то же число):
 
-Обновить число тестов (сейчас **428**, см. `make test-count`) в:
+Обновить число тестов (сейчас **457**, см. `make test-count`) в:
 
 | Файл |
 |------|

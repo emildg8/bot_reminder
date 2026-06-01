@@ -142,3 +142,11 @@ def test_normalize_keeps_cherez_dva_dnya():
     from bot.services.nlp.absolute_time_parse import normalize_phrase
 
     assert "14:00" not in normalize_phrase("завтра через 2 дня оплатить")
+
+
+def test_zavtra_kazhdye_2_chasa_strips_day_anchor():
+    parsed = parse_with_rules("завтра каждые 2 часа встать", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.kind == "interval"
+    assert parsed.text == "встать"
+    assert parsed.interval_seconds == 7200

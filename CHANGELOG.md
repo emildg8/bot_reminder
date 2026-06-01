@@ -4,6 +4,18 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.42.2] — 2026-06-01
+
+### Fix (NLP)
+- «завтра в 2 дня созвон» → 14:00, задача «созвон» (не 02:00 / «дня созвон»)
+- `normalize_part_of_day`: убрано ложное skip для «в N дня»
+- `BARE_HOUR`: не матчит «в 2» перед частью дня
+- Расписание (interval/daily/weekly): `strip_day_words` в тексте задачи («завтра каждые 2 часа встать» → «встать»)
+
+### Tests / docs
+- `test_nlp_time_priority.py` — parametrized по `nlp-time-priority.md` (+29 → **457**)
+- Anti-patterns и карта тестов в docs
+
 ## [3.42.1] — 2026-06-02
 
 ### Fix

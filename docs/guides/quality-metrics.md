@@ -2,7 +2,7 @@
 
 Кратко, что проверяется перед каждым merge в `main`.
 
-## 428 тестов (pytest)
+## 457 тестов (pytest)
 
 Автоматические сценарии: парсинг фраз, БД, callbacks, группы, удаление и т.д.
 
@@ -66,11 +66,11 @@ python scripts/verify_ops.py
 pytest -v --cov=bot --cov-fail-under=65
 ```
 
-## Карта тестов (428)
+## Карта тестов (457)
 
 | Категория | Примеры файлов | ~кол-во |
 |-----------|----------------|---------|
-| NLP / время | `test_absolute_time_parse`, `test_ambiguous_*`, `test_weekday_parse`, `test_rule_parser` | 80+ |
+| NLP / время | `test_nlp_time_priority`, `test_absolute_time_parse`, `test_ambiguous_*`, `test_weekday_parse`, `test_rule_parser` | 100+ |
 | DB / repo | `test_000_repository`, `test_db_migrate`, `test_duplicates` | 25+ |
 | Callbacks / UI | `test_001`–`test_003`, `test_confirm_flow`, `test_pagination` | 60+ |
 | Handlers | `test_004`–`test_008`, `test_005_handlers_core`, `test_007_onboarding` | 50+ |

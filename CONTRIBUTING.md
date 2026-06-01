@@ -38,7 +38,7 @@ pytest -v --cov=bot --cov-fail-under=65
 - Комментарии — только для неочевидной бизнес-логики
 - Тесты — осмысленные сценарии, не ради coverage (см. [quality-metrics.md](docs/guides/quality-metrics.md))
 
-## Структура тестов (~428)
+## Структура тестов (~457)
 
 Полная карта: [docs/guides/quality-metrics.md](docs/guides/quality-metrics.md).
 
