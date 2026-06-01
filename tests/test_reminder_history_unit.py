@@ -65,6 +65,7 @@ async def test_log_and_month_stats(patched_db):
         kind="once",
         next_run_at=None,
     )
+    now = datetime.now(ZoneInfo("Europe/Moscow"))
     await log_reminder_event(
         patched_db,
         reminder=reminder,
@@ -72,8 +73,8 @@ async def test_log_and_month_stats(patched_db):
         user_telegram_id=88001,
         text="hist test",
         kind=ReminderEventKind.DONE,
+        event_at=now,
     )
-    now = datetime.now(ZoneInfo("Europe/Moscow"))
     stats = await get_month_stats(
         patched_db, 88001, day=now, timezone="Europe/Moscow", user_telegram_id=88001
     )
