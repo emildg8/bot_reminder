@@ -45,6 +45,8 @@ async def patched_db(monkeypatch) -> AsyncSession:
         "bot.services.search_ui",
         "bot.services.chat_status",
         "bot.services.chat_pause",
+        "bot.services.admin_panel",
+        "bot.handlers.admin",
     ):
         monkeypatch.setattr(f"{module}.async_session", shared)
 

@@ -38,11 +38,11 @@ from bot.services.chat_ctx import chat_kind_from_chat, tz_scope_label
 from bot.services.chat_status import build_status_text
 from bot.services.pending_tasks import clear_pending_task, pop_pending_task
 from bot.services.nlp.ambiguous_time import phrase_from_ambiguous_choice, phrase_from_day_only_choice
+from bot.services.help_display import format_help_for_chat, format_help_for_message
 from bot.texts.messages import (
     CREATE_HINT,
     EXAMPLES_INTRO,
     EXAMPLE_PHRASES,
-    format_help,
     phrase_from_task_preset,
 )
 from bot.version import __version__
@@ -61,13 +61,16 @@ def _clear_modes(user_id: int) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     _clear_modes(message.from_user.id)
-    await message.answer(format_help(chat_kind_from_chat(message.chat)), reply_markup=menu_keyboard_for_chat(message.chat.id))
+    await message.answer(format_help_for_message(message), reply_markup=menu_keyboard_for_chat(message.chat.id))
 
 
 @router.message(Command("cancel"))
 async def cmd_cancel(message: Message) -> None:
     _clear_modes(message.from_user.id)
-    await message.answer("Отменено.", reply_markup=menu_keyboard_for_chat(message.chat.id))
+    await message.answer(
+        "Отменено.",
+        reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
+    )
 
 
 @router.message(Command("menu"))
@@ -78,13 +81,16 @@ async def cmd_menu(message: Message, bot) -> None:
         return
     await message.answer(
         "⌨️ <b>Меню</b> — кнопки внизу или команды через /",
-        reply_markup=menu_keyboard_for_chat(message.chat.id),
+        reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
     )
 
 
 async def _send_status(message: Message, bot) -> None:
     text = await build_status_text(bot, message)
-    await message.answer(text, reply_markup=menu_keyboard_for_chat(message.chat.id))
+    await message.answer(
+        text,
+        reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
+    )
 
 
 @router.message(F.text.in_(MENU_BUTTON_TEXTS))
@@ -100,7 +106,7 @@ async def handle_menu_buttons(message: Message, bot) -> None:
         await message.answer(
             "🔍 <b>Поиск</b>\n\nНапиши слово или фразу — найду среди активных напоминаний.\n"
             "Отмена: /cancel",
-            reply_markup=menu_keyboard_for_chat(message.chat.id),
+            reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
         )
         return
 
@@ -112,14 +118,23 @@ async def handle_menu_buttons(message: Message, bot) -> None:
     elif text == BTN_STATS:
         await _send_stats(message)
     elif text == BTN_MORE:
-        await message.answer("Дополнительно:", reply_markup=more_menu_keyboard())
+        await message.answer(
+            "Дополнительно:",
+            reply_markup=more_menu_keyboard(message.from_user.id),
+        )
     elif text == BTN_CREATE:
-        await message.answer(CREATE_HINT, reply_markup=menu_keyboard_for_chat(message.chat.id))
+        await message.answer(
+            CREATE_HINT,
+            reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
+        )
     elif text == BTN_TIMEZONE:
         label = tz_scope_label(chat_kind_from_chat(message.chat))
         await message.answer(f"🕐 Часовой пояс ({label}):", reply_markup=timezone_keyboard())
     elif text == BTN_HELP:
-        await message.answer(format_help(chat_kind_from_chat(message.chat)), reply_markup=menu_keyboard_for_chat(message.chat.id))
+        await message.answer(
+            format_help_for_message(message),
+            reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
+        )
     elif text == BTN_EXAMPLES:
         await message.answer(EXAMPLES_INTRO, reply_markup=examples_keyboard())
 
@@ -161,10 +176,15 @@ async def menu_more(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
         await safe_callback_answer(callback)
-        await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
+        await callback.message.answer(
+            format_help_for_chat(callback.message.chat, callback.from_user.id)
+        )
         return
     await safe_callback_answer(callback)
-    await callback.message.edit_text("Дополнительно:", reply_markup=more_menu_keyboard())
+    await callback.message.edit_text(
+        "Дополнительно:",
+        reply_markup=more_menu_keyboard(callback.from_user.id),
+    )
 
 
 @router.callback_query(F.data == "menu:status")
@@ -204,10 +224,14 @@ async def menu_help(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)
     if is_group_menu_chat(callback.message.chat):
         await safe_callback_answer(callback)
-        await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
+        await callback.message.answer(
+            format_help_for_chat(callback.message.chat, callback.from_user.id)
+        )
         return
     await safe_callback_answer(callback)
-    await callback.message.answer(format_help(chat_kind_from_chat(callback.message.chat)))
+    await callback.message.answer(
+        format_help_for_chat(callback.message.chat, callback.from_user.id)
+    )
 
 
 @router.callback_query(F.data == "menu:about")

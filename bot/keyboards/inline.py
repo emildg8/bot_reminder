@@ -96,24 +96,34 @@ def snooze_picker_keyboard(
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def more_menu_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🔍 Поиск", callback_data="menu:search"),
-                InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
-            ],
-            [
-                InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
-                InlineKeyboardButton(text="⚙️ Отложить", callback_data="menu:settings"),
-            ],
-            [
-                InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
-                InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
-            ],
-            [InlineKeyboardButton(text="◀️ Меню", callback_data="menu:home")],
-        ]
-    )
+def more_menu_keyboard(telegram_id: int | None = None) -> InlineKeyboardMarkup:
+    from bot.services.admin_access import is_admin_listed, is_bot_admin
+    from bot.services.admin_mode import more_menu_admin_row
+
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(text="🔍 Поиск", callback_data="menu:search"),
+            InlineKeyboardButton(text="💡 Примеры", callback_data="menu:examples"),
+        ],
+        [
+            InlineKeyboardButton(text="🕐 Часовой пояс", callback_data="menu:timezone"),
+            InlineKeyboardButton(text="⚙️ Отложить", callback_data="menu:settings"),
+        ],
+        [
+            InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
+            InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
+        ],
+    ]
+    if telegram_id is not None and is_admin_listed(telegram_id):
+        admin_row: list[InlineKeyboardButton] = []
+        if is_bot_admin(telegram_id):
+            admin_row.append(
+                InlineKeyboardButton(text="🎛 Админ", callback_data="admin:panel")
+            )
+        admin_row.extend(more_menu_admin_row(admin_tools=is_bot_admin(telegram_id)))
+        rows.append(admin_row)
+    rows.append([InlineKeyboardButton(text="◀️ Меню", callback_data="menu:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def list_tabs_keyboard(active: bool, page: int = 0) -> InlineKeyboardMarkup:

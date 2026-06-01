@@ -7,7 +7,7 @@ import logging
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
 
-from bot.config import settings
+from bot.services.admin_access import is_bot_admin
 from bot.services.chat_ctx import is_group_chat
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ async def can_manage_group_reminders(bot: Bot, chat_id: int, user_id: int) -> bo
     """В личке — всегда да. В группе — админ чата или bot admin."""
     if not is_group_chat(chat_id):
         return True
-    if user_id in settings.admin_telegram_ids:
+    if is_bot_admin(user_id):
         return True
     try:
         member = await bot.get_chat_member(chat_id, user_id)

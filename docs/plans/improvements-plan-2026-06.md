@@ -2,13 +2,13 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.39.3)
+## Оценка текущего состояния (v3.40.0)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
 | NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
 | Группы / collective | 10/10 | assignee @/reply, /delete yes, /edit N |
-| Тесты | 9/10 | 377 тестов, gate 65%; mention suite |
+| Тесты | 9/10 | 401 тестов, gate 65%; mention suite |
 | CI | 9/10 | lint-and-test ✅; release ✅; deploy skip без secrets |
 | Docs | 9/10 | v1.0 status, guides, roadmap |
 | Ops | 7/10 | Wispbyte — ручной чеклист |

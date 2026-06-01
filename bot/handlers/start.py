@@ -14,6 +14,7 @@ from bot.db.repository import (
 from bot.handlers.create import _process_text_and_reply
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
+from bot.services.admin_access import is_admin_listed, is_bot_admin
 from bot.services.bot_privacy import format_group_privacy_user_hint
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat, tz_scope_label
 from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
@@ -53,7 +54,9 @@ async def _finish_onboarding(callback: CallbackQuery) -> None:
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.answer(
         "⌨️ Меню:",
-        reply_markup=menu_keyboard_for_chat(callback.message.chat.id),
+        reply_markup=menu_keyboard_for_chat(
+            callback.message.chat.id, callback.from_user.id
+        ),
     )
     await callback.message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
 
@@ -104,8 +107,15 @@ async def cmd_start(message: Message) -> None:
             tz_scope=tz_scope_label(kind),
             tz_label=format_timezone_label(tz),
         ),
-        reply_markup=menu_keyboard_for_chat(message.chat.id),
+        reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
     )
+
+    if is_admin_listed(message.from_user.id):
+        from bot.texts.messages import format_admin_help_footer
+
+        await message.answer(
+            format_admin_help_footer(admin_tools=is_bot_admin(message.from_user.id))
+        )
 
     async with async_session() as session:
         user = await get_or_create_user(session, message.from_user.id, settings.default_timezone)

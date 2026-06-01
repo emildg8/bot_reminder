@@ -13,12 +13,12 @@ _COLLECT_ENV = {**os.environ, "BOT_TOKEN": os.environ.get("BOT_TOKEN", "0:ci-tes
 
 # (путь относительно root, regex с одной группой — число тестов)
 DOC_TEST_COUNT_CHECKS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("README.md", re.compile(r"\*\*(\d+) теста\*\*")),
-    ("docs/guides/quality-metrics.md", re.compile(r"## (\d+) теста \(pytest\)")),
+    ("README.md", re.compile(r"\*\*(\d+) тест(?:а|ов)\*\*")),
+    ("docs/guides/quality-metrics.md", re.compile(r"## (\d+) тест(?:а|ов) \(pytest\)")),
     ("docs/guides/quality-metrics.md", re.compile(r"## Карта тестов \((\d+)\)")),
     ("docs/v1.0-final-status.md", re.compile(r"passed \(\*\*(\d+)\*\*\)")),
     ("docs/plans/improvements-plan-2026-06.md", re.compile(r"(\d+) тест")),
-    ("docs/plans/product-audit-2026.md", re.compile(r"\*\*(\d+)\*\* теста")),
+    ("docs/plans/product-audit-2026.md", re.compile(r"\*\*(\d+)\*\* тест(?:а|ов)")),
 )
 
 

@@ -56,13 +56,11 @@ CHANNEL_COMMANDS = [
 
 
 async def setup_bot_commands(bot: Bot) -> None:
-    commands = list(PRIVATE_COMMANDS)
-    if settings.admin_telegram_ids:
-        commands.append(
-            BotCommand(command="sysinfo", description="Системная статистика (админ)")
-        )
-    await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
+    await bot.set_my_commands(PRIVATE_COMMANDS, scope=BotCommandScopeDefault())
     await bot.set_my_commands(COLLECTIVE_COMMANDS, scope=BotCommandScopeAllGroupChats())
+    from bot.services.admin_mode import setup_all_admin_command_menus
+
+    await setup_all_admin_command_menus(bot)
 
 
 async def setup_channel_commands(bot: Bot, chat_id: int) -> None:

@@ -624,6 +624,7 @@ def format_status(
     next_line: str | None = None,
     delivery_line: str | None = None,
     post_ok: bool | None = None,
+    admin_mode_line: str | None = None,
 ) -> str:
     tz_label = format_timezone_label(tz)
     state = "⏸ на паузе" if paused else "▶️ активны"
@@ -644,4 +645,60 @@ def format_status(
         lines.append("⚠️ Бот <b>не может писать</b> в чат доставки — дай права или сделай админом")
     elif post_ok is True and chat_kind != ChatKind.PRIVATE:
         lines.append("✅ Бот может публиковать напоминания")
+    if admin_mode_line:
+        lines.append(admin_mode_line)
     return "\n".join(lines) + extra
+
+
+def format_admin_mode_ack(*, admin_tools: bool) -> str:
+    if admin_tools:
+        return "✅ <b>Режим администратора</b> — инструменты и Pro-bypass включены."
+    return "✅ <b>Режим пользователя</b> — тестируешь бота как обычный аккаунт."
+
+
+def format_admin_mode_status(*, admin_tools: bool) -> str:
+    if admin_tools:
+        return (
+            "🛠 <b>Режим администратора</b>\n\n"
+            "<b>Сейчас доступно</b>\n"
+            "• <code>/admin</code> — панель · кнопка 🎛 ниже\n"
+            "• /health · /sysinfo · /userinfo · /admins\n"
+            "• /update · /grantpro · /revokepro · /broadcast\n"
+            "• Лимиты Free/Pro — как у Pro (если монетизация on)\n"
+            "• В группах — /pause и /clear без админа чата\n\n"
+            "Проверить UX пользователя: кнопка «👤 Как пользователь» внизу "
+            "или <code>/adminmode user</code>"
+        )
+    return (
+        "👤 <b>Режим пользователя</b>\n\n"
+        "<b>Сейчас как у обычного аккаунта</b>\n"
+        "• Админ-команды скрыты (попробуй /health — подсказка)\n"
+        "• Лимиты Free · /subscribe\n"
+        "• В группах — только свои напоминания\n\n"
+        "<code>/adminmode</code> и кнопка «🛠 Режим админа» всегда под рукой.\n"
+        "Ops-уведомления о падении бота приходят в любом режиме."
+    )
+
+
+def format_admin_mode_line(*, admin_tools: bool) -> str:
+    if admin_tools:
+        return "🛠 Режим: <b>администратор</b> · /adminmode"
+    return "👤 Режим: <b>пользователь</b> · /adminmode"
+
+
+def format_admin_help_footer(*, admin_tools: bool) -> str:
+    if admin_tools:
+        return (
+            "🛠 <b>Админ бота</b> — режим <b>администратора</b>\n"
+            "/adminmode — переключить на пользовательский для теста UX"
+        )
+    return (
+        "👤 <b>Админ бота</b> — режим <b>пользователя</b> (тест UX)\n"
+        "/adminmode admin — вернуть /health, /sysinfo и др."
+    )
+
+
+def format_ping_admin_suffix(*, admin_tools: bool) -> str:
+    if admin_tools:
+        return " · 🛠 admin"
+    return " · 👤 user-test"

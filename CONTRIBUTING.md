@@ -38,7 +38,7 @@ pytest -v --cov=bot --cov-fail-under=65
 - Комментарии — только для неочевидной бизнес-логики
 - Тесты — осмысленные сценарии, не ради coverage (см. [quality-metrics.md](docs/guides/quality-metrics.md))
 
-## Структура тестов (~377)
+## Структура тестов (~401)
 
 Полная карта: [docs/guides/quality-metrics.md](docs/guides/quality-metrics.md).
 
@@ -59,6 +59,8 @@ pytest -v --cov=bot --cov-fail-under=65
 | `tests/test_reminder_delete.py` | сервис удаления |
 | `tests/test_verify_ops.py` | чеклист деплоя |
 | `tests/test_doc_metrics.py` | docs ↔ pytest count |
+| `tests/test_admin_mode.py` | /adminmode admin/user |
+| `tests/test_admin_panel.py` | /admin, userinfo, panel |
 | `tests/test_smoke_imports.py` | wiring main/admin |
 | `tests/callback_helpers.py` | `make_callback`, `make_bot`, `make_message` |
 | `tests/db_helpers.py` | `patched_db` fixture |

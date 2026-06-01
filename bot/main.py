@@ -177,6 +177,7 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(group.router)
     dp.include_router(group_menu.router)
+    dp.include_router(admin.router)
     dp.include_router(menu.router)
     dp.include_router(diary.router)
     dp.include_router(settings_handler.router)
@@ -186,7 +187,6 @@ async def main() -> None:
     dp.include_router(list_callbacks.router)
     dp.include_router(search.router)
     dp.include_router(health.router)
-    dp.include_router(admin.router)
     dp.include_router(callbacks.router)
     dp.include_router(edit.router)
     dp.include_router(create.router)
@@ -240,6 +240,9 @@ async def main() -> None:
             exit_for_restart("Startup auto-update applied")
     await setup_bot_commands(bot)
     await setup_bot_profile(bot)
+    from bot.services.admin_access import load_admin_tools_cache
+
+    await load_admin_tools_cache()
 
     try:
         await ensure_bot_avatar(bot)

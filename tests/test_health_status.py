@@ -4,9 +4,20 @@ from bot.services.scheduler import RepairStats
 
 
 def test_is_bot_admin(monkeypatch):
+    from bot.services.admin_access import set_admin_tools_cached
+
     monkeypatch.setattr("bot.services.admin_access.settings.admin_telegram_ids", [42])
+    set_admin_tools_cached(42, True)
     assert is_bot_admin(42) is True
     assert is_bot_admin(1) is False
+
+
+def test_is_bot_admin_user_mode(monkeypatch):
+    monkeypatch.setattr("bot.services.admin_access.settings.admin_telegram_ids", [42])
+    from bot.services.admin_access import set_admin_tools_cached
+
+    set_admin_tools_cached(42, False)
+    assert is_bot_admin(42) is False
 
 
 def test_health_needs_repair():

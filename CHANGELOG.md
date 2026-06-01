@@ -4,6 +4,26 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.40.0] — 2026-06-02
+
+### Admin — режим admin / user
+- `/admin` — панель: userinfo, admins, broadcast, grant/revoke Pro
+- `/adminmode`, reply-кнопки, inline Health/Sysinfo, пункт в «⋯ Ещё»
+- User-режим: лимиты Free, без админ-команд; умный отказ + `/start` hint
+- Гайд: [docs/guides/admin-mode.md](docs/guides/admin-mode.md)
+
+### Admin — панель v3
+- `/adminlog`, `/adminstats`, `/userfind`; уведомление других админов о рассылке
+- Журнал grant/revoke/broadcast; кнопки Stats/Лог в панели; ✓ на фильтре рассылки
+- userinfo: «Обновить» (edit), недавние с числом активных напоминаний
+
+### Admin — панель v2
+- Рассылка: фильтры все / активные / Pro / Free, превью «Себе», кнопки фильтра
+- `/broadcast test` · `grantpro`/`revokepro` по reply
+- userinfo: чаты, ближайшее напоминание, кнопка «Напоминания»
+- «Недавние» — inline на userinfo; `/admin` в user-mode — урезанная панель
+- Статистика: новые за 7 дней, Pro в БД
+
 ## [3.39.3] — 2026-06-02
 
 ### Fix
