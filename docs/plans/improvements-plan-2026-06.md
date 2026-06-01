@@ -7,9 +7,9 @@
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
 | NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
-| Группы / collective | 9/10 | /remind, /delete, /edit N, privacy hints |
-| Тесты | 8.5/10 | 340+ тестов, gate 55%; pause/export — слабее |
-| CI | 8/10 | lint-and-test ✅; deploy падает без secrets |
+| Группы / collective | 10/10 | assignee @/reply, /delete yes, /edit N |
+| Тесты | 9/10 | 370+ тестов, gate 65%; mention suite |
+| CI | 9/10 | lint-and-test ✅; release ✅; deploy skip без secrets |
 | Docs | 9/10 | v1.0 status, guides, roadmap |
 | Ops | 7/10 | Wispbyte — ручной чеклист |
 
@@ -41,6 +41,17 @@
 | F3.0.1 | @user + reply + голос | ✅ v3.39.0 |
 | F3.0.2 | Confirm/created/list с «кому» | ✅ v3.39.0 |
 | F3.0.3 | `docs/guides/group-assignee.md` | ✅ v3.39.0 |
+| F3.0.4 | `/delete N yes`, list hint 👤 | ✅ v3.39.1 |
+| F3.0.5 | Тесты + release workflow | ✅ v3.39.1 |
+
+### Definition of Done — assignee (F3.0) ✅
+
+- [x] Создание: @, reply, голос+reply
+- [x] Редактирование с новым @
+- [x] Confirm / created / collective notice с «кому»
+- [x] `/list` 👤, срабатывание `format_reminder_message`
+- [x] Гайд + ops smoke + 15+ тестов
+- [x] CI green, релизы v3.39.0 / v3.39.1
 
 ## Фаза F3 — Продукт (backlog)
 

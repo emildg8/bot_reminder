@@ -55,6 +55,7 @@
 | 47 | Alembic, PostgreSQL, Groq-only STT | v3.37 |
 | 48 | /delete, /edit N в группах | v3.37.3 |
 | 49 | План F1–F2, CI deploy skip, тесты групп | v3.38 |
+| 50 | **Assignee:** @user, reply, голос; confirm/list/fire; `/delete yes` | v3.39.1 ✅ |
 
 ## Дальше (backlog)
 

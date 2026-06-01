@@ -6,6 +6,11 @@
 
 ## [3.39.1] — 2026-06-02
 
+### Assignee feature — финализация (docs)
+- F3.0 закрыт: [feature-group-assignee.md](docs/releases/feature-group-assignee.md)
+- Гайд: smoke-чеклист, ограничения, таблица тестов
+- Ops-checklist: smoke assignee
+
 ### Группы
 - **`/delete N yes`** — удалить сразу без кнопки (также `да`, `confirm`)
 - Подсказка `/list`: 👤 = тег участника, `/delete N yes`
