@@ -18,6 +18,7 @@
 | [guides/groups-and-channels.md](guides/groups-and-channels.md) | Группы, каналы, Group Privacy |
 | [guides/ops-checklist.md](guides/ops-checklist.md) | Чеклист после деплоя |
 | [guides/group-assignee.md](guides/group-assignee.md) | Напоминание на участника (@user, reply) |
+| [guides/nlp-time-priority.md](guides/nlp-time-priority.md) | Приоритеты: «сегодня» + «через N минут» |
 | [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (428), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |

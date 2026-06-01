@@ -69,6 +69,12 @@ def test_day_only_not_when_relative_offset():
     assert detect_ambiguous_day_only("сегодня через полчаса таблетки") is None
 
 
+def test_day_only_not_when_schedule():
+    from bot.services.nlp.ambiguous_time import detect_ambiguous_day_only
+
+    assert detect_ambiguous_day_only("завтра каждые 2 часа встать") is None
+
+
 def test_ambiguous_hour_keyboard_two_choices():
     from bot.keyboards.inline import ambiguous_hour_keyboard
 

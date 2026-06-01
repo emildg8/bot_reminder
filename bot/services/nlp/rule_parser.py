@@ -7,6 +7,7 @@ from bot.services.nlp.absolute_time_parse import (
     normalize_phrase,
     parse_absolute_datetime,
     parse_number_token,
+    strip_day_words,
     try_dateparser_search,
 )
 from bot.services.mention_parse import strip_telegram_command
@@ -124,12 +125,7 @@ def _parse_count_token(token: str) -> int | None:
 
 
 def _task_without_pattern(cleaned: str, pattern: re.Pattern) -> str:
-    day_word = r"сегодня|завтра|послезавтра|после\s+завтра"
-    raw = pattern.sub("", cleaned).strip(" ,.")
-    raw = re.sub(r"\s+", " ", raw)
-    raw = re.sub(rf"^(?:{day_word})\s+", "", raw, flags=re.IGNORECASE)
-    raw = re.sub(rf"\s+(?:{day_word})$", "", raw, flags=re.IGNORECASE)
-    return raw.strip(" ,.") or "Напоминание"
+    return strip_day_words(pattern.sub("", cleaned))
 
 
 def parse_with_rules(text: str, timezone: str) -> ParsedReminder | None:

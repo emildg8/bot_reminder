@@ -14,21 +14,11 @@ from bot.services.nlp.absolute_time_parse import (
     NOISE_PREFIX,
     TIME_IN_TASK,
     _parse_hour_token,
+    has_relative_offset,
+    has_schedule_mark,
 )
 
 _DAY = r"сегодня|завтра|послезавтра|после\s+завтра"
-RELATIVE_OFFSET = re.compile(
-    r"\bчерез\s+(?:"
-    r"\d+\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней|недел(?:ю|и|ь)|нед|месяц(?:а|ев)?|мес\.?)"
-    r"|(?:(?:один|одну|1)\s+)?час\b"
-    r"|пару\s+(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч)"
-    r"|полчаса|полтора\s+часа"
-    r"|(?:несколько|неск\.?)\s+час(?:а|ов)?"
-    r"|\d+\s*[-–—]\s*\d+\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней)"
-    rf"|(?:{HOUR_WORD_PATTERN}|\d+)\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b"
-    r")\b",
-    re.IGNORECASE,
-)
 _AMBIGUOUS = re.compile(
     rf"^(?P<day>{_DAY})\s+(?:в\s+)?(?P<h>{HOUR_WORD_PATTERN}|\d{{1,2}})\s+(?P<task>.+)$",
     re.IGNORECASE,
@@ -82,7 +72,7 @@ def detect_ambiguous_day_only(text: str) -> AmbiguousDayOnly | None:
     phrase = NOISE_PREFIX.sub("", text.strip()).strip()
     if not phrase or detect_ambiguous_day_hour(phrase):
         return None
-    if RELATIVE_OFFSET.search(phrase):
+    if has_relative_offset(phrase) or has_schedule_mark(phrase):
         return None
     if DAY_PART_PERIOD.search(phrase) or HOUR_PART_OF_DAY.search(phrase):
         return None

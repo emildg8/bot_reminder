@@ -129,3 +129,16 @@ def test_segodnya_cherez_minutu():
     assert parsed.kind == "once"
     assert parsed.text == "тест"
     assert parsed.delay_seconds == 60
+
+
+def test_zavtra_cherez_dva_dnya():
+    parsed = parse_with_rules("завтра через 2 дня оплатить", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.text == "оплатить"
+    assert parsed.delay_seconds == 2 * 86400
+
+
+def test_normalize_keeps_cherez_dva_dnya():
+    from bot.services.nlp.absolute_time_parse import normalize_phrase
+
+    assert "14:00" not in normalize_phrase("завтра через 2 дня оплатить")

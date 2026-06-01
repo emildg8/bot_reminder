@@ -199,6 +199,41 @@ DAY_PART_PERIOD = re.compile(
     re.IGNORECASE,
 )
 
+_DAY_WORD = r"сегодня|завтра|послезавтра|после\s+завтра"
+
+RELATIVE_OFFSET = re.compile(
+    rf"\bчерез\s+(?:"
+    rf"\d+\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней|недел(?:ю|и|ь)|нед|месяц(?:а|ev)?|мес\.?)"
+    rf"|(?:(?:один|одну|1)\s+)?час\b"
+    rf"|пару\s+(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч)"
+    rf"|полчаса|полтора\s+часа"
+    rf"|(?:несколько|неск\.?)\s+час(?:а|ов)?"
+    rf"|\d+\s*[-–—]\s*\d+\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч|день|дня|дней)"
+    rf"|(?:{HOUR_WORD_PATTERN}|\d+)\s*(?:минут(?:у|ы)?|мин|час(?:а|ов)?|ч)\b"
+    rf")\b",
+    re.IGNORECASE,
+)
+
+SCHEDULE_MARK = re.compile(
+    r"\b(?:кажды(?:е|й)\s+|ежедневно\b|по\s+(?:будням|выходным)\b)",
+    re.IGNORECASE,
+)
+
+
+def has_relative_offset(text: str) -> bool:
+    return bool(RELATIVE_OFFSET.search(text))
+
+
+def has_schedule_mark(text: str) -> bool:
+    return bool(SCHEDULE_MARK.search(text))
+
+
+def strip_day_words(text: str) -> str:
+    raw = re.sub(r"\s+", " ", text.strip(" ,."))
+    raw = re.sub(rf"^(?:{_DAY_WORD})\s+", "", raw, flags=re.IGNORECASE)
+    raw = re.sub(rf"\s+(?:{_DAY_WORD})$", "", raw, flags=re.IGNORECASE)
+    return raw.strip(" ,.") or "Напоминание"
+
 
 def normalize_time_dots(text: str) -> str:
     return TIME_DOT_PATTERN.sub(r"\1:\2", text)
@@ -331,6 +366,12 @@ def _hour_from_part_of_day(hour: int, part: str) -> int:
 
 def normalize_part_of_day(text: str) -> str:
     def repl(match: re.Match) -> str:
+        before = text[: match.start()]
+        if re.search(r"\bчерез\s+$", before, re.IGNORECASE):
+            return match.group(0)
+        if match.group("part").lower() in ("дня", "день", "дней") and "час" not in match.group(0).lower():
+            if not re.search(r"\bв\s+$", before, re.IGNORECASE):
+                return match.group(0)
         hour_value = _parse_hour_token(match.group("h"))
         if hour_value is None:
             return match.group(0)
@@ -482,6 +523,8 @@ def parse_absolute_datetime(text: str, timezone: str) -> ParsedReminder | None:
 
     for pattern in (DAY_ONLY_PREFIX, DAY_ONLY_SUFFIX):
         if match := pattern.match(normalized):
+            if has_relative_offset(normalized) or has_schedule_mark(normalized):
+                continue
             task_raw = match.group("task")
             if TIME_IN_TASK.search(task_raw):
                 continue
