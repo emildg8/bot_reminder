@@ -9,9 +9,19 @@ def test_describe_stt_backends_with_groq(monkeypatch):
     from bot.config import settings
 
     monkeypatch.setattr(settings, "groq_api_key", "test-key")
+    monkeypatch.setattr(settings, "local_whisper_enabled", False)
     monkeypatch.setattr(settings, "use_yandex_stt", False)
     chain = describe_stt_backends()
     assert "Groq" in chain
+    assert "Whisper local" not in chain
+
+
+def test_describe_stt_backends_with_local_whisper(monkeypatch):
+    from bot.config import settings
+
+    monkeypatch.setattr(settings, "groq_api_key", "")
+    monkeypatch.setattr(settings, "local_whisper_enabled", True)
+    chain = describe_stt_backends()
     assert "Whisper local" in chain
 
 
@@ -38,6 +48,7 @@ async def test_transcribe_falls_back_to_whisper(tmp_path, monkeypatch):
     from bot.config import settings
 
     monkeypatch.setattr(settings, "groq_api_key", "")
+    monkeypatch.setattr(settings, "local_whisper_enabled", True)
     monkeypatch.setattr(settings, "use_yandex_stt", False)
     audio = tmp_path / "voice.wav"
     audio.write_bytes(b"fake")

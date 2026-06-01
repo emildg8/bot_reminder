@@ -66,10 +66,11 @@ def describe_stt_backends() -> str:
     parts: list[str] = []
     if settings.groq_api_key:
         parts.append(f"Groq ({settings.groq_whisper_model})")
-    parts.append(f"Whisper local ({settings.whisper_model})")
+    if settings.local_whisper_enabled:
+        parts.append(f"Whisper local ({settings.whisper_model})")
     if settings.use_yandex_stt and settings.yandex_api_key and settings.yandex_folder_id:
         parts.append("Yandex")
-    return " → ".join(parts)
+    return " → ".join(parts) if parts else "не настроено (нужен GROQ_API_KEY)"
 
 
 async def transcribe_audio(audio_path: Path, language: str = "ru") -> str:
@@ -84,21 +85,25 @@ async def transcribe_audio(audio_path: Path, language: str = "ru") -> str:
 
     wav_path: Path | None = None
     try:
-        if audio_path.suffix.lower() == ".wav":
-            stt_path = audio_path
-        else:
-            wav_path = await convert_to_wav(audio_path)
-            stt_path = wav_path
+        if settings.local_whisper_enabled:
+            if audio_path.suffix.lower() == ".wav":
+                stt_path = audio_path
+            else:
+                wav_path = await convert_to_wav(audio_path)
+                stt_path = wav_path
 
-        try:
-            text = await WhisperLocalSTT().transcribe(str(stt_path), language=language)
-            if text:
-                logger.info("STT via Whisper local (%d chars)", len(text))
-                return text
-        except Exception as exc:
-            logger.warning("Whisper STT failed: %s", exc)
+            try:
+                text = await WhisperLocalSTT().transcribe(str(stt_path), language=language)
+                if text:
+                    logger.info("STT via Whisper local (%d chars)", len(text))
+                    return text
+            except Exception as exc:
+                logger.warning("Whisper STT failed: %s", exc)
 
         if settings.use_yandex_stt and settings.yandex_api_key and settings.yandex_folder_id:
+            stt_path = audio_path if audio_path.suffix.lower() == ".wav" else await convert_to_wav(audio_path)
+            if stt_path != audio_path:
+                wav_path = stt_path
             text = await YandexSTT().transcribe(str(stt_path), language=language)
             if text:
                 logger.info("STT via Yandex (%d chars)", len(text))

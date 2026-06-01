@@ -49,6 +49,7 @@ class Settings(BaseSettings):
 
     whisper_model: str = "tiny"
     whisper_device: str = "cpu"
+    local_whisper_enabled: bool = False
     use_yandex_stt: bool = False
     yandex_api_key: str = ""
     yandex_folder_id: str = ""

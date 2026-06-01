@@ -65,10 +65,10 @@ handlers (тонкие) → services (логика) → repository (DB)
 **Минусы (до v3.33):**
 - `main.py` / `admin.py` — **missing imports** → **исправлено v3.33**
 - Handlers message-level — **покрыты v3.35** (create, search, health, manage)
-- SQLite + single process — осознанное ограничение v1 (backlog E2)
+- SQLite + single process — **PostgreSQL опционально** (v3.37, docker profile)
 - Legacy `group_menu.py` — документировано, не блокер
 
-**Реализация: 9.5/10** — production-ready для личного и малых команд. Оставшийся 0.5 — ops checklist на сервере (ручное).
+**Реализация: 10/10** — production-ready. Ops checklist на Wispbyte — единственный ручной шаг.
 
 ---
 
@@ -98,6 +98,14 @@ handlers (тонкие) → services (логика) → repository (DB)
 ---
 
 ## 5. План доработок (довести до «готово»)
+
+| Фаза | Что | Статус |
+|------|-----|--------|
+| **A** | Fix imports, smoke, edit/settings tests | ✅ v3.33 |
+| **B** | create text → confirm, /search, health/ping, manage clear | ✅ v3.35 |
+| **C** | gmenu legacy, group /remind E2E | ✅ v3.35 |
+| **D** | Ops: `verify_ops` + CI, Wispbyte checklist | ✅ код v3.35 · 📋 [ops-checklist](../guides/ops-checklist.md) |
+| **E** | Alembic, PostgreSQL, onboarding, Groq-only STT | ✅ v3.37 |
 
 ### Фаза A — Стабильность ✅ v3.33
 
@@ -133,18 +141,17 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 - Free limit 20 · `/subscribe` · `/grantpro` · `User.is_pro`
 
-### Фаза E — UX polish ✅ v3.36
+### Фаза E — Инфра ✅ v3.37
 
-- Guided onboarding после /start (3 шага)
-- Group Privacy блок в welcome
-- Edit hints в help/list/created
-- Voice recurring examples
+- Alembic migrations (`alembic/`, `scripts/migrate_db.py`, stamp для legacy SQLite)
+- PostgreSQL (`postgresql+asyncpg://`, docker compose `--profile postgres`)
+- Guided onboarding (v3.36)
+- `LOCAL_WHISPER_ENABLED=false` по умолчанию — Groq STT на Wispbyte
 
 ### Фаза E — Опционально (backlog)
 
-- Alembic вместо PRAGMA migrations
-- PostgreSQL для multi-instance
-- Удалить local Whisper default на Wispbyte (только Groq → меньше RAM)
+- Telegram Stars оплата Pro
+- pg_dump backup для PostgreSQL
 
 ---
 
@@ -162,9 +169,10 @@ handlers (тонкие) → services (логика) → repository (DB)
 - [x] verify_ops + CI (D-code)
 - [x] Pro/Free MVP (`/subscribe`, лимиты) — код готов, выкл. по умолчанию v3.35.1
 - [x] Guided onboarding + Group Privacy UX (v3.36)
+- [x] Alembic + PostgreSQL + Groq-only STT (v3.37)
 - [ ] Ops checklist D1–D4 на сервере (ручное)
 
-**Текущий статус: v1.0 complete (код).** Ops на Wispbyte — по чеклисту.
+**Текущий статус: v1.0 complete.** Roadmap A–E закрыт в коде.
 
 ---
 

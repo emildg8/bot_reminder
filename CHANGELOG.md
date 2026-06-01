@@ -4,6 +4,13 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.37.0] — 2026-05-31
+
+### Infra (roadmap E complete)
+- **Alembic** — миграции вместо PRAGMA; `make migrate`, stamp для legacy SQLite
+- **PostgreSQL** — `postgresql+asyncpg://`, docker compose `--profile postgres`
+- **STT** — `LOCAL_WHISPER_ENABLED=false` по умолчанию (Groq на Wispbyte)
+
 ## [3.36.0] — 2026-05-31
 
 ### UX polish (8→10)

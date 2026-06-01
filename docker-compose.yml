@@ -11,3 +11,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 45s
+
+  # PostgreSQL (опционально): docker compose --profile postgres up -d
+  db:
+    profiles: ["postgres"]
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reminder
+      POSTGRES_PASSWORD: reminder
+      POSTGRES_DB: reminder
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reminder -d reminder"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

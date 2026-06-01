@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify
+.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate
 
 help:
 	@echo "bot_reminder — make targets:"
@@ -6,6 +6,7 @@ help:
 	@echo "  test         pytest with coverage gate 55%%"
 	@echo "  lint         ruff check"
 	@echo "  verify       ops artifacts check"
+	@echo "  migrate      alembic upgrade head"
 	@echo "  run          python -m bot.main"
 	@echo "  backup       DB backup to data/backups/"
 	@echo "  restore      restore latest backup"
@@ -35,6 +36,9 @@ run:
 
 verify:
 	python scripts/verify_ops.py
+
+migrate:
+	python scripts/migrate_db.py
 
 docker-up:
 	docker compose up -d --build

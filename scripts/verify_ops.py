@@ -18,6 +18,11 @@ REQUIRED = (
     "bot/main.py",
     "bot/version.py",
     "pyproject.toml",
+    "alembic.ini",
+    "alembic/env.py",
+    "alembic/versions/20260531_0001_initial_schema.py",
+    "bot/db/migrate.py",
+    "docker-compose.yml",
 )
 
 
@@ -38,6 +43,14 @@ def main() -> int:
 
     if not (ROOT / "start.sh").read_text(encoding="utf-8").strip().startswith("#!/"):
         errors.append("start.sh should be a bash script")
+
+    start_sh = (ROOT / "start.sh").read_text(encoding="utf-8")
+    if "python -m bot.main" not in start_sh:
+        errors.append("start.sh must run python -m bot.main")
+
+    env_example = (ROOT / ".env.example").read_text(encoding="utf-8")
+    if "LOCAL_WHISPER_ENABLED=false" not in env_example:
+        errors.append(".env.example should default LOCAL_WHISPER_ENABLED=false")
 
     ver_py = _read_version(ROOT / "bot" / "version.py")
     ver_toml = ROOT / "pyproject.toml"

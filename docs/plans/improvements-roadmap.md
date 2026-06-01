@@ -52,14 +52,14 @@
 | 44 | Phases B–D + Pro MVP, v1.0-ready | v3.35 |
 | 45 | Monetization off by default | v3.35.1 |
 | 46 | Guided onboarding, privacy UX, edit hints | v3.36 |
+| 47 | Alembic, PostgreSQL, Groq-only STT | v3.37 |
 
-## Дальше (backlog E)
+## Дальше (backlog)
 
 | # | Задача |
 |---|--------|
-| E1 | Alembic migrations |
-| E2 | PostgreSQL / multi-instance |
 | E4 | Telegram Stars оплата Pro |
+| E5 | pg_dump backup для PostgreSQL |
 
 ## Отменено / не актуально
 

@@ -1,15 +1,20 @@
 import logging
 from datetime import datetime, time
+from pathlib import Path
 
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from bot.config import settings
-from bot.db.models import Base, ChatSettings, Reminder, ReminderEvent, User
+from bot.config import BASE_DIR, settings
+from bot.db.models import ChatSettings, Reminder, ReminderEvent, User
 from bot.services.reminder_utils import storage_next_run_at
 
-engine = create_async_engine(settings.database_url, echo=False)
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    pool_pre_ping=True,
+)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -21,106 +26,16 @@ logger = logging.getLogger(__name__)
 
 
 async def init_db() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        try:
-            result = await conn.execute(text("PRAGMA table_info(reminders)"))
-            cols = {row[1] for row in result.fetchall()}
-            if "chat_id" not in cols:
-                await conn.execute(text("ALTER TABLE reminders ADD COLUMN chat_id BIGINT"))
-            if "created_by_telegram_id" not in cols:
-                await conn.execute(text("ALTER TABLE reminders ADD COLUMN created_by_telegram_id BIGINT"))
-            if "timezone" not in cols:
-                await conn.execute(text("ALTER TABLE reminders ADD COLUMN timezone VARCHAR(64)"))
-            if "weekdays_mask" not in cols:
-                await conn.execute(text("ALTER TABLE reminders ADD COLUMN weekdays_mask INTEGER"))
-            if "mention_telegram_id" not in cols:
-                await conn.execute(text("ALTER TABLE reminders ADD COLUMN mention_telegram_id BIGINT"))
+    from bot.db.migrate import init_db_migrations
 
-            user_cols = {
-                row[1]
-                for row in (await conn.execute(text("PRAGMA table_info(users)"))).fetchall()
-            }
-            if "timezone_confirmed" not in user_cols:
-                await conn.execute(
-                    text("ALTER TABLE users ADD COLUMN timezone_confirmed BOOLEAN DEFAULT 1")
-                )
-            if "snooze_presets" not in user_cols:
-                await conn.execute(
-                    text(
-                        "ALTER TABLE users ADD COLUMN snooze_presets VARCHAR(64) "
-                        "DEFAULT '5,15,30,60,180,240'"
-                    )
-                )
-            if "snooze_step" not in user_cols:
-                await conn.execute(
-                    text("ALTER TABLE users ADD COLUMN snooze_step INTEGER DEFAULT 15")
-                )
-            if "is_pro" not in user_cols:
-                await conn.execute(
-                    text("ALTER TABLE users ADD COLUMN is_pro BOOLEAN DEFAULT 0")
-                )
-            if "onboarding_done" not in user_cols:
-                await conn.execute(
-                    text("ALTER TABLE users ADD COLUMN onboarding_done BOOLEAN DEFAULT 1")
-                )
+    if settings.database_url.startswith("sqlite"):
+        raw = settings.database_url.split("///", 1)[-1]
+        path = Path(raw)
+        if not path.is_absolute():
+            path = BASE_DIR / raw.lstrip("./")
+        path.parent.mkdir(parents=True, exist_ok=True)
 
-            chat_cols = {
-                row[1]
-                for row in (await conn.execute(text("PRAGMA table_info(chat_settings)"))).fetchall()
-            }
-            if "timezone_confirmed" not in chat_cols:
-                await conn.execute(
-                    text(
-                        "ALTER TABLE chat_settings ADD COLUMN timezone_confirmed BOOLEAN DEFAULT 1"
-                    )
-                )
-            if "linked_chat_id" not in chat_cols:
-                await conn.execute(
-                    text("ALTER TABLE chat_settings ADD COLUMN linked_chat_id BIGINT")
-                )
-
-            reminder_cols = {
-                row[1]
-                for row in (await conn.execute(text("PRAGMA table_info(reminders)"))).fetchall()
-            }
-            if "telegram_schedule_message_id" not in reminder_cols:
-                await conn.execute(
-                    text(
-                        "ALTER TABLE reminders ADD COLUMN telegram_schedule_message_id BIGINT"
-                    )
-                )
-
-            await conn.execute(
-                text(
-                    """
-                    UPDATE reminders
-                    SET chat_id = (SELECT telegram_id FROM users WHERE users.id = reminders.user_id)
-                    WHERE chat_id IS NULL
-                    """
-                )
-            )
-            await conn.execute(
-                text(
-                    """
-                    UPDATE reminders
-                    SET created_by_telegram_id = (SELECT telegram_id FROM users WHERE users.id = reminders.user_id)
-                    WHERE created_by_telegram_id IS NULL
-                    """
-                )
-            )
-            await conn.execute(
-                text(
-                    """
-                    UPDATE reminders
-                    SET timezone = (SELECT timezone FROM users WHERE users.id = reminders.user_id)
-                    WHERE timezone IS NULL
-                    """
-                )
-            )
-        except Exception as exc:
-            logger.exception("Database migration failed")
-            raise exc from exc
+    await init_db_migrations()
 
 
 async def get_or_create_user(session: AsyncSession, telegram_id: int, timezone: str) -> User:
