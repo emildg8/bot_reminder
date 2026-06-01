@@ -45,6 +45,24 @@ async def test_delete_command_hash_id(patched_db):
 
 
 @pytest.mark.asyncio
+async def test_delete_command_yes_instant(patched_db, monkeypatch):
+    patch_scheduler(monkeypatch)
+    user_id = 9403
+    reminder = await _seed(patched_db, user_id, text="сразу")
+    message = make_message(user_id, chat_id=-100500)
+    message.text = f"/delete {reminder.id} yes"
+
+    await cmd_delete(message, make_bot())
+
+    refreshed = await get_reminder(patched_db, reminder.id)
+    assert refreshed is not None
+    assert refreshed.is_active is False
+    body = message.answer.await_args[0][0]
+    assert "удалено" in body.lower()
+    assert message.answer.await_args.kwargs.get("reply_markup") is None
+
+
+@pytest.mark.asyncio
 async def test_delete_confirm_deactivates(patched_db, monkeypatch):
     from bot.handlers.callbacks import delete_reminder
 

@@ -24,6 +24,7 @@ from bot.services.export_import import parse_import_item
 from bot.services.reminder_display import reminder_to_export_dict
 from bot.services.reminder_utils import compute_next_run, weekdays_to_mask
 from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
+from bot.services.reminder_delete import delete_owned_reminder
 from bot.services.reminder_jobs import teardown_reminder_schedule
 
 from bot.services.scheduler import schedule_reminder
@@ -31,7 +32,7 @@ from bot.services.scheduler import schedule_reminder
 router = Router()
 
 DELETE_CMD_PATTERN = re.compile(
-    r"^/(?:delete|del)(?:@\w+)?(?:\s+#?(\d+))?$",
+    r"^/(?:delete|del)(?:@\w+)?(?:\s+#?(\d+))?(?:\s+(yes|да|confirm|подтверждаю))?\s*$",
     re.IGNORECASE,
 )
 
@@ -79,11 +80,14 @@ async def cmd_export(message: Message) -> None:
 async def cmd_delete(message: Message, bot: Bot) -> None:
     match = DELETE_CMD_PATTERN.match(message.text.strip())
     reminder_id_str = match.group(1)
+    instant = match.group(2)
     if reminder_id_str is None:
         await message.answer(
             "Формат:\n"
-            "<code>/delete 24</code> или <code>/del 24</code>\n\n"
-            "Удаляет только <b>твоё</b> напоминание из /list.\n"
+            "<code>/delete 24</code> — с подтверждением кнопкой\n"
+            "<code>/delete 24 yes</code> — сразу удалить\n"
+            "<code>/del 24</code> — то же\n\n"
+            "Только <b>свои</b> напоминания из /list.\n"
             "В группе кнопки 🗑 нет — используй команду.",
             reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
@@ -92,6 +96,18 @@ async def cmd_delete(message: Message, bot: Bot) -> None:
     reminder_id = int(reminder_id_str)
 
     async with async_session() as session:
+        if instant:
+            err, reminder = await delete_owned_reminder(
+                bot, session, reminder_id, message.from_user.id
+            )
+            if err:
+                await message.answer(err)
+                return
+            await message.answer(
+                f"🗑 Напоминание #{reminder_id} удалено.\n📝 {reminder.text}"
+            )
+            return
+
         reminder = await get_reminder(session, reminder_id)
         if reminder is None or not reminder.is_active:
             await message.answer("Напоминание не найдено.")

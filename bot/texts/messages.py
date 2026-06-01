@@ -400,7 +400,7 @@ HELP_TEXT_GROUP = f"""\
 
 <b>Управление своими</b>
 • <code>/edit 24</code> — изменить
-• <code>/delete 24</code> — удалить (подтверждение кнопкой)
+• <code>/delete 24</code> или <code>/delete 24 yes</code> — удалить своё
 
 <b>Команды</b>
 /list · /edit · /delete · /pause · /resume · /timezone · /status · /help

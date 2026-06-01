@@ -37,6 +37,12 @@ jobs:
             echo "Release notes not found: $NOTES_FILE" >&2
             exit 1
           fi
-          gh release create "$GITHUB_REF_NAME" \
-            --title "v${VERSION} — Напоминалка" \
-            --notes-file "$NOTES_FILE"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "v${VERSION} — Напоминалка" \
+              --notes-file "$NOTES_FILE"
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "v${VERSION} — Напоминалка" \
+              --notes-file "$NOTES_FILE"
+          fi
