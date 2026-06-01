@@ -33,7 +33,7 @@ jobs:
       - name: Pytest
         env:
           BOT_TOKEN: "0:ci-test-token"
-        run: pytest -v --tb=short --cov=bot --cov-report=term-missing --cov-fail-under=55
+        run: pytest -v --tb=short --cov=bot --cov-report=term-missing --cov-fail-under=56
 
   deploy:
     name: Deploy to Wispbyte
@@ -70,11 +70,11 @@ jobs:
             echo "missing=true" >> "$GITHUB_OUTPUT"
             echo "wisp_missing=true" >> "$GITHUB_OUTPUT"
             echo "has_bot=false" >> "$GITHUB_OUTPUT"
-            echo "::error::Deploy secrets not configured: ${missing[*]} ${wisp_missing[*]}"
-            echo "### Deploy failed — secrets missing" >> "$GITHUB_STEP_SUMMARY"
-            echo "Run \`scripts/setup_github_deploy.ps1\` (see \`.env.deploy.local.example\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Deploy skipped — secrets not configured: ${missing[*]} ${wisp_missing[*]}"
+            echo "### Deploy skipped (secrets)" >> "$GITHUB_STEP_SUMMARY"
+            echo "Lint/tests passed. Configure secrets: \`scripts/setup_github_deploy.ps1\`" >> "$GITHUB_STEP_SUMMARY"
             echo "Missing: \`${missing[*]} ${wisp_missing[*]}\`" >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+            exit 0
           fi
 
           echo "has_bot=true" >> "$GITHUB_OUTPUT"

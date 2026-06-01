@@ -30,7 +30,10 @@ from bot.services.scheduler import schedule_reminder
 
 router = Router()
 
-DELETE_CMD_PATTERN = re.compile(r"^/delete(?:@\w+)?(?:\s+#?(\d+))?$", re.IGNORECASE)
+DELETE_CMD_PATTERN = re.compile(
+    r"^/(?:delete|del)(?:@\w+)?(?:\s+#?(\d+))?$",
+    re.IGNORECASE,
+)
 
 
 async def _ops_chat_id(message: Message) -> int:
@@ -79,7 +82,7 @@ async def cmd_delete(message: Message, bot: Bot) -> None:
     if reminder_id_str is None:
         await message.answer(
             "Формат:\n"
-            "<code>/delete 24</code>\n\n"
+            "<code>/delete 24</code> или <code>/del 24</code>\n\n"
             "Удаляет только <b>твоё</b> напоминание из /list.\n"
             "В группе кнопки 🗑 нет — используй команду.",
             reply_markup=menu_keyboard_for_chat(message.chat.id),

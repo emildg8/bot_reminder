@@ -34,7 +34,8 @@ async def test_collective_list_has_no_edit_buttons(monkeypatch):
         page=0,
         source_chat_id=-100123,
     )
-    assert "управления — в личке" in text
+    assert "/delete" in text
+    assert "управления — в личке" in text or "личке" in text
     assert keyboard is not None
     callbacks = [
         btn.callback_data

@@ -3,9 +3,6 @@ import pytest
 from bot.db.repository import create_reminder, get_or_create_user, get_reminder
 from bot.handlers.manage import cmd_delete
 from tests.callback_helpers import make_bot, make_callback, make_message, patch_scheduler
-from tests.db_helpers import patched_db
-
-
 async def _seed(session, user_id: int, text: str = "тест"):
     user = await get_or_create_user(session, user_id, "Europe/Moscow")
     return await create_reminder(

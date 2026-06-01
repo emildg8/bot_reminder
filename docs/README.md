@@ -25,6 +25,7 @@
 | [v1.0-final-status.md](v1.0-final-status.md) | **Финальный статус v1.0** — проверки, ops |
 | [plans/product-audit-2026.md](plans/product-audit-2026.md) | Оценка продукта, roadmap A–E |
 | [plans/improvements-roadmap.md](plans/improvements-roadmap.md) | Roadmap улучшений v3.16+ |
+| [plans/improvements-plan-2026-06.md](plans/improvements-plan-2026-06.md) | План F1–F4 (июнь 2026) |
 | [plans/groups-channels.md](plans/groups-channels.md) | Архитектура collective |
 | [plans/groups-phase5-ux.md](plans/groups-phase5-ux.md) | UX групп (фаза 5) |
 

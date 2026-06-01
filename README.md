@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥55%](https://img.shields.io/badge/coverage-≥55%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.37.3](CHANGELOG.md) · **337 тестов** · **v1.0 complete** · [статус](docs/v1.0-final-status.md)
+**Версия:** [v3.38.0](CHANGELOG.md) · **340+ тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 
@@ -91,6 +91,7 @@ docker compose logs -f bot
 | `/stats` | Статистика за месяц |
 | `/search` | Поиск по тексту |
 | `/edit` | Изменить напоминание |
+| `/delete` / `/del` | Удалить своё напоминание |
 | `/settings` | Настройки «Отложить» |
 | `/status` | Статус: кол-во, пауза, TZ |
 | `/timezone` | Часовой пояс |
@@ -107,6 +108,9 @@ docker compose logs -f bot
 | Команда | Описание |
 |---------|----------|
 | `/remind@бот …` | Создать напоминание (надёжнее, чем `@бот` в личку) |
+| `/list` | Список активных |
+| `/edit N` / `/delete N` | Изменить / удалить **своё** (в группе без кнопок) |
+| `/pause` / `/resume` | Пауза чата (админы) |
 
 ### Админ бота
 

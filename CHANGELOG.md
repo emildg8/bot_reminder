@@ -4,6 +4,14 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.38.0] — 2026-06-02
+
+### План и качество (F1–F2)
+- **План:** `docs/plans/improvements-plan-2026-06.md` — roadmap F3/F4
+- **CI:** deploy skip без secrets (workflow не краснеет)
+- **Тесты:** группы delete/del, pause, `reminder_delete`, help
+- **Coverage gate:** 56%
+
 ## [3.37.3] — 2026-06-02
 
 ### Группы

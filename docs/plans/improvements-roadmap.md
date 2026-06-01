@@ -53,8 +53,12 @@
 | 45 | Monetization off by default | v3.35.1 |
 | 46 | Guided onboarding, privacy UX, edit hints | v3.36 |
 | 47 | Alembic, PostgreSQL, Groq-only STT | v3.37 |
+| 48 | /delete, /edit N в группах | v3.37.3 |
+| 49 | План F1–F2, CI deploy skip, тесты групп | v3.38 |
 
 ## Дальше (backlog)
+
+См. [improvements-plan-2026-06.md](improvements-plan-2026-06.md).
 
 | # | Задача |
 |---|--------|
