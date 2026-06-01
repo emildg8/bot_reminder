@@ -143,6 +143,11 @@ async def onboarding_callback(callback: CallbackQuery, bot) -> None:
 
     action = callback.data.split(":", 1)[1]
 
+    if action == "restart":
+        await callback.answer()
+        await _send_onboarding_step(callback.message, 1)
+        return
+
     if action == "skip" or action == "done":
         await callback.answer()
         await _finish_onboarding(callback)

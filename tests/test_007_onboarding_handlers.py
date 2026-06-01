@@ -71,6 +71,16 @@ async def test_onboarding_try_runs_example(patched_db, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_onboarding_restart_private(patched_db):
+    callback = make_callback("onb:restart", user_id=501, chat_id=501)
+    callback.message.answer = __import__("unittest").mock.AsyncMock()
+    await onboarding_callback(callback, make_bot())
+    callback.message.answer.assert_awaited()
+    body = callback.message.answer.await_args[0][0]
+    assert "Шаг 1" in body
+
+
+@pytest.mark.asyncio
 async def test_complete_user_onboarding_repo(patched_db):
     user_id = 9704
     user = await get_or_create_user(patched_db, user_id, "Europe/Moscow")

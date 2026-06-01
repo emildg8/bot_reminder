@@ -24,7 +24,7 @@ COLLECTIVE_LIST_HINT = (
     "\n\n<i>✏️ /edit N · 🗑 /delete N (или /delete N yes)\n"
     "👤 — напоминание с тегом участника\n"
     "⏸ /pause · 🕐 /timezone (админы)\n"
-    "Кнопки ✏️🗑 — в личке с ботом.</i>"
+    "Кнопки ✏️🗑 — только <b>свои</b> напоминания.</i>"
 )
 
 PRIVATE_LIST_HINT = (
@@ -41,13 +41,14 @@ def _paginate(items: list, page: int) -> tuple[list, int, int]:
 
 def _merge_keyboards(
     main: InlineKeyboardMarkup | None,
-    tabs: InlineKeyboardMarkup,
+    tabs: InlineKeyboardMarkup | None,
 ) -> InlineKeyboardMarkup | None:
     rows = []
     if main:
         rows.extend(main.inline_keyboard)
-    rows.extend(tabs.inline_keyboard)
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+    if tabs:
+        rows.extend(tabs.inline_keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
 
 
 def _collective_nav_keyboard(page: int, total_pages: int) -> InlineKeyboardMarkup | None:
@@ -152,8 +153,11 @@ async def build_list_message(
     tabs = list_tabs_keyboard(active=True, page=page)
 
     if collective_ui:
+        manage_kb = list_page_keyboard(page_items, viewer_id, page, total_pages)
         nav_kb = _collective_nav_keyboard(page, total_pages)
-        return body + COLLECTIVE_LIST_HINT, _merge_keyboards(nav_kb, tabs)
+        merged = _merge_keyboards(manage_kb, nav_kb)
+        merged = _merge_keyboards(merged, tabs)
+        return body + COLLECTIVE_LIST_HINT, merged
 
     keyboard = list_page_keyboard(page_items, viewer_id, page, total_pages)
     return body + PRIVATE_LIST_HINT, _merge_keyboards(keyboard, tabs)

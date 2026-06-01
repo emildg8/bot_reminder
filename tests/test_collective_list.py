@@ -4,7 +4,7 @@ from bot.services.reminders_ui import build_list_message
 
 
 @pytest.mark.asyncio
-async def test_collective_list_has_no_edit_buttons(monkeypatch):
+async def test_collective_list_shows_own_edit_buttons(monkeypatch):
     class Reminder:
         def __init__(self, rid: int, owner: int):
             self.id = rid
@@ -35,7 +35,7 @@ async def test_collective_list_has_no_edit_buttons(monkeypatch):
         source_chat_id=-100123,
     )
     assert "/delete" in text
-    assert "управления — в личке" in text or "личке" in text
+    assert "свои" in text
     assert keyboard is not None
     callbacks = [
         btn.callback_data
@@ -43,5 +43,7 @@ async def test_collective_list_has_no_edit_buttons(monkeypatch):
         for btn in row
         if btn.callback_data
     ]
-    assert not any(cb.startswith("edit:") for cb in callbacks)
-    assert not any(cb.startswith("del_confirm:") for cb in callbacks)
+    assert "edit:1" in callbacks
+    assert "del_confirm:1" in callbacks
+    assert "edit:2" not in callbacks
+    assert "del_confirm:2" not in callbacks

@@ -2,16 +2,27 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.40.0)
+## Оценка текущего состояния (v3.40.3)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
 | NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
-| Группы / collective | 10/10 | assignee @/reply, /delete yes, /edit N |
-| Тесты | 9/10 | 412 тестов, gate 65%; mention suite |
-| CI | 9/10 | lint-and-test ✅; release ✅; deploy skip без secrets |
-| Docs | 9/10 | v1.0 status, guides, roadmap |
+| Группы / collective | 10/10 | assignee, /delete yes; **v3.41:** inline ✏️🗑 своих |
+| Admin | 9/10 | v3.40 панель; audit in-memory |
+| Тесты | 9/10 | 413 тестов, gate 65% |
+| CI | 9/10 | green v3.40.3; release = CI в v3.41 |
+| Docs | 9/10 | phase2 plan, admin-mode |
 | Ops | 7/10 | Wispbyte — ручной чеклист |
+
+**Phase 2:** [improvements-plan-phase2.md](improvements-plan-phase2.md)
+
+## Фаза F — Admin UX ✅ v3.40
+
+| # | Задача | Статус |
+|---|--------|--------|
+| F1 | `/adminmode`, user-test, `admin_tools_enabled` | ✅ v3.40.0 |
+| F2 | Панель, broadcast, userinfo, adminlog | ✅ v3.40.0 |
+| F3 | CI/Docker polish | ✅ v3.40.2–3.40.3 |
 
 ---
 
@@ -58,10 +69,10 @@
 
 | # | Задача | Effort |
 |---|--------|--------|
-| F3.2 | Inline ✏️🗑 в группе только для своих (опционально) | M |
-| F3.3 | Telegram Stars / Pro | L |
-| F3.4 | pg_dump для PostgreSQL | M |
-| F3.5 | Guided onboarding v2 (повторный тур в /help) | S |
+| F3.2 | Inline ✏️🗑 в группе только для своих | M | ✅ v3.41 |
+| F3.3 | Telegram Stars / Pro | L | backlog |
+| F3.4 | pg_dump для PostgreSQL | M | 🔄 скрипт v3.41 |
+| F3.5 | Guided onboarding v2 (повторный тур) | S | ✅ v3.41 |
 
 ## Фаза F4 — Ops (ручное)
 

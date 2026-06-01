@@ -113,6 +113,9 @@ def more_menu_keyboard(telegram_id: int | None = None) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="❓ Помощь", callback_data="menu:help"),
             InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
         ],
+        [
+            InlineKeyboardButton(text="🎯 Тур по боту", callback_data="onb:restart"),
+        ],
     ]
     if telegram_id is not None and is_admin_listed(telegram_id):
         admin_row: list[InlineKeyboardButton] = []

@@ -22,10 +22,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
+      - name: Ruff
+        run: ruff check bot tests
+
+      - name: Verify ops artifacts
+        run: python scripts/verify_ops.py
+
       - name: Tests
         env:
           BOT_TOKEN: "0:ci-test-token"
-        run: pytest -v --tb=short
+        run: pytest -v --tb=short --cov=bot --cov-report=term-missing --cov-fail-under=65
 
       - name: Create GitHub Release
         env:

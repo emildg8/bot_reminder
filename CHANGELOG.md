@@ -4,6 +4,16 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.41.0] — 2026-06-02
+
+### Гroups + onboarding
+- F3.2: inline ✏️🗑 в групповом `/list` для своих напоминаний
+- F3.5: «🎯 Тур по боту» в «⋯ Ещё» (`onb:restart`)
+
+### Infra
+- Release CI = main CI (ruff, verify_ops, cov 65%)
+- `scripts/pg_backup.sh`, план [phase2](docs/plans/improvements-plan-phase2.md)
+
 ## [3.40.3] — 2026-06-02
 
 ### Fix
