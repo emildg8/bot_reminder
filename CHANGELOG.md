@@ -2,6 +2,14 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.29.0] — 2026-05-31
+
+### Тесты menu/list handlers
+- **menu:list / menu:home** — пустой список, активные, inline-меню
+- **list:page / list:tab / list:noop** — пагинация, вкладка «История», noop
+- `db_helpers` — shared session для menu/reminders_ui/search_ui
+- Coverage gate в CI: **45% → 47%** (факт ~53%)
+
 ## [3.28.0] — 2026-05-31
 
 ### Тесты callbacks (snooze preset/back)

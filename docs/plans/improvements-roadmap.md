@@ -37,6 +37,8 @@
 | 29 | Coverage gate 42% | v3.27 |
 | 30 | snooze preset/back handler tests | v3.28 |
 | 31 | Coverage gate 45% | v3.28 |
+| 32 | menu/list handler tests | v3.29 |
+| 33 | Coverage gate 47% | v3.29 |
 
 ## Дальше (идеи)
 

@@ -33,7 +33,13 @@ async def patched_db(monkeypatch) -> AsyncSession:
 
     monkeypatch.setattr(repository, "engine", engine)
     monkeypatch.setattr(repository, "async_session", shared)
-    monkeypatch.setattr("bot.handlers.callbacks.async_session", shared)
+    for module in (
+        "bot.handlers.callbacks",
+        "bot.handlers.menu",
+        "bot.services.reminders_ui",
+        "bot.services.search_ui",
+    ):
+        monkeypatch.setattr(f"{module}.async_session", shared)
 
     yield session
 
