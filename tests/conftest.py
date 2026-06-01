@@ -1,4 +1,5 @@
-import os
+"""Общие pytest-фикстуры для handler-тестов."""
 
-os.environ.setdefault("BOT_TOKEN", "0:test-token-for-pytest")
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+from tests.db_helpers import patched_db
+
+__all__ = ["patched_db"]
