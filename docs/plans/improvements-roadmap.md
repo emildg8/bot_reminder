@@ -48,6 +48,7 @@
 | 40 | Fix main/admin imports + smoke tests | v3.33 |
 | 41 | Edit/settings handler tests | v3.33 |
 | 42 | Product audit + plan to v1.0 | v3.33 |
+| 43 | Documentation refresh (README, guides, GitHub) | v3.34 |
 
 ## Дальше (из аудита `docs/plans/product-audit-2026.md`)
 

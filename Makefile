@@ -1,4 +1,15 @@
-.PHONY: install install-dev test lint run docker-up docker-down deploy backup restore
+.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar
+
+help:
+	@echo "bot_reminder — make targets:"
+	@echo "  install-dev  pip install requirements-dev.txt"
+	@echo "  test         pytest with coverage gate 55%%"
+	@echo "  lint         ruff check"
+	@echo "  run          python -m bot.main"
+	@echo "  backup       DB backup to data/backups/"
+	@echo "  restore      restore latest backup"
+	@echo "  deploy       hint for GitHub secrets setup"
+	@echo "  docker-up    docker compose up -d --build"
 
 install:
 	pip install -r requirements.txt

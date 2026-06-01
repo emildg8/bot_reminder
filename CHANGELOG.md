@@ -2,6 +2,18 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+Полная документация: [README.md](README.md) · [docs/](docs/README.md)
+
+## [3.34.0] — 2026-05-31
+
+### Документация и GitHub
+- **README** — переписан: структура, оглавление, без простыни версий
+- **docs/** — оглавление, guides (groups, ops-checklist), CONTRIBUTING, SECURITY, LICENSE
+- **.github/** — DEPLOY.md, issue/PR templates
+- **pyproject.toml** — описание, keywords, URLs
+- **.env.example** — секции и комментарии
+- GitHub repo description + topics
+
 ## [3.33.0] — 2026-05-31
 
 ### Стабильность и аудит продукта

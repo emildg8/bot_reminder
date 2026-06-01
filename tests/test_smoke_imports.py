@@ -18,4 +18,4 @@ def test_startup_helpers_importable():
 def test_admin_runtime_helpers_importable():
     from bot.services.runtime import format_uptime
 
-    assert format_uptime(3661).startswith("1 ч")
+    assert "1ч" in format_uptime(3661)

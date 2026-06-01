@@ -1,0 +1,26 @@
+name: Feature request
+description: Предложить улучшение
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Проблема / use case
+      description: Какую задачу пользователь не может решить сейчас?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Предлагаемое решение
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Приоритет для вас
+      options:
+        - Nice to have
+        - Would help often
+        - Blocking my workflow

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Документация
+    url: https://github.com/emildg8/bot_reminder/blob/main/docs/README.md
+    about: Оглавление guides, deploy, releases
+  - name: Деплой Wispbyte
+    url: https://github.com/emildg8/bot_reminder/blob/main/.github/DEPLOY.md
+    about: Startup, secrets, troubleshooting

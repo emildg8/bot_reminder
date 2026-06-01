@@ -1,161 +1,225 @@
-# Telegram-бот напоминалка · v3.33
+# ⏰ Telegram-бот напоминалка
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Coverage ≥55%](https://img.shields.io/badge/coverage-≥55%25-green.svg)](.github/workflows/ci.yml)
 
-Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Личка, группы и каналы.
+**Версия:** [v3.34.0](CHANGELOG.md) · **308+ тестов** · **деплой:** push в `main` → CI → Wispbyte
 
-> **v3.33** — fix старта/main+sysinfo; smoke tests; edit/settings handlers; [аудит продукта](docs/plans/product-audit-2026.md).
->
-> **v3.32** — menu:examples/status/timezone; handler callback-тесты закрыты; coverage gate 55%.
->
-> **v3.31** — menu:help/about + send_search_results E2E; coverage gate 52%.
->
-> **v3.30** — handler-тесты menu:search/more и search:page; coverage gate 50%.
->
-> **v3.29** — handler-тесты menu/list (7 сценариев); coverage gate 47%.
->
-> **v3.28** — handler-тесты snooze preset/back; coverage gate 45%.
->
-> **v3.27** — handler-тесты del_cancel и snooze ±; coverage gate 42%.
->
-> **v3.26** — handler-тесты delete/snooze/access (6 сценариев); coverage gate 40%.
->
-> **v3.25** — handler-тесты confirm/edit/done/cancel/dedup (7 сценариев).
->
-> **v3.24** — «созвон завтра в 2»; подсказка, если текст вместо кнопки; тесты ambiguous_prompt.
->
-> **v3.23** — /cancel сбрасывает уточнение; «напомни завтра в 2» / «завтра в два»; edit не теряется при кнопках.
->
-> **v3.22** — «завтра в 2» только ☀️ 14:00 / 🌙 02:00; уточнение времени при редактировании.
->
-> **v3.21** — roadmap закрыт: тесты repository/confirm/LLM, coverage gate, «завтра созвон» → кнопки времени.
->
-> **v3.20** — «завтра в 2» → ☀️ 14:00 / 🌙 02:00.
->
-> **v3.19.1** — в группах без inline-меню, только команды.
->
-> **v3.19** — fail-closed права бота, DM-ссылка, health monitor для админов.
->
-> **v3.18** — group-меню без дублей, parse fail с подсказкой `/remind@бот`.
->
-> **v3.17** — надёжные callbacks в группах, `/sysinfo` с Group Privacy.
->
-> **v3.16.1** — подсказки про Group Privacy: ручной @ не доходит, `/remind@бот` надёжнее.
->
-> **v3.16** — компактное меню в группах: edit-in-place, без лишних экранов из лички.
->
-> **v3.14** — разовые напоминания в канале через native Telegram schedule; подсказка для discussion group.
->
-> **v3.13** — pause/clear/TZ из discussion group управляют каналом; единый /status.
->
-> **v3.12** — расширенный /status, предупреждение о правах бота, resync linked chat.
->
-> **v3.9** — единый UX для групп и каналов, scoped-команды, `/remind@бот`.
+Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
+
+---
+
+## Содержание
+
+- [Возможности](#возможности)
+- [Быстрый старт](#быстрый-старт)
+- [Команды](#команды)
+- [Группы и каналы](#группы-и-каналы)
+- [Конфигурация](#конфигурация)
+- [Разработка](#разработка)
+- [Деплой](#деплой)
+- [Документация](#документация)
+
+---
 
 ## Возможности
 
-- **Разовые**: «через час», «через 3-4 часа», «через месяц», «завтра в 14:00», «15 июня в 10:00»
-- **Интервальные**: «каждые 30 минут встать»
-- **Ежедневные**: «каждый день в 9:00 зарядка»
-- **По дням недели**: «по будням», «вт, ср, пт в 10:00 и 16:00» (несколько напоминаний)
-- **Задача без времени** → кнопки +30 мин, +1 ч, +3 ч, +4 ч, завтра
-- **Дневник** и **история за день** — события не удаляются
-- **Статистика за месяц** — выполнено, срабатывания, отложения
-- **Отложить** — счётчик − / + и быстрые варианты (настраиваются)
-- **Группы и каналы**: `/remind@бот`; confirm в личку; срабатывание в чат/канал, кнопки в личке; pause/TZ — админы
-- **Канал + обсуждения**: `/remind` из группы обсуждений публикует в канал
+| Область | Примеры |
+|---------|---------|
+| **Разовые** | «через час», «через 3–4 часа», «завтра в 14:00», «15 июня в 10:00» |
+| **Интервалы** | «каждые 30 минут встать» |
+| **Расписание** | «каждый день в 9:00», «по будням», «пн ср пт в 10:00» |
+| **Без времени** | «созвон» → кнопки +30 мин / +1 ч / завтра |
+| **Неоднозначное** | «завтра в 2» → ☀️ 14:00 или 🌙 02:00 |
+| **Голос / кружок** | STT через Groq (или локальный Whisper + ffmpeg) |
+| **Отложить** | picker − / +, быстрые presets, настройка в `/settings` |
+| **Дневник** | `/journal`, история за день, статистика за месяц |
+| **Collective** | группы и каналы: `/remind@бот`, confirm в личку, fire в чат |
+
+**Стек:** Python 3.11+ · [aiogram 3](https://docs.aiogram.dev/) · SQLAlchemy · APScheduler · rule-based NLP + LLM fallback
+
+---
+
+## Быстрый старт
+
+### Локально
+
+```bash
+git clone https://github.com/emildg8/bot_reminder.git
+cd bot_reminder
+
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux / macOS:
+source .venv/bin/activate
+
+pip install -r requirements-dev.txt
+cp .env.example .env   # Windows: copy .env.example .env
+# Заполни BOT_TOKEN в .env
+
+python -m bot.main
+```
+
+В Telegram: `/start` → напиши «через 30 минут выпить воды».
+
+**Голос:** задай `GROQ_API_KEY` в `.env` — ffmpeg не обязателен. Без Groq нужен [ffmpeg](https://ffmpeg.org/) для локального Whisper.
+
+### Docker
+
+```bash
+cp .env.example .env
+# заполни BOT_TOKEN
+docker compose up -d --build
+docker compose logs -f bot
+```
+
+---
 
 ## Команды
+
+### Пользовательские
 
 | Команда | Описание |
 |---------|----------|
 | `/start` | Главное меню |
-| `/remind` | Создать напоминание в группе (`/remind@бот …`) |
 | `/list` | Активные напоминания |
 | `/history` | История за сегодня |
 | `/journal` | Дневник дня |
 | `/stats` | Статистика за месяц |
-| `/settings` | Настройки «Отложить» |
-| `/status` | Статус: кол-во, пауза, TZ |
 | `/search` | Поиск по тексту |
 | `/edit` | Изменить напоминание |
-| `/cancel` | Выйти из режима |
-| `/pause` / `/resume` | Пауза / возобновление |
+| `/settings` | Настройки «Отложить» |
+| `/status` | Статус: кол-во, пауза, TZ |
 | `/timezone` | Часовой пояс |
-| `/clear` | Удалить все в чате |
-| `/export` / `/import` | JSON |
-| `/about` | О боте и возможностях |
+| `/pause` / `/resume` | Пауза / возобновление (админы в группах) |
+| `/clear` | Удалить все напоминания в чате |
+| `/export` / `/import` | Резервная копия JSON |
 | `/help` | Справка |
+| `/about` | О боте |
+| `/cancel` | Выйти из режима (поиск, edit, уточнение времени) |
+
+### Группы
+
+| Команда | Описание |
+|---------|----------|
+| `/remind@бот …` | Создать напоминание (надёжнее, чем `@бот` в личку) |
+
+### Админ бота
+
+| Команда | Описание |
+|---------|----------|
 | `/ping` | Бот жив · версия · аптайм |
-| `/health` | Состояние сервера + авто-перепланирование (админ) |
-| `/update` | Обновление с GitHub + restart (админ) |
-| `/sysinfo` | STT, ffmpeg, deploy sha (админ) |
+| `/health` | Состояние сервера, repair scheduler |
+| `/update` | Обновление с GitHub + restart |
+| `/sysinfo` | STT, ffmpeg, deploy sha, Group Privacy |
 
-## Быстрый старт
+---
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate          # Linux/macOS: source .venv/bin/activate
-pip install -r requirements-dev.txt
-copy .env.example .env          # Linux/macOS: cp .env.example .env
-python -m bot.main
+## Группы и каналы
+
+```
+Личка          → текст / голос → confirm → напоминание
+Группа         → /remind@бот … → confirm в личку → fire в группу
+Канал          → /remind@бот … → публикация в канал
+Discussion grp → /remind из обсуждений → публикация в связанный канал
 ```
 
-Нужен **ffmpeg** для локального Whisper; с **GROQ_API_KEY** голос и кружочки работают через облако без ffmpeg.
+**Важно для групп**
+
+1. **Group Privacy** в BotFather → **Turn off**, если нужен ручной `@бот` (иначе работает только `/remind@бот`).
+2. В группах **нет inline-меню** — только команды и reply-кнопки в личке.
+3. Кнопки «Готово» / «Отложить» в collective-режиме — в **личке** с ботом.
+
+Подробнее: [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md)
+
+---
+
+## Конфигурация
+
+Скопируй `.env.example` → `.env`. Минимум:
+
+| Переменная | Обязательно | Описание |
+|------------|-------------|----------|
+| `BOT_TOKEN` | ✅ | Токен от [@BotFather](https://t.me/BotFather) |
+| `GROQ_API_KEY` | рекомендуется | LLM + STT (голос без ffmpeg) |
+| `DEFAULT_TIMEZONE` | — | По умолчанию `Europe/Moscow` |
+| `ADMIN_TELEGRAM_IDS` | для деплоя | Telegram user id через запятую |
+
+Полный список переменных — в [.env.example](.env.example).
+
+**Данные:** SQLite в `data/reminders.db`, логи `data/logs/`, бэкапы `data/backups/`.
+
+**Восстановление БД:**
+
+```bash
+python scripts/restore_db.py
+python scripts/restore_db.py data/backups/reminders_YYYYMMDD_HHMMSS.db
+```
+
+---
 
 ## Разработка
 
 ```bash
-make install-dev
-make test
-make lint
-make backup
-make run
+make install-dev   # зависимости
+make test          # pytest, coverage ≥55%
+make lint          # ruff
+make run           # python -m bot.main
+make backup        # ручной бэкап БД
 ```
 
-## Восстановление БД
+Структура проекта:
 
-```bash
-python scripts/restore_db.py                  # последний бэкап из data/backups/
-python scripts/restore_db.py data/backups/reminders_20260101_120000.db
+```
+bot/
+  handlers/     # aiogram routers (create, menu, callbacks, …)
+  services/     # NLP, scheduler, drafts, collective UX
+  db/           # models, repository
+  keyboards/    # inline + reply
+tests/          # unit + handler tests (308+)
+scripts/        # deploy, backup, healthcheck
+docs/           # guides, releases, plans
 ```
 
-## Docker
-
-```bash
-cp .env.example .env
-docker compose up -d --build
-```
-
-## Конфигурация (.env)
-
-| Переменная | Описание |
-|------------|----------|
-| `BOT_TOKEN` | Токен [@BotFather](https://t.me/BotFather) |
-| `GROQ_API_KEY` | Умный разбор фраз (опционально) |
-| `DEFAULT_TIMEZONE` | По умолчанию `Europe/Moscow` |
-| `ADMIN_TELEGRAM_IDS` | ID админов через запятую |
-
-Полный список — в `.env.example`.
-
-## Деплой — полностью автоматически
-
-**Push в `main` → GitHub Actions (тесты + перезапуск Wispbyte) → `start.sh` на сервере.**
-
-Один раз добавь secrets в GitHub — см. [.github/DEPLOY.md](.github/DEPLOY.md).
-
-| Secret | Назначение |
-|--------|------------|
-| `BOT_TOKEN`, `ADMIN_TELEGRAM_IDS` | Уведомления о деплое |
-| `WISP_PANEL_URL`, `WISP_API_TOKEN`, `WISP_SERVER_UUID` | Мгновенный restart через API |
-
-**Startup command на Wispbyte:** `bash start.sh`
-
-Без Wisp-секретов бот сам подтягивает обновления с GitHub каждую **1 мин** (auto-update) и при каждом старте.
-
-**Первый раз:** `copy .env.deploy.local.example .env.deploy.local` → заполни → `.\scripts\setup_github_deploy.ps1`
+Как contribить: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
+
+## Деплой
+
+**Автоматически:** push в `main` → GitHub Actions (ruff + pytest) → restart Wispbyte → `start.sh`.
+
+| Шаг | Действие |
+|-----|----------|
+| 1 | `cp .env.deploy.local.example .env.deploy.local` → заполни secrets |
+| 2 | `.\scripts\setup_github_deploy.ps1` (или `.sh`) |
+| 3 | Wispbyte **Startup command:** `bash start.sh` |
+| 4 | Dismiss «Missing Package bot» (не Add to Startup!) |
+
+Полная инструкция: [.github/DEPLOY.md](.github/DEPLOY.md)
+
+Без Wisp API бот сам тянет обновления с GitHub каждую **1 мин** (`AUTO_UPDATE_ENABLED`).
+
+---
+
+## Документация
+
+| Документ | Описание |
+|----------|----------|
+| [CHANGELOG.md](CHANGELOG.md) | История версий |
+| [docs/README.md](docs/README.md) | Оглавление docs |
+| [.github/DEPLOY.md](.github/DEPLOY.md) | Деплой и Wispbyte |
+| [docs/plans/product-audit-2026.md](docs/plans/product-audit-2026.md) | Аудит продукта, roadmap до v1.0 |
+| [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md) | Группы, каналы, privacy |
+| [docs/releases/](docs/releases/) | Release notes по версиям |
+
+---
+
+## Лицензия
+
+MIT — см. [LICENSE](LICENSE).
 
 **Репозиторий:** [github.com/emildg8/bot_reminder](https://github.com/emildg8/bot_reminder)

@@ -1,0 +1,44 @@
+name: Bug report
+description: Сообщить об ошибке
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Что произошло
+      description: Ожидаемое vs фактическое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: |
+        1. /start
+        2. «завтра в 2 созвон»
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: context
+    attributes:
+      label: Где
+      options:
+        - Личка
+        - Группа
+        - Канал
+        - Деплой / сервер
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия бота
+      description: Вывод /ping или /about
+      placeholder: v3.34.0
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи / скрин
+      description: Фрагмент data/logs/bot.log или скрин Telegram
