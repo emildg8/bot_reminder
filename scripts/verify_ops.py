@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-
 REQUIRED = (
     "README.md",
     "CHANGELOG.md",
@@ -56,6 +55,13 @@ def main() -> int:
     ver_toml = ROOT / "pyproject.toml"
     if f'version = "{ver_py}"' not in ver_toml.read_text(encoding="utf-8"):
         errors.append(f"version mismatch: bot/version.py={ver_py} vs pyproject.toml")
+
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from scripts.doc_metrics import verify_doc_test_counts, verify_doc_version
+
+    errors.extend(verify_doc_version(ROOT, ver_py))
+    errors.extend(verify_doc_test_counts(ROOT))
 
     if errors:
         print("verify_ops FAILED:")

@@ -170,14 +170,15 @@ handlers (тонкие) → services (логика) → repository (DB)
 - [x] Pro/Free MVP (`/subscribe`, лимиты) — код готов, выкл. по умолчанию v3.35.1
 - [x] Guided onboarding + Group Privacy UX (v3.36)
 - [x] Alembic + PostgreSQL + Groq-only STT (v3.37)
+- [x] Assignee в группах: @, reply, confirm/list/fire (v3.39.1)
 - [ ] Ops checklist D1–D4 на сервере (ручное)
 
-**Текущий статус: v1.0 complete.** Roadmap A–E закрыт в коде.
+**Текущий статус: v1.0 complete + F3.0.** Roadmap A–E и assignee закрыты в коде.
 
 ---
 
 ## 7. Итог (июнь 2026)
 
-Roadmap **A–E закрыт** в v3.37.0. CI: lint + 337 тестов + coverage ≥55% + verify_ops.
+**Актуально (v3.39.2):** roadmap A–E + F1–F2 + **F3.0 assignee** закрыты. CI: lint-and-test, **377** теста, coverage **≥65%**, `verify_ops`, deploy skip без secrets, release workflow на тегах.
 
-**Дальше:** только ops на Wispbyte (чеклист) и опциональный backlog (Stars, pg_dump).
+**Дальше:** ops на Wispbyte ([ops-checklist](../guides/ops-checklist.md)) и backlog F3.2+ (Stars, pg_dump, inline в группах).

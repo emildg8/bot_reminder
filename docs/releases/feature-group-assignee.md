@@ -17,7 +17,8 @@
 - UI: confirm, «Готово», уведомление в группе, `/list` 👤
 - Срабатывание: `format_reminder_message` с тегом
 - Проверка: участник в чате (`mention_resolve`)
-- Тесты: `test_mention_*`, collective handlers
+- Тесты: `test_mention_*`, `test_delete_command`, collective handlers (см. [quality-metrics.md](../guides/quality-metrics.md#assignee-f30))
+- Документация: [doc-maintenance.md](../guides/doc-maintenance.md) для будущих релизов
 
 ## Out of scope (backlog)
 

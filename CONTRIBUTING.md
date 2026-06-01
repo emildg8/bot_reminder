@@ -18,7 +18,9 @@ cp .env.example .env
 
 ```bash
 make lint          # ruff check bot tests
+make verify        # ops + docs metrics (как в CI)
 make test          # pytest, coverage ≥65%
+make test-count    # только число тестов
 ```
 
 Или вручную:
@@ -36,7 +38,9 @@ pytest -v --cov=bot --cov-fail-under=65
 - Комментарии — только для неочевидной бизнес-логики
 - Тесты — осмысленные сценарии, не ради coverage (см. [quality-metrics.md](docs/guides/quality-metrics.md))
 
-## Структура тестов
+## Структура тестов (~377)
+
+Полная карта: [docs/guides/quality-metrics.md](docs/guides/quality-metrics.md).
 
 | Файл | Назначение |
 |------|------------|
@@ -46,11 +50,22 @@ pytest -v --cov=bot --cov-fail-under=65
 | `tests/test_002_callbacks_snooze_delete.py` | snooze/delete |
 | `tests/test_003_callbacks_menu_list.py` | menu/list/search |
 | `tests/test_004_edit_settings_handlers.py` | edit/settings |
+| `tests/test_005_handlers_core.py` | create text, manage |
+| `tests/test_006_collective_handlers.py` | группы, `/remind`, assignee |
+| `tests/test_007_onboarding_handlers.py` | onboarding |
+| `tests/test_008_group_manage.py` | pause, delete, group help |
+| `tests/test_mention_*.py` | @user, reply, entities |
+| `tests/test_delete_command.py` | `/delete N yes` |
+| `tests/test_reminder_delete.py` | сервис удаления |
+| `tests/test_verify_ops.py` | чеклист деплоя |
+| `tests/test_doc_metrics.py` | docs ↔ pytest count |
 | `tests/test_smoke_imports.py` | wiring main/admin |
 | `tests/callback_helpers.py` | `make_callback`, `make_bot`, `make_message` |
 | `tests/db_helpers.py` | `patched_db` fixture |
 
 Новые handler-тесты — через `patched_db` + мок Bot/CallbackQuery.
+
+После добавления тестов: `pytest --collect-only -q` и обновить счётчик в README / [doc-maintenance.md](docs/guides/doc-maintenance.md).
 
 ## Версионирование
 

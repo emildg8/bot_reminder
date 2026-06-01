@@ -56,15 +56,24 @@
 
 ## Тесты (автоматические)
 
+Ядро assignee — **21+** тестов в `test_mention_*`; плюс collective и delete.
+
 | Файл | Что |
 |------|-----|
-| `tests/test_mention_create.py` | reply, @, приоритет |
-| `tests/test_mention_from_message.py` | entities после `/remind` |
-| `tests/test_mention_assignee_text.py` | тексты confirm/created |
-| `tests/test_006_collective_handlers.py` | `/remind` + reply |
+| `tests/test_mention_create.py` | reply, @, приоритет, голос |
+| `tests/test_mention_from_message.py` | entities после `/remind@бот` |
+| `tests/test_mention_assignee_text.py` | confirm, created, collective notice |
 | `tests/test_mention_resolve.py` | участник в чате |
+| `tests/test_mention_parse.py` | разбор entity |
+| `tests/test_006_collective_handlers.py` | `/remind` + reply в группе |
+| `tests/test_reminder_display.py` | 👤 в `/list`, `tg://user?id=` |
+| `tests/test_delete_command.py` | `/delete N yes` |
+| `tests/test_004_edit_settings_handlers.py` | `/edit` с новым @ |
+
+Запуск: `pytest tests/test_mention_create.py tests/test_mention_from_message.py -v`
 
 ## Связанные документы
 
 - [groups-and-channels.md](groups-and-channels.md) — collective-режим
 - [improvements-plan F3.0](../plans/improvements-plan-2026-06.md) — roadmap
+- [quality-metrics.md](quality-metrics.md) — карта всех 377 тестов

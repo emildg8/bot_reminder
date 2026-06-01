@@ -2,13 +2,13 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.39.1)
+## Оценка текущего состояния (v3.39.2)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
 | NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
 | Группы / collective | 10/10 | assignee @/reply, /delete yes, /edit N |
-| Тесты | 9/10 | 370+ тестов, gate 65%; mention suite |
+| Тесты | 9/10 | 377 тестов, gate 65%; mention suite |
 | CI | 9/10 | lint-and-test ✅; release ✅; deploy skip без secrets |
 | Docs | 9/10 | v1.0 status, guides, roadmap |
 | Ops | 7/10 | Wispbyte — ручной чеклист |
@@ -32,7 +32,8 @@
 | F2.1 | `test_008_group_manage.py` — pause, delete deny, help | ✅ v3.38 |
 | F2.2 | `test_reminder_delete.py` — сервис ошибок | ✅ v3.38 |
 | F2.3 | Collective list hint содержит `/delete` | ✅ v3.38 |
-| F2.4 | Coverage gate 56% (после +тестов) | ✅ v3.38 |
+| F2.4 | Coverage gate 56% | ✅ v3.38 |
+| F2.5 | Coverage gate 65%, quality-metrics | ✅ v3.39 (22ca2a9) |
 
 ## Фаза F3.0 — Напоминание на участника ✅ v3.39
 
@@ -57,7 +58,6 @@
 
 | # | Задача | Effort |
 |---|--------|--------|
-| F3.1 | `/delete N yes` — без подтверждения | ✅ v3.39.1 |
 | F3.2 | Inline ✏️🗑 в группе только для своих (опционально) | M |
 | F3.3 | Telegram Stars / Pro | L |
 | F3.4 | pg_dump для PostgreSQL | M |
@@ -70,7 +70,7 @@
 | F4.1 | GitHub Secrets: BOT_TOKEN, ADMIN, Wisp |
 | F4.2 | Wispbyte: `bash start.sh`, GROQ_API_KEY |
 | F4.3 | BotFather Group Privacy off |
-| F4.4 | Smoke: `/ping`, `/list`, `/delete` в группе |
+| F4.4 | Smoke: `/ping`, assignee, `/list`, `/delete` — [ops-checklist](../guides/ops-checklist.md) |
 
 ---
 
@@ -79,6 +79,7 @@
 1. Один логический блок = одна версия (не +2% coverage отдельно).
 2. Gate coverage: +3–5% за квартал, не каждый PR.
 3. Обязательно: `verify_ops`, ruff, pytest, обновить `docs/v1.0-final-status.md` на major.
+4. Синхронизация docs: [doc-maintenance.md](../guides/doc-maintenance.md).
 
 ## Definition of Done (F1–F2)
 

@@ -13,6 +13,8 @@ async def test_group_help_mentions_delete_and_edit():
     text = format_help(ChatKind.SUPERGROUP)
     assert "/delete" in text
     assert "/edit" in text
+    assert "/delete 24 yes" in text
+    assert "На участника" in text
 
 
 @pytest.mark.asyncio

@@ -375,8 +375,8 @@ HELP_TEXT_PRIVATE = f"""\
 
 <b>Изменить / удалить</b>
 • кнопки ✏️ 🗑 в /list
-• <code>/edit 3 завтра в 10:00 новый текст</code>
-• <code>/delete 3</code>
+• <code>/edit N завтра в 10:00 новый текст</code>
+• <code>/delete N</code>
 
 <b>Команды</b>
 /start · /list · /history · /journal · /stats · /about

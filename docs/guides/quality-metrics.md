@@ -2,7 +2,7 @@
 
 Кратко, что проверяется перед каждым merge в `main`.
 
-## 352 теста (pytest)
+## 377 теста (pytest)
 
 Автоматические сценарии: парсинг фраз, БД, callbacks, группы, удаление и т.д.
 
@@ -10,7 +10,7 @@
 - Падение любого теста = регрессия, CI красный
 - Число растёт по мере новых фич (не цель сама по себе)
 
-## Coverage gate 56% → 65%
+## Coverage gate 65%
 
 **Покрытие кода** — какая доля строк в пакете `bot/` хотя бы раз выполнилась во время тестов.
 
@@ -18,9 +18,9 @@
 |--------|----------|
 | `--cov=bot` | Считаем только прод-код в `bot/` |
 | `--cov-fail-under=65` | CI падает, если покрытие **ниже 65%** |
-| Факт (~2026-06) | **~65%** строк (CI) |
+| Факт (~2026-06) | **~66%** строк (CI) |
 
-Это **страховка от регрессий**, не оценка «идеального бота». Порог поднят с 56% до 65%, чтобы совпадать с реальным уровнем проекта.
+Это **страховка от регрессий**, не оценка «идеального бота». Порог **65%** с v3.39 (ранее 56% в v3.38).
 
 ### Почему не 100%?
 
@@ -49,12 +49,13 @@ ruff check bot tests
 
 - есть `start.sh`, `alembic`, `docker-compose.yml`, ops-доки;
 - `start.sh` запускает `python -m bot.main`;
-- версия в `bot/version.py` = `pyproject.toml`;
+- версия в `bot/version.py` = `pyproject.toml` и в `README.md` / `docs/README.md`;
+- **число тестов** в docs = `pytest --collect-only` (`scripts/doc_metrics.py`);
 - в `.env.example` дефолты для Wispbyte (например `LOCAL_WHISPER_ENABLED=false`).
 
 ```bash
 python scripts/verify_ops.py
-# → verify_ops OK · v3.38.0
+# → verify_ops OK · v3.39.2
 ```
 
 ## Локально как в CI
@@ -65,6 +66,44 @@ python scripts/verify_ops.py
 pytest -v --cov=bot --cov-fail-under=65
 ```
 
+## Карта тестов (377)
+
+| Категория | Примеры файлов | ~кол-во |
+|-----------|----------------|---------|
+| NLP / время | `test_absolute_time_parse`, `test_ambiguous_*`, `test_weekday_parse`, `test_rule_parser` | 80+ |
+| DB / repo | `test_000_repository`, `test_db_migrate`, `test_duplicates` | 25+ |
+| Callbacks / UI | `test_001`–`test_003`, `test_confirm_flow`, `test_pagination` | 60+ |
+| Handlers | `test_004`–`test_008`, `test_005_handlers_core`, `test_007_onboarding` | 50+ |
+| Collective / группы | `test_006_collective_handlers`, `test_008_group_manage`, `test_collective_*` | 40+ |
+| Assignee / mention | `test_mention_create`, `test_mention_from_message`, `test_mention_assignee_text` | 20+ |
+| Scheduler / STT | `test_scheduler_*`, `test_media_stt`, `test_llm_*` | 30+ |
+| Инфра | `test_verify_ops`, `test_smoke_imports`, `test_config`, `test_version` | 15+ |
+
+Точное число: `pytest --collect-only -q` → `N tests collected`.
+
+### Assignee (F3.0)
+
+| Файл | Фокус |
+|------|--------|
+| `test_mention_create.py` | @ vs reply, приоритет, голос |
+| `test_mention_from_message.py` | entities, `command_prefix_length` |
+| `test_mention_assignee_text.py` | confirm, created, list 👤 |
+| `test_mention_resolve.py` | участник в чате |
+| `test_006_collective_handlers.py` | `/remind` + reply в группе |
+| `test_reminder_display.py` | `tg://user?id=` в списке |
+| `test_delete_command.py` | `/delete N yes` |
+
+## История coverage gate
+
+| Версия | Gate | Комментарий |
+|--------|------|-------------|
+| v3.30–v3.31 | 50–52% | поэтапный рост |
+| v3.32 | 55% | batch releases |
+| v3.38 | 56% | F1–F2, групповые тесты |
+| **v3.39+** | **65%** | quality-metrics, CI/Makefile |
+
 ## Roadmap покрытия
 
 По плану `docs/plans/improvements-plan-2026-06.md`: +3–5% gate за квартал, не гнаться за 100% на весь репозиторий.
+
+См. также [doc-maintenance.md](doc-maintenance.md) — что обновлять при релизе.

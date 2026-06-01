@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥65%](https://img.shields.io/badge/coverage-≥65%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.39.1](CHANGELOG.md) · **370+ тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
+**Версия:** [v3.39.2](CHANGELOG.md) · **377 теста** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 
@@ -186,7 +186,7 @@ bot/
   services/     # NLP, scheduler, drafts, collective UX
   db/           # models, repository
   keyboards/    # inline + reply
-tests/          # unit + handler tests (308+)
+tests/          # unit + handler tests (377, см. quality-metrics.md)
 scripts/        # deploy, backup, healthcheck
 docs/           # guides, releases, plans
 ```
@@ -221,6 +221,7 @@ docs/           # guides, releases, plans
 | [docs/README.md](docs/README.md) | Оглавление docs |
 | [.github/DEPLOY.md](.github/DEPLOY.md) | Деплой и Wispbyte |
 | [docs/plans/product-audit-2026.md](docs/plans/product-audit-2026.md) | Аудит продукта, roadmap до v1.0 |
+| [docs/guides/quality-metrics.md](docs/guides/quality-metrics.md) | Тесты, coverage 65%, ruff, verify_ops |
 | [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md) | Группы, каналы, privacy |
 | [docs/guides/group-assignee.md](docs/guides/group-assignee.md) | Напоминание на участника |
 | [docs/releases/](docs/releases/) | Release notes по версиям |

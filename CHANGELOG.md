@@ -4,6 +4,14 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.39.2] — 2026-06-02
+
+### Docs / CI
+- Карта **377** тестов, история coverage gate, [doc-maintenance.md](docs/guides/doc-maintenance.md)
+- `verify_ops`: сверка версии и числа тестов в docs с `pytest --collect-only`
+- `make test-count`, тесты help (`test_texts_help_compat`, `test_doc_metrics`)
+- Help: `/edit N`, `/delete N` в личке; синхронизация docs и метрик
+
 ## [3.39.1] — 2026-06-02
 
 ### Assignee feature — финализация (docs)

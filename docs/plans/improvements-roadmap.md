@@ -56,6 +56,8 @@
 | 48 | /delete, /edit N в группах | v3.37.3 |
 | 49 | План F1–F2, CI deploy skip, тесты групп | v3.38 |
 | 50 | **Assignee:** @user, reply, голос; confirm/list/fire; `/delete yes` | v3.39.1 ✅ |
+| 51 | Coverage gate **65%**, quality-metrics, doc-maintenance | v3.39.1 ✅ |
+| 52 | `verify_ops` doc metrics, help tests, 377 tests | v3.39.2 ✅ |
 
 ## Дальше (backlog)
 

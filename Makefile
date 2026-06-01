@@ -6,6 +6,7 @@ help:
 	@echo "  test         pytest with coverage gate 65%%"
 	@echo "  lint         ruff check"
 	@echo "  verify       ops artifacts check"
+	@echo "  test-count   pytest --collect-only"
 	@echo "  migrate      alembic upgrade head"
 	@echo "  run          python -m bot.main"
 	@echo "  backup       DB backup to data/backups/"
@@ -36,6 +37,9 @@ run:
 
 verify:
 	python scripts/verify_ops.py
+
+test-count:
+	python -m pytest --collect-only -q
 
 migrate:
 	python scripts/migrate_db.py
