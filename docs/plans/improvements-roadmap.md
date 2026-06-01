@@ -50,6 +50,8 @@
 | 42 | Product audit + plan to v1.0 | v3.33 |
 | 43 | Documentation refresh (README, guides, GitHub) | v3.34 |
 | 44 | Phases B–D + Pro MVP, v1.0-ready | v3.35 |
+| 45 | Monetization off by default | v3.35.1 |
+| 46 | Guided onboarding, privacy UX, edit hints | v3.36 |
 
 ## Дальше (backlog E)
 
@@ -57,7 +59,6 @@
 |---|--------|
 | E1 | Alembic migrations |
 | E2 | PostgreSQL / multi-instance |
-| E3 | Guided onboarding /start |
 | E4 | Telegram Stars оплата Pro |
 
 ## Отменено / не актуально

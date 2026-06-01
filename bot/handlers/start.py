@@ -5,24 +5,27 @@ from aiogram.types import CallbackQuery, Message
 from bot.config import settings
 from bot.db.repository import (
     async_session,
+    complete_user_onboarding,
     get_or_create_chat,
     get_or_create_user,
     update_chat_timezone,
     update_user_timezone,
 )
+from bot.handlers.create import _process_text_and_reply
 from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
+from bot.services.bot_privacy import format_group_privacy_user_hint
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat, tz_scope_label
 from bot.services.chat_delivery import format_ops_target_note, resolve_delivery_chat_id
 from bot.services.chat_delivery import sync_channel_linked_chat
 from bot.services.bot_menu import setup_channel_commands
-from bot.services.timezone_labels import format_timezone_label
-from bot.texts.messages import (
-    ONBOARDING_READY,
-    WELCOME_BACK,
-    WELCOME_ONBOARDING,
-    format_collective_welcome,
+from bot.services.onboarding import (
+    ONBOARDING_TRY_EXAMPLE_INDEX,
+    onboarding_keyboard,
+    onboarding_step_text,
 )
+from bot.services.timezone_labels import format_timezone_label
+from bot.texts.messages import EXAMPLE_PHRASES, WELCOME_BACK, WELCOME_ONBOARDING, format_collective_welcome
 
 router = Router()
 
@@ -32,6 +35,27 @@ def _offset_to_tz(offset_hours: int) -> str:
         return "Etc/UTC"
     sign = "-" if offset_hours > 0 else "+"
     return f"Etc/GMT{sign}{abs(offset_hours)}"
+
+
+async def _send_onboarding_step(target: Message, step: int) -> None:
+    await target.answer(
+        onboarding_step_text(step),
+        reply_markup=onboarding_keyboard(step),
+    )
+
+
+async def _finish_onboarding(callback: CallbackQuery) -> None:
+    async with async_session() as session:
+        user = await get_or_create_user(
+            session, callback.from_user.id, settings.default_timezone
+        )
+        await complete_user_onboarding(session, user)
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer(
+        "⌨️ Меню:",
+        reply_markup=menu_keyboard_for_chat(callback.message.chat.id),
+    )
+    await callback.message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
 
 
 @router.message(CommandStart())
@@ -69,7 +93,10 @@ async def cmd_start(message: Message) -> None:
                     default_timezone=settings.default_timezone,
                 )
             await setup_channel_commands(message.bot, message.chat.id)
-        await message.answer(format_collective_welcome(kind, me.username))
+        privacy_hint = format_group_privacy_user_hint(
+            can_read_all_group_messages=me.can_read_all_group_messages,
+        )
+        await message.answer(format_collective_welcome(kind, me.username, privacy_hint=privacy_hint))
         return
 
     await message.answer(
@@ -79,6 +106,15 @@ async def cmd_start(message: Message) -> None:
         ),
         reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
+
+    async with async_session() as session:
+        user = await get_or_create_user(session, message.from_user.id, settings.default_timezone)
+        needs_tour = not user.onboarding_done
+
+    if needs_tour:
+        await _send_onboarding_step(message, 1)
+        return
+
     await message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
 
 
@@ -87,6 +123,49 @@ async def cmd_timezone(message: Message) -> None:
     kind = chat_kind_from_chat(message.chat)
     scope = "личный" if kind == ChatKind.PRIVATE else tz_scope_label(kind)
     await message.answer(f"🕐 Выбери часовой пояс ({scope}):", reply_markup=timezone_keyboard())
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("onb:"))
+async def onboarding_callback(callback: CallbackQuery, bot) -> None:
+    if callback.message.chat.id <= 0:
+        await callback.answer()
+        return
+
+    action = callback.data.split(":", 1)[1]
+
+    if action == "skip" or action == "done":
+        await callback.answer()
+        await _finish_onboarding(callback)
+        return
+
+    if action == "try":
+        await callback.answer()
+        async with async_session() as session:
+            user = await get_or_create_user(
+                session, callback.from_user.id, settings.default_timezone
+            )
+            await complete_user_onboarding(session, user)
+        await callback.message.edit_reply_markup(reply_markup=None)
+        _, phrase = EXAMPLE_PHRASES[ONBOARDING_TRY_EXAMPLE_INDEX]
+        await _process_text_and_reply(
+            callback.message,
+            phrase,
+            bot,
+            actor_user_id=callback.from_user.id,
+            use_phrase_text=True,
+        )
+        return
+
+    if action.startswith("next:"):
+        step = int(action.split(":", 1)[1])
+        await callback.answer()
+        await callback.message.edit_text(
+            onboarding_step_text(step),
+            reply_markup=onboarding_keyboard(step),
+        )
+        return
+
+    await callback.answer()
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("tz_menu:"))
@@ -137,7 +216,7 @@ async def _apply_timezone(callback: CallbackQuery, timezone: str) -> None:
     if not is_group_chat(chat_id):
         await callback.message.answer("⌨️ Меню:", reply_markup=menu_keyboard_for_chat(chat_id))
         if was_first_setup:
-            await callback.message.answer(ONBOARDING_READY, reply_markup=main_menu_inline_keyboard())
+            await _send_onboarding_step(callback.message, 1)
     await callback.answer("Сохранено")
 
 

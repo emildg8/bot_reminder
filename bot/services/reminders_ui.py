@@ -25,6 +25,10 @@ COLLECTIVE_LIST_HINT = (
     "Кнопки управления — в личке с ботом.</i>"
 )
 
+PRIVATE_LIST_HINT = (
+    "\n\n<i>⏰ Отложить · ✅ Готово · ✏️ Изменить — кнопки под каждым напоминанием</i>"
+)
+
 
 def _paginate(items: list, page: int) -> tuple[list, int, int]:
     total_pages = max(1, (len(items) + LIST_PAGE_SIZE - 1) // LIST_PAGE_SIZE)
@@ -150,7 +154,7 @@ async def build_list_message(
         return body + COLLECTIVE_LIST_HINT, _merge_keyboards(nav_kb, tabs)
 
     keyboard = list_page_keyboard(page_items, viewer_id, page, total_pages)
-    return body, _merge_keyboards(keyboard, tabs)
+    return body + PRIVATE_LIST_HINT, _merge_keyboards(keyboard, tabs)
 
 
 async def send_active_reminders(message: Message, page: int = 0, tab: str = "active") -> None:

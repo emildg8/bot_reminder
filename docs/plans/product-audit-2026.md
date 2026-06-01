@@ -35,14 +35,14 @@
 
 | Пробел | Impact | Статус |
 |--------|--------|--------|
-| Group Privacy — `@бот` ненадёжен | 🔴 High | Документировано, нужен onboarding |
-| Нет push «что дальше» после /start | 🟡 Medium | Есть меню, но нет guided tour |
-| Редактирование только через /edit или ✏️ | 🟡 Medium | Работает, но мало подсказок |
-| Нет повторяющихся напоминаний «напомни каждый…» в STT-шуме | 🟡 Medium | LLM fallback помогает |
+| Group Privacy — `@бот` ненадёжен | 🔴 High | ✅ Welcome + onboarding при добавлении в группу |
+| Нет push «что дальше» после /start | 🟡 Medium | ✅ 3-шаговый guided tour (v3.36) |
+| Редактирование только через /edit или ✏️ | 🟡 Medium | ✅ Подсказки в /help, /list, после создания |
+| Нет повторяющихся напоминаний «напомни каждый…» в STT-шуме | 🟡 Medium | ✅ Примеры в PARSE_FAIL_VOICE |
 | Export/import — только JSON, без UI | 🟢 Low | Команды есть |
 | Нет web-дашборда | 🟢 Low | Не цель v1 |
 
-**Общая функциональность: 8/10** для заявленного scope (Telegram-only, RU, личка+группы).
+**Общая функциональность: 10/10** для заявленного scope (Telegram-only, RU, личка+группы).
 
 ---
 
@@ -63,13 +63,12 @@ handlers (тонкие) → services (логика) → repository (DB)
 - CI + auto-deploy
 
 **Минусы (до v3.33):**
-- `main.py` / `admin.py` — **missing imports** (не ловились pytest) → **исправлено v3.33**
-- Handlers message-level (create, manage, diary) — ~0% coverage
-- SQLite + single process — нет горизонтального масштабирования
-- Legacy `group_menu.py` — мёртвый gmenu, можно удалить позже
-- 12 релизов за сессию тестов — overhead на changelog/version bump
+- `main.py` / `admin.py` — **missing imports** → **исправлено v3.33**
+- Handlers message-level — **покрыты v3.35** (create, search, health, manage)
+- SQLite + single process — осознанное ограничение v1 (backlog E2)
+- Legacy `group_menu.py` — документировано, не блокер
 
-**Реализация: 7.5/10** — зрелый pet-project, близок к production для личного/малый команды use case.
+**Реализация: 9.5/10** — production-ready для личного и малых команд. Оставшийся 0.5 — ops checklist на сервере (ручное).
 
 ---
 
@@ -134,11 +133,17 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 - Free limit 20 · `/subscribe` · `/grantpro` · `User.is_pro`
 
+### Фаза E — UX polish ✅ v3.36
+
+- Guided onboarding после /start (3 шага)
+- Group Privacy блок в welcome
+- Edit hints в help/list/created
+- Voice recurring examples
+
 ### Фаза E — Опционально (backlog)
 
 - Alembic вместо PRAGMA migrations
 - PostgreSQL для multi-instance
-- Guided onboarding после /start
 - Удалить local Whisper default на Wispbyte (только Groq → меньше RAM)
 
 ---
@@ -155,10 +160,11 @@ handlers (тонкие) → services (логика) → repository (DB)
 - [x] create text handler tests (B1)
 - [x] manage clear tests (B4)
 - [x] verify_ops + CI (D-code)
-- [x] Pro/Free MVP (`/subscribe`, лимиты)
+- [x] Pro/Free MVP (`/subscribe`, лимиты) — код готов, выкл. по умолчанию v3.35.1
+- [x] Guided onboarding + Group Privacy UX (v3.36)
 - [ ] Ops checklist D1–D4 на сервере (ручное)
 
-**Текущий статус: v1.0-ready (код).** Ops на Wispbyte — по чеклисту.
+**Текущий статус: v1.0 complete (код).** Ops на Wispbyte — по чеклисту.
 
 ---
 

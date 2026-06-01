@@ -2,6 +2,7 @@ from bot.services.bot_privacy import (
     format_group_at_manual_warning,
     format_group_privacy_admin_warning,
     format_group_privacy_status,
+    format_group_privacy_user_hint,
 )
 
 
@@ -24,3 +25,13 @@ def test_privacy_status_lines():
 
 def test_manual_at_warning():
     assert "вручную" in format_group_at_manual_warning()
+
+
+def test_privacy_user_hint_when_enabled():
+    text = format_group_privacy_user_hint(can_read_all_group_messages=False)
+    assert "Group Privacy" in text
+    assert "Turn off" in text
+
+
+def test_privacy_user_hint_empty_when_disabled():
+    assert format_group_privacy_user_hint(can_read_all_group_messages=True) == ""

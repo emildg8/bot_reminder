@@ -7,6 +7,7 @@ from bot.config import settings
 from bot.db.repository import async_session, find_channel_by_linked_chat, get_or_create_chat
 from bot.keyboards.inline import timezone_keyboard
 from bot.services.bot_menu import setup_channel_commands
+from bot.services.bot_privacy import format_group_privacy_user_hint
 from bot.services.chat_ctx import ChatKind, chat_kind_from_type
 from bot.services.chat_delivery import resolve_delivery_chat_id, sync_channel_linked_chat
 from bot.texts.messages import (
@@ -26,7 +27,10 @@ async def on_bot_added(event: ChatMemberUpdated) -> None:
 
     kind = chat_kind_from_type(chat_type)
     me = await event.bot.get_me()
-    welcome = format_collective_welcome(kind, me.username)
+    privacy_hint = format_group_privacy_user_hint(
+        can_read_all_group_messages=me.can_read_all_group_messages,
+    )
+    welcome = format_collective_welcome(kind, me.username, privacy_hint=privacy_hint)
 
     await event.bot.send_message(event.chat.id, welcome)
 

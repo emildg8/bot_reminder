@@ -23,5 +23,17 @@ def format_group_privacy_status(*, can_read_all_group_messages: bool | None) -> 
     return "Group Privacy: <b>?</b>"
 
 
+def format_group_privacy_user_hint(*, can_read_all_group_messages: bool | None) -> str:
+    """Блок для welcome в группе, если privacy включён."""
+    if can_read_all_group_messages is not False:
+        return ""
+    return (
+        "\n\n🔒 <b>Group Privacy включён</b> (BotFather)\n"
+        "Ручной @ бот <b>не получает</b> — ответа не будет.\n"
+        "✅ Работает: <code>/remind@бот …</code> или @ из списка.\n"
+        "Админам: BotFather → Group Privacy → <b>Turn off</b>."
+    )
+
+
 def format_group_at_manual_warning() -> str:
     return "⚠️ @, набранный вручную, бот может не увидеть — используй /remind@бот или @ из списка."

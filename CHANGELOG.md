@@ -4,6 +4,14 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.36.0] — 2026-05-31
+
+### UX polish (8→10)
+- **Guided onboarding** — 3-шаговый тур после выбора часового пояса (`onb:*` callbacks)
+- **Group Privacy** — явный блок в welcome группы и при добавлении бота
+- **Edit hints** — в /help, /list и после создания напоминания
+- **Голос** — примеры повторяющихся напоминаний в подсказке parse fail
+
 ## [3.35.1] — 2026-05-31
 
 ### Monetization

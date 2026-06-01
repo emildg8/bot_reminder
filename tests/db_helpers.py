@@ -40,6 +40,7 @@ async def patched_db(monkeypatch) -> AsyncSession:
         "bot.handlers.edit",
         "bot.handlers.settings",
         "bot.handlers.manage",
+        "bot.handlers.start",
         "bot.services.reminders_ui",
         "bot.services.search_ui",
         "bot.services.chat_status",

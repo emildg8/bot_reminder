@@ -41,7 +41,7 @@ WELCOME_BACK = (
     "🕐 Часовой пояс ({tz_scope}): <b>{tz_label}</b>"
 )
 
-def format_group_welcome(bot_username: str | None = None) -> str:
+def format_group_welcome(bot_username: str | None = None, *, privacy_hint: str = "") -> str:
     at = f"@{bot_username}" if bot_username else "@бот"
     uname = bot_username or "бот"
     return (
@@ -50,7 +50,8 @@ def format_group_welcome(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n\n"
         f"Или {at} <b>из списка</b> + фраза:\n"
         f"• <code>{at} через 30 минут созвон</code>\n\n"
-        "⚠️ @, набранный вручную, бот <b>не увидит</b> — ответа не будет.\n\n"
+        "⚠️ @, набранный вручную, бот <b>не увидит</b> — ответа не будет."
+        f"{privacy_hint}\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
 
@@ -68,10 +69,15 @@ def format_channel_welcome(bot_username: str | None = None) -> str:
     )
 
 
-def format_collective_welcome(chat_kind: ChatKind, bot_username: str | None = None) -> str:
+def format_collective_welcome(
+    chat_kind: ChatKind,
+    bot_username: str | None = None,
+    *,
+    privacy_hint: str = "",
+) -> str:
     if chat_kind == ChatKind.CHANNEL:
         return format_channel_welcome(bot_username)
-    return format_group_welcome(bot_username)
+    return format_group_welcome(bot_username, privacy_hint=privacy_hint)
 
 
 GROUP_WELCOME = format_group_welcome()
@@ -142,7 +148,8 @@ PARSE_FAIL_VOICE = (
     "Скажи одной короткой фразой: <b>когда</b> + <b>что</b>\n"
     "• «завтра в два часа дня созвон»\n"
     "• «через час выпить таблетки»\n"
-    "• «завтра утром зарядка»\n\n"
+    "• «каждый день в девять зарядка»\n"
+    "• «по будням в девять стендап»\n\n"
     "🎤 Говори чётко, без длинных пауз в начале."
 )
 
@@ -245,6 +252,10 @@ ONBOARDING_READY = (
     "• <code>каждый день в 9:00 зарядка</code>\n\n"
     "🎤 Или скажи голосом: «завтра в два часа дня созвон»\n"
     "Или нажми ➕ <b>Создать</b> в меню внизу."
+)
+
+EDIT_HINT = (
+    "\n\n💡 Изменить: кнопка <b>✏️</b> в /list или <code>/edit N новая фраза</code>"
 )
 
 
@@ -350,9 +361,13 @@ HELP_TEXT_PRIVATE = f"""\
 • каждый день в 9:00 зарядка
 • по будням в 09:00 стендап
 
+<b>Изменить</b>
+• кнопка ✏️ в списке (/list)
+• <code>/edit 3 завтра в 10:00 новый текст</code>
+
 <b>Команды</b>
 /start · /list · /history · /journal · /stats · /about
-/search · /edit · /settings · /timezone · /help"""
+/search · /edit · /settings · /timezone · /export · /help"""
 
 HELP_TEXT_GROUP = f"""\
 <b>{BOT_NAME}</b> в группе · v{__version__}
@@ -478,6 +493,8 @@ def format_created(
         kind = ChatKind.SUPERGROUP
     if kind is not None and kind != ChatKind.PRIVATE:
         body += collective_created_suffix(kind)
+    elif not in_group and collective is None:
+        body += EDIT_HINT
     return body
 
 

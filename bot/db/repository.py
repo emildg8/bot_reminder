@@ -60,6 +60,10 @@ async def init_db() -> None:
                 await conn.execute(
                     text("ALTER TABLE users ADD COLUMN is_pro BOOLEAN DEFAULT 0")
                 )
+            if "onboarding_done" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN onboarding_done BOOLEAN DEFAULT 1")
+                )
 
             chat_cols = {
                 row[1]
@@ -147,6 +151,13 @@ async def confirm_user_timezone(session: AsyncSession, user: User, timezone: str
 async def update_user_timezone(session: AsyncSession, user: User, timezone: str) -> User:
     user.timezone = timezone
     user.timezone_confirmed = True
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def complete_user_onboarding(session: AsyncSession, user: User) -> User:
+    user.onboarding_done = True
     await session.commit()
     await session.refresh(user)
     return user
