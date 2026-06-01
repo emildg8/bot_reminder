@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.40.1** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.40.2** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -18,7 +18,7 @@
 | [guides/groups-and-channels.md](guides/groups-and-channels.md) | Группы, каналы, Group Privacy |
 | [guides/ops-checklist.md](guides/ops-checklist.md) | Чеклист после деплоя |
 | [guides/group-assignee.md](guides/group-assignee.md) | Напоминание на участника (@user, reply) |
-| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (401), coverage 65%, ruff, verify_ops |
+| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (412), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
 
@@ -37,7 +37,7 @@
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
-- [releases/v3.40.0.md](releases/v3.40.0.md) — admin/user mode (F)
+- [releases/v3.40.2.md](releases/v3.40.2.md) — CI/Docker fix
 - [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee (F3.0) закрыт
 
 ## CI / GitHub

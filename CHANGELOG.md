@@ -4,6 +4,12 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.40.2] — 2026-06-02
+
+### Fix
+- CI: admin panel tests с `patched_db`, coverage gate 65%
+- Docker: Alembic в образе; release notes v3.40.1
+
 ## [3.40.1] — 2026-06-02
 
 ### Admin — polish

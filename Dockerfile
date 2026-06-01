@@ -12,7 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bot/ bot/
 COPY scripts/ scripts/
 COPY assets/ assets/
-COPY pytest.ini .
+COPY alembic/ alembic/
+COPY alembic.ini .
 
 RUN mkdir -p data/logs data/backups
 

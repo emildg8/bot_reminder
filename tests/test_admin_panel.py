@@ -27,7 +27,7 @@ async def test_admin_panel_limited_in_user_mode(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_admin_panel_opens(monkeypatch):
+async def test_admin_panel_opens(monkeypatch, patched_db):
     monkeypatch.setattr("bot.services.admin_access.settings.admin_telegram_ids", [71])
     set_admin_tools_cached(71, True)
     message = MagicMock()
