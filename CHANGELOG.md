@@ -4,6 +4,11 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.42.1] — 2026-06-02
+
+### Fix
+- CI: `test_reminder_history_unit` — стабильная проверка через `get_day_events`
+
 ## [3.42.0] — 2026-06-02
 
 ### Pro / Stars (H1)
