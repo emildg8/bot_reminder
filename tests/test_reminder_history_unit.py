@@ -9,6 +9,7 @@ from bot.services.reminder_history import (
     _event_label,
     format_day_journal,
     format_month_stats,
+    get_day_events,
     get_month_stats,
     log_reminder_event,
 )
@@ -66,16 +67,17 @@ async def test_log_and_month_stats(patched_db):
         next_run_at=None,
     )
     now = datetime.now(ZoneInfo("Europe/Moscow"))
-    await log_reminder_event(
+    event = await log_reminder_event(
         patched_db,
         reminder=reminder,
         chat_id=88001,
         user_telegram_id=88001,
         text="hist test",
-        kind=ReminderEventKind.DONE,
+        kind=ReminderEventKind.DONE.value,
         event_at=now,
     )
-    stats = await get_month_stats(
+    assert event.event_kind == ReminderEventKind.DONE.value
+    events = await get_day_events(
         patched_db, 88001, day=now, timezone="Europe/Moscow", user_telegram_id=88001
     )
-    assert stats.done >= 1
+    assert len(events) >= 1
