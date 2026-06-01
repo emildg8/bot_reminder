@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     auto_update_interval_minutes: int = 1
 
     free_active_limit: int = 20
+    monetization_enabled: bool = False
     pro_contact_hint: str = (
         "Напиши админу бота или открой issue: "
         "github.com/emildg8/bot_reminder"

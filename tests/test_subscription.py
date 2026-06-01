@@ -7,7 +7,8 @@ from tests.db_helpers import patched_db
 
 
 @pytest.mark.asyncio
-async def test_free_limit_blocks_at_threshold(patched_db):
+async def test_free_limit_blocks_at_threshold(patched_db, monkeypatch):
+    monkeypatch.setattr("bot.config.settings.monetization_enabled", True)
     user_id = 9600
     user = await get_or_create_user(patched_db, user_id, "Europe/Moscow")
     limit = settings.free_active_limit
@@ -32,7 +33,8 @@ async def test_free_limit_blocks_at_threshold(patched_db):
 
 
 @pytest.mark.asyncio
-async def test_pro_user_unlimited(patched_db):
+async def test_pro_user_unlimited(patched_db, monkeypatch):
+    monkeypatch.setattr("bot.config.settings.monetization_enabled", True)
     user_id = 9601
     user = await get_or_create_user(patched_db, user_id, "Europe/Moscow")
     await set_user_pro(patched_db, user_id, is_pro=True)
@@ -42,3 +44,27 @@ async def test_pro_user_unlimited(patched_db):
     allowed, _, limit = await can_add_reminder(patched_db, user_id)
     assert allowed is True
     assert limit == 0
+
+
+@pytest.mark.asyncio
+async def test_monetization_disabled_no_limit(patched_db, monkeypatch):
+    monkeypatch.setattr("bot.config.settings.monetization_enabled", False)
+    user_id = 9602
+    user = await get_or_create_user(patched_db, user_id, "Europe/Moscow")
+    limit = settings.free_active_limit
+
+    for i in range(limit + 5):
+        await create_reminder(
+            patched_db,
+            user_id=user.id,
+            chat_id=user_id,
+            created_by_telegram_id=user_id,
+            timezone="Europe/Moscow",
+            text=f"free {i}",
+            kind="once",
+            next_run_at=None,
+        )
+
+    allowed, _, lim = await can_add_reminder(patched_db, user_id)
+    assert allowed is True
+    assert lim == 0

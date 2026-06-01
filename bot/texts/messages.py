@@ -258,8 +258,12 @@ def format_about(version: str = __version__) -> str:
         "• Статистика за месяц\n"
         "• Группы и личные чаты\n"
         "• Отложить с настраиваемыми вариантами\n\n"
-        f"Free: до {settings.free_active_limit} активных · Pro: /subscribe\n\n"
-        "Команды: /help · /list · /journal · /stats"
+        + (
+            f"Free: до {settings.free_active_limit} активных · Pro: /subscribe\n\n"
+            if settings.monetization_enabled
+            else ""
+        )
+        + "Команды: /help · /list · /journal · /stats"
     )
 
 GROUP_CREATED_SUFFIX = ""

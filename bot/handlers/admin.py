@@ -70,6 +70,12 @@ async def cmd_setavatar(message: Message, bot: Bot) -> None:
 
 @router.message(Command("grantpro"))
 async def cmd_grantpro(message: Message) -> None:
+    from bot.services.subscription import monetization_active
+
+    if not monetization_active():
+        await message.answer("⭐ Pro пока отключён — монетизация в разработке.")
+        return
+
     if not is_bot_admin(message.from_user.id):
         await message.answer("Команда доступна только администраторам бота.")
         return

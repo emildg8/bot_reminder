@@ -4,6 +4,12 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.35.1] — 2026-05-31
+
+### Monetization
+- **Отключена по умолчанию** (`MONETIZATION_ENABLED=false`) — лимиты и Pro не применяются
+- Код Pro/is_pro/grantpro сохранён для будущего включения
+
 ## [3.35.0] — 2026-05-31
 
 ### Фазы B–D + monetization MVP (v1.0-ready)

@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥55%](https://img.shields.io/badge/coverage-≥55%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.35.0](CHANGELOG.md) · **322 теста** · **деплой:** push в `main` → CI → Wispbyte
+**Версия:** [v3.35.1](CHANGELOG.md) · **322 теста** · **деплой:** push в `main` → CI → Wispbyte
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 
@@ -99,7 +99,7 @@ docker compose logs -f bot
 | `/export` / `/import` | Резервная копия JSON |
 | `/help` | Справка |
 | `/about` | О боте |
-| `/subscribe` | Free vs Pro, лимиты |
+| `/subscribe` | Pro (зарезервировано, сейчас выкл.) |
 | `/cancel` | Выйти из режима (поиск, edit, уточнение времени) |
 
 ### Группы
@@ -116,7 +116,7 @@ docker compose logs -f bot
 | `/health` | Состояние сервера, repair scheduler |
 | `/update` | Обновление с GitHub + restart |
 | `/sysinfo` | STT, ffmpeg, deploy sha, Group Privacy |
-| `/grantpro` | Выдать Pro пользователю |
+| `/grantpro` | Выдать Pro (админ, когда включена монетизация) |
 
 ---
 
