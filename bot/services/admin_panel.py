@@ -611,7 +611,7 @@ async def format_admin_stats() -> str:
         f"{stats}\n\n"
         f"💬 Групповых чатов с активными: <b>{group_chats}</b>\n"
         f"📋 По типам (активные): {kind_lines}\n"
-        f"⏱ Задач планировщика: <b>{jobs}</b>",
+        f"⏱ Задач планировщика: <b>{jobs}</b>"
     )
 
 

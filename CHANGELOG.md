@@ -4,6 +4,11 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.40.3] — 2026-06-02
+
+### Fix
+- `format_admin_stats` возвращала tuple вместо str (лишняя запятая)
+
 ## [3.40.2] — 2026-06-02
 
 ### Fix
