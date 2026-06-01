@@ -20,7 +20,7 @@ async def test_admin_panel_limited_in_user_mode(monkeypatch):
     message = MagicMock()
     message.from_user.id = 70
     message.answer = AsyncMock()
-    await cmd_admin_panel(message, MagicMock())
+    await cmd_admin_panel(message)
     body = message.answer.await_args[0][0]
     assert "режим пользователя" in body.lower()
     assert message.answer.await_args.kwargs.get("reply_markup") is not None
@@ -33,7 +33,7 @@ async def test_admin_panel_opens(monkeypatch):
     message = MagicMock()
     message.from_user.id = 71
     message.answer = AsyncMock()
-    await cmd_admin_panel(message, MagicMock())
+    await cmd_admin_panel(message)
     body = message.answer.await_args[0][0]
     assert "Панель администратора" in body
     assert "7 дней" in body

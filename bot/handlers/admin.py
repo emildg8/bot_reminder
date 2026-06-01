@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 
 from bot.config import settings
 from bot.db.models import Reminder, User
-from bot.db.repository import async_session, get_all_active_reminders, get_user_by_telegram_id
+from bot.db.repository import async_session, get_all_active_reminders, get_or_create_user, set_user_pro
 from bot.keyboards.reply import (
     ADMIN_MODE_BUTTON_TEXTS,
     menu_keyboard_for_chat,
@@ -23,12 +23,14 @@ from bot.services.admin_mode import (
 )
 from bot.services.admin_audit import format_admin_log, log_admin_action
 from bot.services.admin_panel import (
+    BROADCAST_HELP,
     BroadcastFilter,
     PendingBroadcast,
     admin_limited_keyboard,
     admin_panel_keyboard,
     broadcast_message,
     broadcast_preview_keyboard,
+    build_userinfo_reply,
     count_broadcast_recipients,
     fetch_recent_users,
     format_admin_panel_intro,
@@ -37,10 +39,10 @@ from bot.services.admin_panel import (
     format_admins_list,
     format_broadcast_preview,
     format_recent_users,
-    format_user_info,
     format_user_reminders,
     format_userfind_results,
     get_pending_broadcast,
+    is_userinfo_card,
     notify_other_admins,
     parse_broadcast_message,
     parse_target_telegram_id,
@@ -48,7 +50,6 @@ from bot.services.admin_panel import (
     recent_users_keyboard,
     send_broadcast_preview_to_admin,
     set_pending_broadcast,
-    user_info_keyboard,
 )
 from bot.services.auto_update import force_update, schedule_process_restart
 from bot.services.bot_avatar import ensure_bot_avatar
@@ -57,11 +58,18 @@ from bot.services.media import describe_stt_backends, is_ffmpeg_available
 from bot.services.runtime import format_uptime, uptime_seconds
 from bot.services.bot_privacy import format_group_privacy_status
 from bot.services.scheduler import count_scheduled_reminder_jobs
-from bot.services.subscription import is_pro_user, monetization_active
+from bot.services.subscription import monetization_active
 from bot.texts.messages import format_admin_mode_ack, format_admin_mode_status
 from bot.version import __version__
 
 router = Router()
+
+
+def _callback_target_id(callback: CallbackQuery) -> int | None:
+    try:
+        return int((callback.data or "").split(":")[-1])
+    except ValueError:
+        return None
 
 
 async def _deny_admin(message: Message) -> None:
@@ -69,29 +77,32 @@ async def _deny_admin(message: Message) -> None:
 
 
 async def _reply_userinfo(message: Message, target_id: int, *, edit: bool = False) -> None:
-    text = await format_user_info(target_id)
-    async with async_session() as session:
-        user = await get_user_by_telegram_id(session, target_id)
-        active = 0
-        if user:
-            from bot.db.repository import count_active_reminders_for_user
-
-            active = await count_active_reminders_for_user(session, target_id)
-    if user is None:
-        if edit:
-            await message.edit_text(text)
-        else:
-            await message.answer(text)
-        return
-    kb = user_info_keyboard(
-        target_id,
-        is_pro=is_pro_user(user, target_id),
-        active_count=active,
-    )
+    text, kb = await build_userinfo_reply(target_id)
+    kwargs = {"reply_markup": kb} if kb else {}
     if edit:
-        await message.edit_text(text, reply_markup=kb)
+        await message.edit_text(text, **kwargs)
     else:
-        await message.answer(text, reply_markup=kb)
+        await message.answer(text, **kwargs)
+
+
+async def _set_user_pro(
+    message: Message,
+    admin_id: int,
+    target_id: int,
+    *,
+    is_pro: bool,
+) -> bool:
+    async with async_session() as session:
+        await get_or_create_user(session, target_id, settings.default_timezone)
+        user = await set_user_pro(session, target_id, is_pro=is_pro)
+    if user is None:
+        await message.answer("Пользователь не найден.")
+        return False
+    verb = "grant" if is_pro else "revoke"
+    log_admin_action(admin_id, f"{verb} Pro → {target_id}")
+    body = message.text or message.caption or ""
+    await _reply_userinfo(message, target_id, edit=is_userinfo_card(body))
+    return True
 
 
 async def _finish_broadcast(
@@ -219,7 +230,7 @@ async def cb_adminmode(callback: CallbackQuery, bot: Bot) -> None:
 
 
 @router.message(Command("admin"))
-async def cmd_admin_panel(message: Message, bot: Bot) -> None:
+async def cmd_admin_panel(message: Message) -> None:
     if not is_admin_listed(message.from_user.id):
         await message.answer("Команда доступна только администраторам бота.")
         return
@@ -278,7 +289,8 @@ async def cmd_userfind(message: Message) -> None:
             "Минимум 3 цифры — поиск по фрагменту Telegram ID."
         )
         return
-    await message.answer(await format_userfind_results(parts[1].strip()))
+    text, kb = await format_userfind_results(parts[1].strip())
+    await message.answer(text, reply_markup=kb)
 
 
 @router.message(Command("admins"))
@@ -304,16 +316,7 @@ async def cmd_revokepro(message: Message) -> None:
             "Или <b>ответ</b> на сообщение + <code>/revokepro</code>"
         )
         return
-    from bot.db.repository import get_or_create_user, set_user_pro
-
-    async with async_session() as session:
-        await get_or_create_user(session, target_id, settings.default_timezone)
-        user = await set_user_pro(session, target_id, is_pro=False)
-    if user is None:
-        await message.answer("Пользователь не найден.")
-        return
-    log_admin_action(message.from_user.id, f"revoke Pro → {target_id}")
-    await _reply_userinfo(message, target_id)
+    await _set_user_pro(message, message.from_user.id, target_id, is_pro=False)
 
 
 @router.message(Command("broadcast"))
@@ -324,13 +327,7 @@ async def cmd_broadcast(message: Message, bot: Bot) -> None:
 
     parsed = parse_broadcast_message(message)
     if parsed is None or parsed.action == "help":
-        await message.answer(
-            "Формат:\n"
-            "• <code>/broadcast Текст</code> — превью\n"
-            "• <code>/broadcast активные Текст</code> · <code>pro</code> · <code>free</code>\n"
-            "• <code>/broadcast test Текст</code> — пример себе\n"
-            "• <code>/broadcast да Текст</code> — сразу (до 100)"
-        )
+        await message.answer(BROADCAST_HELP)
         return
 
     if parsed.action == "test":
@@ -402,15 +399,13 @@ async def cb_admin_userinfo(callback: CallbackQuery) -> None:
     if not is_bot_admin(callback.from_user.id):
         await callback.answer("Недоступно", show_alert=True)
         return
-    try:
-        target_id = int((callback.data or "").split(":")[-1])
-    except ValueError:
+    target_id = _callback_target_id(callback)
+    if target_id is None:
         await callback.answer("Ошибка id", show_alert=True)
         return
     await callback.answer()
     body = callback.message.text or callback.message.caption or ""
-    edit = "Пользователь" in body
-    await _reply_userinfo(callback.message, target_id, edit=edit)
+    await _reply_userinfo(callback.message, target_id, edit=is_userinfo_card(body))
 
 
 @router.callback_query(F.data.startswith("admin:reminders:"))
@@ -418,11 +413,7 @@ async def cb_admin_reminders(callback: CallbackQuery) -> None:
     if not is_bot_admin(callback.from_user.id):
         await callback.answer("Недоступно", show_alert=True)
         return
-    try:
-        target_id = int((callback.data or "").split(":")[-1])
-    except ValueError:
-        await callback.answer("Ошибка id", show_alert=True)
-        return
+    target_id = _callback_target_id(callback)
     await callback.answer()
     await callback.message.answer(await format_user_reminders(target_id))
 
@@ -441,7 +432,6 @@ async def cb_broadcast_filter(callback: CallbackQuery) -> None:
     except ValueError:
         await callback.answer("Неизвестный фильтр", show_alert=True)
         return
-    pending.filter = filt
     set_pending_broadcast(callback.from_user.id, pending.text, filter=filt)
     total = await count_broadcast_recipients(filt)
     await callback.message.edit_text(
@@ -508,21 +498,14 @@ async def cb_admin_pro(callback: CallbackQuery) -> None:
     except ValueError:
         await callback.answer("Некорректный id", show_alert=True)
         return
-    from bot.db.repository import get_or_create_user, set_user_pro
-
     grant = action == "grant"
-    async with async_session() as session:
-        await get_or_create_user(session, target_id, settings.default_timezone)
-        user = await set_user_pro(session, target_id, is_pro=grant)
-    if user is None:
+    if not await _set_user_pro(
+        callback.message, callback.from_user.id, target_id, is_pro=grant
+    ):
         await callback.answer("Не найден", show_alert=True)
         return
     label = "выдан" if grant else "снят"
-    log_admin_action(callback.from_user.id, f"{'grant' if grant else 'revoke'} Pro → {target_id}")
     await callback.answer(f"Pro {label}")
-    body = callback.message.text or callback.message.caption or ""
-    edit = "Пользователь" in body
-    await _reply_userinfo(callback.message, target_id, edit=edit)
 
 
 @router.callback_query(F.data.startswith("admin:run:"))
@@ -639,17 +622,7 @@ async def cmd_grantpro(message: Message) -> None:
         )
         return
 
-    from bot.db.repository import get_or_create_user, set_user_pro
-
-    async with async_session() as session:
-        await get_or_create_user(session, target_id, settings.default_timezone)
-        user = await set_user_pro(session, target_id, is_pro=True)
-
-    if user is None:
-        await message.answer("Пользователь не найден.")
-        return
-    log_admin_action(message.from_user.id, f"grant Pro → {target_id}")
-    await _reply_userinfo(message, target_id)
+    await _set_user_pro(message, message.from_user.id, target_id, is_pro=True)
 
 
 @router.message(Command("update"))

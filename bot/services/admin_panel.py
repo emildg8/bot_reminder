@@ -77,6 +77,54 @@ class BroadcastArgs:
 _pending_broadcast: dict[int, PendingBroadcast] = {}
 
 
+def is_userinfo_card(text: str | None) -> bool:
+    return bool(text and "Пользователь" in text)
+
+
+async def build_userinfo_reply(telegram_id: int) -> tuple[str, InlineKeyboardMarkup | None]:
+    text = await format_user_info(telegram_id)
+    async with async_session() as session:
+        user = await get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            return text, None
+        active = await count_active_reminders_for_user(session, telegram_id)
+    kb = user_info_keyboard(
+        telegram_id,
+        is_pro=is_pro_user(user, telegram_id),
+        active_count=active,
+    )
+    return text, kb
+
+
+def userfind_keyboard(ids: list[int]) -> InlineKeyboardMarkup | None:
+    if not ids:
+        return None
+    buttons: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for tid in ids:
+        label = str(tid)
+        if len(label) > 10:
+            label = "…" + label[-8:]
+        row.append(
+            InlineKeyboardButton(text=label, callback_data=f"admin:userinfo:{tid}")
+        )
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+BROADCAST_HELP = (
+    "Формат:\n"
+    "• <code>/broadcast Текст</code> — превью\n"
+    "• <code>/broadcast активные Текст</code> · <code>pro</code> · <code>free</code>\n"
+    "• <code>/broadcast test Текст</code> — пример себе\n"
+    "• <code>/broadcast да Текст</code> — сразу (до 100)"
+)
+
+
 def parse_target_telegram_id(message: Message) -> int | None:
     """ID из аргумента команды или из сообщения, на которое ответили."""
     parts = (message.text or "").split(maxsplit=1)
@@ -526,17 +574,18 @@ async def find_users_by_id_fragment(fragment: str, *, limit: int = 10) -> list[i
         return list(result.scalars().all())
 
 
-async def format_userfind_results(fragment: str) -> str:
+async def format_userfind_results(fragment: str) -> tuple[str, InlineKeyboardMarkup | None]:
     ids = await find_users_by_id_fragment(fragment)
     if not ids:
         return (
             f"🔍 По фрагменту <code>{escape(fragment)}</code> ничего не найдено.\n"
-            "Нужно минимум 3 цифры · <code>/userfind 123456789</code>"
+            "Нужно минимум 3 цифры · <code>/userfind 123456789</code>",
+            None,
         )
     lines = [f"🔍 <b>Найдено</b> ({len(ids)}):\n"]
     for tid in ids:
-        lines.append(f"• <code>{tid}</code> — /userinfo {tid}")
-    return "\n".join(lines)
+        lines.append(f"• <code>{tid}</code>")
+    return "\n".join(lines), userfind_keyboard(ids)
 
 
 async def format_admin_stats() -> str:
@@ -556,12 +605,13 @@ async def format_admin_stats() -> str:
         group_chats = groups.scalar_one()
 
     kind_lines = " · ".join(f"{k}: <b>{n}</b>" for k, n in kind_rows) if kind_rows else "—"
+    jobs = count_scheduled_reminder_jobs()
     return (
         "📊 <b>Статистика бота</b>\n\n"
         f"{stats}\n\n"
         f"💬 Групповых чатов с активными: <b>{group_chats}</b>\n"
         f"📋 По типам (активные): {kind_lines}\n"
-        f"⏱ Задач планировщика: <b>{count_scheduled_reminder_jobs()}</b>"
+        f"⏱ Задач планировщика: <b>{jobs}</b>",
     )
 
 
