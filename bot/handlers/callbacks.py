@@ -556,26 +556,15 @@ async def delete_cancel(callback: CallbackQuery) -> None:
 async def delete_reminder(callback: CallbackQuery, bot: Bot) -> None:
     reminder_id = int(callback.data.split(":", 1)[1])
 
+    from bot.services.reminder_delete import delete_owned_reminder
+
     async with async_session() as session:
-        reminder = await get_reminder(session, reminder_id)
-        if reminder is None:
-            await callback.answer("Напоминание не найдено.", show_alert=True)
-            return
-
-        if reminder.created_by_telegram_id != callback.from_user.id:
-            await callback.answer("Нет доступа.", show_alert=True)
-            return
-
-        await teardown_reminder_schedule(bot, session, reminder)
-        await deactivate_reminder(session, reminder)
-        await log_reminder_event(
-            session,
-            reminder=reminder,
-            chat_id=reminder.chat_id,
-            user_telegram_id=callback.from_user.id,
-            text=reminder.text,
-            kind=ReminderEventKind.DELETED,
+        err, reminder = await delete_owned_reminder(
+            bot, session, reminder_id, callback.from_user.id
         )
+        if err:
+            await callback.answer(err, show_alert=True)
+            return
 
-    await callback.message.edit_text("🗑 Напоминание удалено.")
+    await callback.message.edit_text(f"🗑 Напоминание #{reminder_id} удалено.\n📝 {reminder.text}")
     await safe_callback_answer(callback)

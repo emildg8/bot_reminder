@@ -22,7 +22,10 @@ from bot.texts.messages import format_confirm_card, format_parse_fail, looks_lik
 
 router = Router()
 
-EDIT_CMD_PATTERN = re.compile(r"^/edit(?:@\w+)?(?:\s+(\d+)\s+(.+))?$", re.DOTALL | re.IGNORECASE)
+EDIT_CMD_PATTERN = re.compile(
+    r"^/edit(?:@\w+)?(?:\s+#?(\d+)(?:\s+(.+))?)?$",
+    re.DOTALL | re.IGNORECASE,
+)
 
 
 @router.message(lambda m: m.text and EDIT_CMD_PATTERN.match(m.text.strip()))
@@ -33,8 +36,10 @@ async def cmd_edit(message: Message, bot: Bot) -> None:
     if reminder_id_str is None:
         await message.answer(
             "Формат:\n"
-            "<code>/edit 3 через 2 часа новый текст</code>\n\n"
-            "Или нажми ✏️ в списке /list",
+            "<code>/edit 24</code> — затем новая фраза\n"
+            "<code>/edit 24 через 2 часа новый текст</code>\n\n"
+            "В группе кнопки ✏️ нет — только команды.\n"
+            "В личке: ✏️ в /list",
             reply_markup=menu_keyboard_for_chat(message.chat.id),
         )
         return

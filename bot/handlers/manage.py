@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 
 from aiogram import Bot, F, Router
@@ -14,8 +15,9 @@ from bot.db.repository import (
     deactivate_all_chat_reminders,
     get_active_chat_reminders,
     get_or_create_user,
+    get_reminder,
 )
-from bot.keyboards.inline import clear_confirm_keyboard
+from bot.keyboards.inline import clear_confirm_keyboard, delete_confirm_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_permissions import can_manage_group_reminders
 from bot.services.export_import import parse_import_item
@@ -27,6 +29,8 @@ from bot.services.reminder_jobs import teardown_reminder_schedule
 from bot.services.scheduler import schedule_reminder
 
 router = Router()
+
+DELETE_CMD_PATTERN = re.compile(r"^/delete(?:@\w+)?(?:\s+#?(\d+))?$", re.IGNORECASE)
 
 
 async def _ops_chat_id(message: Message) -> int:
@@ -66,6 +70,37 @@ async def cmd_export(message: Message) -> None:
 
     file = BufferedInputFile(payload, filename="reminders_export.json")
     await message.answer_document(file)
+
+
+@router.message(lambda m: m.text and DELETE_CMD_PATTERN.match(m.text.strip()))
+async def cmd_delete(message: Message, bot: Bot) -> None:
+    match = DELETE_CMD_PATTERN.match(message.text.strip())
+    reminder_id_str = match.group(1)
+    if reminder_id_str is None:
+        await message.answer(
+            "Формат:\n"
+            "<code>/delete 24</code>\n\n"
+            "Удаляет только <b>твоё</b> напоминание из /list.\n"
+            "В группе кнопки 🗑 нет — используй команду.",
+            reply_markup=menu_keyboard_for_chat(message.chat.id),
+        )
+        return
+
+    reminder_id = int(reminder_id_str)
+
+    async with async_session() as session:
+        reminder = await get_reminder(session, reminder_id)
+        if reminder is None or not reminder.is_active:
+            await message.answer("Напоминание не найдено.")
+            return
+        if reminder.created_by_telegram_id != message.from_user.id:
+            await message.answer("Можно удалять только свои напоминания.")
+            return
+
+    await message.answer(
+        f"🗑 Удалить напоминание #{reminder_id}?\n📝 {reminder.text}",
+        reply_markup=delete_confirm_keyboard(reminder_id),
+    )
 
 
 @router.message(Command("clear"))

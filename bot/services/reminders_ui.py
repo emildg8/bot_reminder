@@ -21,8 +21,9 @@ from bot.services.reminder_history import _day_bounds, _event_label
 LIST_PAGE_SIZE = 8
 
 COLLECTIVE_LIST_HINT = (
-    "\n\n<i>✏️ /edit N — свои · ⏸ /pause · 🕐 /timezone (админы)\n"
-    "Кнопки управления — в личке с ботом.</i>"
+    "\n\n<i>✏️ /edit N · 🗑 /delete N — только свои\n"
+    "⏸ /pause · 🕐 /timezone (админы)\n"
+    "Кнопки ✏️🗑 — в личке с ботом.</i>"
 )
 
 PRIVATE_LIST_HINT = (

@@ -361,9 +361,10 @@ HELP_TEXT_PRIVATE = f"""\
 • каждый день в 9:00 зарядка
 • по будням в 09:00 стендап
 
-<b>Изменить</b>
-• кнопка ✏️ в списке (/list)
+<b>Изменить / удалить</b>
+• кнопки ✏️ 🗑 в /list
 • <code>/edit 3 завтра в 10:00 новый текст</code>
+• <code>/delete 3</code>
 
 <b>Команды</b>
 /start · /list · /history · /journal · /stats · /about
@@ -384,10 +385,14 @@ HELP_TEXT_GROUP = f"""\
 
 💬 <b>Группа обсуждений канала</b> — /remind публикует в канал, confirm в личке.
 
-<b>Команды</b>
-/list · /edit · /pause · /resume · /timezone · /status · /help
+<b>Управление своими</b>
+• <code>/edit 24</code> — изменить
+• <code>/delete 24</code> — удалить (подтверждение кнопкой)
 
-Срабатывание — в группу, кнопки — в личку с ботом."""
+<b>Команды</b>
+/list · /edit · /delete · /pause · /resume · /timezone · /status · /help
+
+Срабатывание — в группу. Кнопки ✏️🗑 — в личке."""
 
 HELP_TEXT_CHANNEL = f"""\
 <b>{BOT_NAME}</b> в канале · v{__version__}

@@ -52,6 +52,32 @@ async def test_edit_button_denied_for_other_user(patched_db):
 
 
 @pytest.mark.asyncio
+async def test_cmd_edit_id_only_starts_session(patched_db):
+    owner_id = 9310
+    reminder = await _seed_reminder(patched_db, owner_id, "тест группы")
+    message = make_message(owner_id)
+    message.text = f"/edit {reminder.id}"
+
+    await cmd_edit(message, make_bot())
+
+    body = message.answer.await_args[0][0]
+    assert f"#{reminder.id}" in body
+    assert pop_edit_pending(owner_id) == reminder.id
+
+
+@pytest.mark.asyncio
+async def test_cmd_edit_hash_id(patched_db):
+    owner_id = 9311
+    reminder = await _seed_reminder(patched_db, owner_id)
+    message = make_message(owner_id)
+    message.text = f"/edit #{reminder.id}"
+
+    await cmd_edit(message, make_bot())
+
+    assert pop_edit_pending(owner_id) == reminder.id
+
+
+@pytest.mark.asyncio
 async def test_cmd_edit_without_args_shows_format(patched_db):
     user_id = 9302
     message = make_message(user_id)
