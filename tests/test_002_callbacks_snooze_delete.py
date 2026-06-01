@@ -12,9 +12,11 @@ from bot.handlers.callbacks import (
     delete_reminder,
     done_reminder,
     snooze_apply,
+    snooze_back,
     snooze_dec,
     snooze_inc,
     snooze_menu,
+    snooze_set_preset,
 )
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
 from tests.callback_helpers import make_callback, patch_scheduler
@@ -183,6 +185,43 @@ async def test_snooze_dec_clamps_at_minimum(patched_db, monkeypatch):
     assert state.minutes == 5
     callback.answer.assert_awaited_with("5 мин")
     clear_picker(user_id)
+
+
+@pytest.mark.asyncio
+async def test_snooze_set_preset_updates_picker(patched_db, monkeypatch):
+    patch_scheduler(monkeypatch)
+    user_id = 9020
+    reminder = await _seed_reminder(patched_db, user_id)
+    set_picker(user_id, reminder.id, 15)
+    callback = make_callback(f"szs:{reminder.id}:60", user_id)
+
+    await snooze_set_preset(callback)
+
+    state = get_picker(user_id, reminder.id)
+    assert state is not None
+    assert state.minutes == 60
+    callback.message.edit_reply_markup.assert_awaited()
+    callback.answer.assert_awaited_with("1 час")
+    clear_picker(user_id)
+
+
+@pytest.mark.asyncio
+async def test_snooze_back_clears_picker_and_shows_actions(patched_db, monkeypatch):
+    patch_scheduler(monkeypatch)
+    user_id = 9021
+    reminder = await _seed_reminder(patched_db, user_id, "вернуться")
+    set_picker(user_id, reminder.id, 30)
+    callback = make_callback(f"szb:{reminder.id}", user_id)
+
+    await snooze_back(callback)
+
+    assert get_picker(user_id, reminder.id) is None
+    body = callback.message.edit_text.await_args[0][0]
+    assert "вернуться" in body
+    markup = callback.message.edit_text.await_args.kwargs["reply_markup"]
+    callbacks = [btn.callback_data for row in markup.inline_keyboard for btn in row]
+    assert f"szm:{reminder.id}" in callbacks
+    assert f"done:{reminder.id}" in callbacks
 
 
 @pytest.mark.asyncio

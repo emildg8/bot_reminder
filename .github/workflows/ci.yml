@@ -30,7 +30,7 @@ jobs:
       - name: Pytest
         env:
           BOT_TOKEN: "0:ci-test-token"
-        run: pytest -v --tb=short --cov=bot --cov-report=term-missing --cov-fail-under=42
+        run: pytest -v --tb=short --cov=bot --cov-report=term-missing --cov-fail-under=45
 
   deploy:
     name: Deploy to Wispbyte

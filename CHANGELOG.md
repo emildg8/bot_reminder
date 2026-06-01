@@ -2,6 +2,13 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.28.0] — 2026-05-31
+
+### Тесты callbacks (snooze preset/back)
+- **szs:** — быстрый preset (60 мин → «1 час»)
+- **szb:** — назад к карточке напоминания, picker сбрасывается
+- Coverage gate в CI: **42% → 45%**
+
 ## [3.27.0] — 2026-05-31
 
 ### Тесты callbacks (del_cancel, snooze ±)

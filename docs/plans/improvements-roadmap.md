@@ -35,6 +35,8 @@
 | 27 | Coverage gate 40% | v3.26 |
 | 28 | del_cancel + snooze ± handler tests | v3.27 |
 | 29 | Coverage gate 42% | v3.27 |
+| 30 | snooze preset/back handler tests | v3.28 |
+| 31 | Coverage gate 45% | v3.28 |
 
 ## Дальше (идеи)
 
