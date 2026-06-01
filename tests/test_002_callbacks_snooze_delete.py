@@ -49,7 +49,10 @@ async def test_delete_reminder_deactivates(patched_db, monkeypatch):
     updated = await get_reminder(patched_db, reminder.id)
     assert updated is not None
     assert updated.is_active is False
-    callback.message.edit_text.assert_awaited_with("🗑 Напоминание удалено.")
+    body = callback.message.edit_text.await_args[0][0]
+    assert "🗑" in body
+    assert f"#{reminder.id}" in body
+    assert "удалить меня" in body
 
 
 @pytest.mark.asyncio
@@ -78,7 +81,7 @@ async def test_delete_denied_for_other_user(patched_db, monkeypatch):
     await delete_reminder(callback, bot)
 
     callback.answer.assert_awaited()
-    assert "доступ" in callback.answer.await_args[0][0].lower()
+    assert "свои" in callback.answer.await_args[0][0].lower()
     updated = await get_reminder(patched_db, reminder.id)
     assert updated.is_active is True
 

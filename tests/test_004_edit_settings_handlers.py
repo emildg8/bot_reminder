@@ -86,7 +86,7 @@ async def test_cmd_edit_without_args_shows_format(patched_db):
     await cmd_edit(message, make_bot())
 
     body = message.answer.await_args[0][0]
-    assert "/edit 3" in body
+    assert "/edit 24" in body
 
 
 @pytest.mark.asyncio
