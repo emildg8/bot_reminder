@@ -30,6 +30,17 @@ def make_callback(data: str, user_id: int, chat_id: int | None = None) -> MagicM
     return callback
 
 
+def make_message(user_id: int, chat_id: int | None = None) -> MagicMock:
+    chat_id = chat_id if chat_id is not None else user_id
+    message = MagicMock()
+    message.from_user.id = user_id
+    message.from_user.username = "tester"
+    message.chat.id = chat_id
+    message.chat.type = "private"
+    message.answer = AsyncMock()
+    return message
+
+
 def patch_scheduler(monkeypatch) -> list:
     scheduled: list[tuple[int, datetime]] = []
 

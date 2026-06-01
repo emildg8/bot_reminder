@@ -41,6 +41,8 @@
 | 33 | Coverage gate 47% | v3.29 |
 | 34 | menu:search/more + search:page tests | v3.30 |
 | 35 | Coverage gate 50% | v3.30 |
+| 36 | menu:help/about + send_search_results E2E | v3.31 |
+| 37 | Coverage gate 52% | v3.31 |
 
 ## Дальше (идеи)
 

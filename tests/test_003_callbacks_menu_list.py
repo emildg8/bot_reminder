@@ -1,14 +1,16 @@
 from datetime import datetime
+from unittest.mock import AsyncMock
 from zoneinfo import ZoneInfo
 
 import pytest
 
 from bot.db.repository import create_reminder, get_or_create_user
 from bot.handlers.list_callbacks import list_noop, list_page, list_tab, search_noop, search_page
-from bot.handlers.menu import menu_home, menu_list, menu_more, menu_search
+from bot.handlers.menu import menu_about, menu_help, menu_home, menu_list, menu_more, menu_search
 from bot.services.drafts import clear_search_pending, pop_search_pending
-from bot.services.search_ui import _store_cache
-from tests.callback_helpers import make_callback
+from bot.services.search_ui import _store_cache, send_search_results
+from bot.version import __version__
+from tests.callback_helpers import make_callback, make_message
 from tests.db_helpers import patched_db
 
 
@@ -127,8 +129,6 @@ async def test_menu_search_sets_pending_and_prompts(patched_db):
 
 @pytest.mark.asyncio
 async def test_menu_more_shows_submenu(patched_db):
-    from unittest.mock import AsyncMock
-
     callback = make_callback("menu:more", 9108)
 
     await menu_more(callback, AsyncMock())
@@ -174,3 +174,50 @@ async def test_search_noop_answers(patched_db):
     await search_noop(callback)
 
     callback.answer.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_menu_help_shows_help_text(patched_db):
+    callback = make_callback("menu:help", 9112)
+
+    await menu_help(callback, AsyncMock())
+
+    body = callback.message.answer.await_args[0][0]
+    assert "голосом" in body
+
+
+@pytest.mark.asyncio
+async def test_menu_about_shows_version(patched_db):
+    callback = make_callback("menu:about", 9113)
+
+    await menu_about(callback)
+
+    body = callback.message.answer.await_args[0][0]
+    assert __version__ in body
+
+
+@pytest.mark.asyncio
+async def test_send_search_results_finds_matches(patched_db):
+    user_id = 9114
+    await _seed_reminder(patched_db, user_id, "купить хлеб")
+    await _seed_reminder(patched_db, user_id, "позвонить маме")
+    message = make_message(user_id)
+
+    await send_search_results(message, "купить")
+
+    body = message.answer.await_args[0][0]
+    assert "Найдено: 1" in body
+    assert "купить" in body
+    assert message.answer.await_args.kwargs.get("reply_markup") is not None
+
+
+@pytest.mark.asyncio
+async def test_send_search_results_empty(patched_db):
+    user_id = 9115
+    await _seed_reminder(patched_db, user_id, "только это")
+    message = make_message(user_id)
+
+    await send_search_results(message, "нет такого")
+
+    body = message.answer.await_args[0][0]
+    assert "ничего не найдено" in body.lower()

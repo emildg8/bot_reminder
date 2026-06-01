@@ -1,10 +1,12 @@
-# Telegram-бот напоминалка · v3.30
+# Telegram-бот напоминалка · v3.31
 
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 
 Бот-ежедневник для Telegram: напоминания текстом, голосом или кружочком. Личка, группы и каналы.
 
+> **v3.31** — menu:help/about + send_search_results E2E; coverage gate 52%.
+>
 > **v3.30** — handler-тесты menu:search/more и search:page; coverage gate 50%.
 >
 > **v3.29** — handler-тесты menu/list (7 сценариев); coverage gate 47%.

@@ -2,6 +2,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.31.0] — 2026-05-31
+
+### Тесты menu help/about и search E2E
+- **menu:help** — текст справки (личка)
+- **menu:about** — версия бота в ответе
+- **send_search_results** — совпадения и пустой результат
+- `make_message` в callback_helpers
+- Coverage gate в CI: **50% → 52%**
+
 ## [3.30.0] — 2026-05-31
 
 ### Тесты menu search/more и search pagination
