@@ -55,7 +55,7 @@ ruff check bot tests
 
 ```bash
 python scripts/verify_ops.py
-# → verify_ops OK · v3.39.2
+# → verify_ops OK · v3.39.3
 ```
 
 ## Локально как в CI

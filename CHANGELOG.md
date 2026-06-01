@@ -4,6 +4,11 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.39.3] — 2026-06-02
+
+### Fix
+- `verify_ops` / `doc_metrics`: `pytest --collect-only` с `BOT_TOKEN` (CI без env падал на collect)
+
 ## [3.39.2] — 2026-06-02
 
 ### Docs / CI

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+# collect-only импортирует handlers → Settings(); как в CI pytest
+_COLLECT_ENV = {**os.environ, "BOT_TOKEN": os.environ.get("BOT_TOKEN", "0:ci-test-token")}
 
 # (путь относительно root, regex с одной группой — число тестов)
 DOC_TEST_COUNT_CHECKS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -26,6 +30,7 @@ def pytest_collect_count(root: Path, *, timeout: float = 120.0) -> int:
         text=True,
         timeout=timeout,
         check=False,
+        env=_COLLECT_ENV,
     )
     combined = (proc.stdout or "") + (proc.stderr or "")
     match = re.search(r"(\d+) tests? collected", combined)
