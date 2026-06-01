@@ -9,7 +9,7 @@
 ## Test plan
 
 - [ ] `make lint`
-- [ ] `make test` (coverage ≥55%)
+- [ ] `make test` (coverage ≥65%)
 - [ ] Ручная проверка в Telegram (если UX)
 
 ## Version

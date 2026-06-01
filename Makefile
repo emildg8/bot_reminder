@@ -3,7 +3,7 @@
 help:
 	@echo "bot_reminder — make targets:"
 	@echo "  install-dev  pip install requirements-dev.txt"
-	@echo "  test         pytest with coverage gate 55%%"
+	@echo "  test         pytest with coverage gate 65%%"
 	@echo "  lint         ruff check"
 	@echo "  verify       ops artifacts check"
 	@echo "  migrate      alembic upgrade head"
@@ -26,7 +26,7 @@ install-dev:
 	pip install -r requirements-dev.txt
 
 test:
-	python -m pytest -v
+	python -m pytest -v --cov=bot --cov-fail-under=65
 
 lint:
 	ruff check bot tests

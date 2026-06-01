@@ -3,7 +3,7 @@
 [![CI](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml/badge.svg)](https://github.com/emildg8/bot_reminder/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/emildg8/bot_reminder?label=release)](https://github.com/emildg8/bot_reminder/releases)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Coverage ≥55%](https://img.shields.io/badge/coverage-≥55%25-green.svg)](.github/workflows/ci.yml)
+[![Coverage ≥65%](https://img.shields.io/badge/coverage-≥65%25-green.svg)](.github/workflows/ci.yml)
 
 **Версия:** [v3.38.0](CHANGELOG.md) · **340+ тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
 
@@ -171,7 +171,7 @@ python scripts/restore_db.py data/backups/reminders_YYYYMMDD_HHMMSS.db
 
 ```bash
 make install-dev   # зависимости
-make test          # pytest, coverage ≥55%
+make test          # pytest, coverage ≥65% (см. docs/guides/quality-metrics.md)
 make lint          # ruff
 make run           # python -m bot.main
 make backup        # ручной бэкап БД

@@ -17,6 +17,7 @@
 |----------|------|
 | [guides/groups-and-channels.md](guides/groups-and-channels.md) | Группы, каналы, Group Privacy |
 | [guides/ops-checklist.md](guides/ops-checklist.md) | Чеклист после деплоя |
+| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты, coverage, ruff, verify_ops |
 
 ## Планы и аудит
 

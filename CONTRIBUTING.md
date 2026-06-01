@@ -18,14 +18,14 @@ cp .env.example .env
 
 ```bash
 make lint          # ruff check bot tests
-make test          # pytest, coverage ≥55%
+make test          # pytest, coverage ≥65%
 ```
 
 Или вручную:
 
 ```bash
 ruff check bot tests
-pytest -v --cov=bot --cov-fail-under=55
+pytest -v --cov=bot --cov-fail-under=65
 ```
 
 ## Стиль кода
@@ -34,7 +34,7 @@ pytest -v --cov=bot --cov-fail-under=55
 - **Ruff** (E, F, B) — конфиг в `pyproject.toml`
 - Handlers — тонкие; логика в `bot/services/`
 - Комментарии — только для неочевидной бизнес-логики
-- Тесты — осмысленные сценарии, не ради coverage
+- Тесты — осмысленные сценарии, не ради coverage (см. [quality-metrics.md](docs/guides/quality-metrics.md))
 
 ## Структура тестов
 
