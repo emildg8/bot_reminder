@@ -2,17 +2,18 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.40.3)
+## Оценка текущего состояния (v3.42.1)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
 | NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
-| Группы / collective | 10/10 | assignee, /delete yes; **v3.41:** inline ✏️🗑 своих |
-| Admin | 9/10 | v3.40 панель; audit in-memory |
+| Группы / collective | 10/10 | assignee, inline ✏️🗑 своих |
+| Admin | 10/10 | audit + broadcast draft в БД |
+| Pro / Stars | 9/10 | код готов; включение на проде — ops |
 | Тесты | 9/10 | 428 тестов, gate 65% |
-| CI | 9/10 | green v3.40.3; release = CI в v3.41 |
-| Docs | 9/10 | phase2 plan, admin-mode |
-| Ops | 7/10 | Wispbyte — ручной чеклист |
+| CI | 10/10 | green v3.42.1; release = lint CI |
+| Docs | 9/10 | phase2 закрыт, postgres-backup |
+| Ops | 7/10 | Wispbyte — ручной чеклист (волна J) |
 
 **Phase 2:** [improvements-plan-phase2.md](improvements-plan-phase2.md)
 

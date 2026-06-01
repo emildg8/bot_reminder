@@ -179,6 +179,6 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ## 7. Итог (июнь 2026)
 
-**Актуально (v3.40.0):** roadmap A–E + F1–F2 + **F3.0 assignee** закрыты. CI: lint-and-test, **428** тестов, coverage **≥65%**, `verify_ops`, deploy skip без secrets, release workflow на тегах.
+**Актуально (v3.42.1):** roadmap A–E + F + G + **H/I phase2** закрыты в коде. CI: lint-and-test + Release **green**, **428** тестов, coverage **≥65%**, `verify_ops`, pre-commit.
 
-**Дальше:** ops на Wispbyte ([ops-checklist](../guides/ops-checklist.md)) и backlog F3.2+ (Stars, pg_dump, inline в группах).
+**Дальше:** ops на Wispbyte ([ops-checklist](../guides/ops-checklist.md)) — smoke, Stars, `/ping` v3.42.1. Backlog phase 3: coverage scheduler, e2e Stars.

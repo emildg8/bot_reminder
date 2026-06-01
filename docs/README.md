@@ -21,6 +21,7 @@
 | [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (428), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
+| [guides/postgres-backup.md](guides/postgres-backup.md) | Бэкап PostgreSQL, cron |
 
 ## Планы и аудит
 
@@ -37,7 +38,8 @@
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
-- [releases/v3.42.1.md](releases/v3.42.1.md) — Stars, audit DB, broadcast draft
+- [releases/v3.42.1.md](releases/v3.42.1.md) — patch CI
+- [releases/v3.42.0.md](releases/v3.42.0.md) — Stars, audit DB, broadcast draft
 - [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee (F3.0) закрыт
 
 ## CI / GitHub
