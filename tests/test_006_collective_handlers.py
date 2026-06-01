@@ -1,6 +1,4 @@
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
-from zoneinfo import ZoneInfo
 
 import pytest
 from aiogram.enums import ChatType
@@ -9,7 +7,6 @@ from bot.db.repository import get_or_create_user
 from bot.handlers.create import cmd_remind
 from bot.handlers.group_menu import gmenu_legacy
 from tests.callback_helpers import make_bot, make_callback, patch_create_flow, patch_scheduler
-from tests.db_helpers import patched_db
 
 
 def _group_message(user_id: int, text: str) -> MagicMock:

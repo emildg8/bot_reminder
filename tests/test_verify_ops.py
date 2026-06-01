@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from scripts.verify_ops import ROOT, _read_version, main
 

@@ -34,7 +34,7 @@ from bot.keyboards.reply import (
 )
 from bot.services.drafts import clear_edit_pending, clear_search_pending, set_search_pending
 from bot.services.reminders_ui import send_active_reminders
-from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, tz_scope_label
+from bot.services.chat_ctx import chat_kind_from_chat, tz_scope_label
 from bot.services.chat_status import build_status_text
 from bot.services.pending_tasks import clear_pending_task, pop_pending_task
 from bot.services.nlp.ambiguous_time import phrase_from_ambiguous_choice, phrase_from_day_only_choice

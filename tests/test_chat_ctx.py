@@ -3,18 +3,14 @@ from aiogram.enums import ChatType
 from bot.services.chat_ctx import (
     ChatKind,
     chat_kind_from_id,
-    chat_kind_from_type,
     collective_noun,
     collective_place_label,
     is_channel,
     is_collective_chat,
-    is_group_like,
     is_private_chat,
     tz_scope_label,
 )
 from bot.texts.messages import (
-    HELP_TEXT_CHANNEL,
-    HELP_TEXT_GROUP,
     collective_created_suffix,
     format_channel_welcome,
     format_collective_confirm_prefix,

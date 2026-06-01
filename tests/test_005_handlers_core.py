@@ -9,7 +9,6 @@ from bot.handlers.health import cmd_health, cmd_ping
 from bot.handlers.manage import clear_confirm, cmd_clear
 from bot.handlers.search import cmd_search
 from tests.callback_helpers import make_bot, make_callback, make_message, patch_create_flow, patch_scheduler
-from tests.db_helpers import patched_db
 
 
 async def _seed_reminder(session, user_id: int, text: str = "активное"):
@@ -103,7 +102,7 @@ async def test_cmd_clear_shows_confirm(patched_db, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_clear_yes_deactivates(patched_db, monkeypatch):
-    scheduled = patch_scheduler(monkeypatch)
+    patch_scheduler(monkeypatch)
     user_id = 9406
     await _seed_reminder(patched_db, user_id, "удалить все")
     callback = make_callback("clear:yes", user_id)

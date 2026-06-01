@@ -20,7 +20,6 @@ from bot.handlers.callbacks import (
 )
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
 from tests.callback_helpers import make_callback, patch_scheduler
-from tests.db_helpers import patched_db
 
 
 async def _seed_reminder(session, user_id: int, text: str = "отложить"):

@@ -17,7 +17,7 @@ from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.ambiguous_prompt import offer_ambiguous_time_choice
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
-from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
+from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
 from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
 
 router = Router()

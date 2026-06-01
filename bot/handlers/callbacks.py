@@ -54,7 +54,7 @@ from bot.services.channel_schedule import (
     setup_channel_telegram_schedule,
 )
 from bot.services.reminder_jobs import cancel_reminder_job, teardown_reminder_schedule
-from bot.services.scheduler import schedule_reminder, scheduler
+from bot.services.scheduler import schedule_reminder
 
 logger = logging.getLogger(__name__)
 

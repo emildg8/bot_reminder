@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.34**.
+Оглавление проекта **v3.37** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -22,7 +22,8 @@
 
 | Документ | Тема |
 |----------|------|
-| [plans/product-audit-2026.md](plans/product-audit-2026.md) | Оценка продукта, план до v1.0 |
+| [v1.0-final-status.md](v1.0-final-status.md) | **Финальный статус v1.0** — проверки, ops |
+| [plans/product-audit-2026.md](plans/product-audit-2026.md) | Оценка продукта, roadmap A–E |
 | [plans/improvements-roadmap.md](plans/improvements-roadmap.md) | Roadmap улучшений v3.16+ |
 | [plans/groups-channels.md](plans/groups-channels.md) | Архитектура collective |
 | [plans/groups-phase5-ux.md](plans/groups-phase5-ux.md) | UX групп (фаза 5) |

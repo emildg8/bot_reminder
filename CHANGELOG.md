@@ -4,6 +4,11 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.37.1] — 2026-06-01
+
+### CI / lint
+- Ruff: автофикс unused imports, CI green
+
 ## [3.37.0] — 2026-05-31
 
 ### Infra (roadmap E complete)

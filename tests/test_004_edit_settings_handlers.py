@@ -9,7 +9,6 @@ from bot.handlers.settings import cycle_step, menu_settings, set_presets_std
 from bot.services.drafts import clear_edit_pending, pop_edit_pending
 from bot.services.user_prefs import get_snooze_presets, get_snooze_step
 from tests.callback_helpers import make_bot, make_callback, make_message
-from tests.db_helpers import patched_db
 
 
 async def _seed_reminder(session, user_id: int, text: str = "редактировать"):

@@ -25,7 +25,7 @@ from bot.db.repository import (
 from bot.keyboards.inline import reminder_actions_keyboard
 from bot.services.reminder_utils import advance_reminder, ensure_future_run_at, local_run_at
 from bot.services.telegram_format import format_reminder_message
-from bot.services.chat_ctx import ChatKind, is_group_chat
+from bot.services.chat_ctx import is_group_chat
 from bot.texts.messages import format_dm_failed_in_group, format_collective_dm_fired
 
 logger = logging.getLogger(__name__)

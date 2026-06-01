@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock
 
 import pytest
-from aiogram.enums import ChatType
 from aiogram.types import InlineKeyboardMarkup
 
 from bot.services.chat_ctx import ChatKind

@@ -3,7 +3,7 @@
 import re
 
 from bot.config import settings
-from bot.services.chat_ctx import ChatKind, collective_noun, collective_place_label, is_group_chat
+from bot.services.chat_ctx import ChatKind, collective_noun
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 

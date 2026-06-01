@@ -3,7 +3,6 @@ import pytest
 from bot.config import settings
 from bot.db.repository import create_reminder, get_or_create_user, set_user_pro
 from bot.services.subscription import can_add_reminder, format_limit_reached, is_pro_user
-from tests.db_helpers import patched_db
 
 
 @pytest.mark.asyncio

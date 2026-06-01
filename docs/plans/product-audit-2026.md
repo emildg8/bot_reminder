@@ -176,8 +176,8 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ---
 
-## 7. Рекомендация
+## 7. Итог (июнь 2026)
 
-**Не добавлять фичи** до закрытия B + D. Бот уже функционален; риск — регрессии в create/manage и ops на Wispbyte.
+Roadmap **A–E закрыт** в v3.37.0. CI: lint + 337 тестов + coverage ≥55% + verify_ops.
 
-**Следующий коммит пользователю:** v3.33 — bugfix + smoke + edit/settings tests + этот аудит.
+**Дальше:** только ops на Wispbyte (чеклист) и опциональный backlog (Stars, pg_dump).

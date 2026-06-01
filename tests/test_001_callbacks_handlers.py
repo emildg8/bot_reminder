@@ -14,7 +14,6 @@ from bot.handlers.callbacks import (
 )
 from bot.services.drafts import get_draft, store_draft
 from tests.callback_helpers import make_callback, once_parsed, patch_scheduler
-from tests.db_helpers import patched_db
 
 
 @pytest.mark.asyncio

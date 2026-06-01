@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from aiogram.enums import ChatMemberStatus, ChatType
+from aiogram.enums import ChatMemberStatus
 
 from bot.services.mention_resolve import is_user_in_chat, resolve_mention_user_id
 

@@ -4,7 +4,6 @@ from bot.db.repository import complete_user_onboarding, get_or_create_user
 from bot.handlers.start import onboarding_callback, cmd_start
 from bot.services.onboarding import onboarding_step_text
 from tests.callback_helpers import make_bot, make_callback, make_message, patch_create_flow
-from tests.db_helpers import patched_db
 
 
 @pytest.mark.asyncio

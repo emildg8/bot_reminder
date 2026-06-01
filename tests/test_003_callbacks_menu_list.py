@@ -23,7 +23,6 @@ from bot.services.drafts import clear_search_pending, pop_search_pending
 from bot.services.search_ui import _store_cache, send_search_results
 from bot.version import __version__
 from tests.callback_helpers import make_bot, make_callback, make_message
-from tests.db_helpers import patched_db
 
 
 async def _seed_reminder(session, user_id: int, text: str = "напоминание"):
