@@ -210,6 +210,52 @@ def normalize_spaced_time(text: str) -> str:
     return text
 
 
+def _compact_hhmm_to_colon(digits: str) -> str | None:
+    if len(digits) == 3:
+        hour, minute = int(digits[0]), int(digits[1:])
+    elif len(digits) == 4:
+        hour, minute = int(digits[:2]), int(digits[2:])
+    else:
+        return None
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        return None
+    return f"{hour}:{minute:02d}"
+
+
+def normalize_compact_hhmm(text: str) -> str:
+    """«сегодня в 1430», «в 930» → «сегодня в 14:30», «в 9:30» (без двоеточия)."""
+
+    def repl_v(match: re.Match) -> str:
+        colon = _compact_hhmm_to_colon(match.group("t"))
+        return f"в {colon}" if colon else match.group(0)
+
+    def repl_day_v(match: re.Match) -> str:
+        colon = _compact_hhmm_to_colon(match.group("t"))
+        if not colon:
+            return match.group(0)
+        return f"{match.group('day')} в {colon}"
+
+    def repl_day(match: re.Match) -> str:
+        colon = _compact_hhmm_to_colon(match.group("t"))
+        if not colon:
+            return match.group(0)
+        return f"{match.group('day')} {colon}"
+
+    text = re.sub(
+        r"\b(?P<day>сегодня|завтра|послезавтра|после\s+завтра)\s+в\s+(?P<t>\d{3,4})\b",
+        repl_day_v,
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"\b(?P<day>сегодня|завтра|послезавтра|после\s+завтра)\s+(?P<t>\d{3,4})\b",
+        repl_day,
+        text,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(r"\bв\s+(?P<t>\d{3,4})\b", repl_v, text, flags=re.IGNORECASE)
+
+
 def normalize_spoken_zero_time(text: str) -> str:
     def repl(match: re.Match) -> str:
         hour_value = _parse_hour_token(match.group(1))
@@ -341,6 +387,7 @@ def normalize_phrase(text: str) -> str:
         flags=re.IGNORECASE,
     )
     text = normalize_time_dots(text)
+    text = normalize_compact_hhmm(text)
     text = normalize_spaced_time(text)
     text = normalize_spoken_zero_time(text)
     text = normalize_k_time(text)

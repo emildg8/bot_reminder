@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥55%](https://img.shields.io/badge/coverage-≥55%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.37.1](CHANGELOG.md) · **337 тестов** · **v1.0 complete** · [статус](docs/v1.0-final-status.md)
+**Версия:** [v3.37.2](CHANGELOG.md) · **337 тестов** · **v1.0 complete** · [статус](docs/v1.0-final-status.md)
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 

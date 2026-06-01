@@ -27,6 +27,38 @@ def test_segodnya():
     assert "ужин" in parsed.text.lower()
 
 
+def test_normalize_compact_hhmm():
+    assert "14:30" in normalize_phrase("сегодня в 1430")
+    assert "9:30" in normalize_phrase("в 930")
+
+
+def test_segodnya_v_1430_compact():
+    parsed = parse_absolute_datetime(
+        "написать егору в вацапе сегодня в 1430",
+        "Europe/Moscow",
+    )
+    assert parsed is not None
+    assert parsed.kind == "once"
+    assert parsed.run_at.hour == 14
+    assert parsed.run_at.minute == 30
+    assert "егор" in parsed.text.lower()
+    assert "вацап" in parsed.text.lower()
+    assert "1430" not in parsed.text
+    assert "14:30" not in parsed.text
+
+
+def test_segodnya_v_1430_rule_parser():
+    from bot.services.nlp.rule_parser import parse_with_rules
+
+    parsed = parse_with_rules(
+        "Написать егору в вацапе сегодня в 1430",
+        "Europe/Moscow",
+    )
+    assert parsed is not None
+    assert parsed.run_at.hour == 14
+    assert parsed.run_at.minute == 30
+
+
 def test_poslezavtra():
     parsed = parse_absolute_datetime("послезавтра в 10:00 созвон", "Europe/Moscow")
     assert parsed is not None
