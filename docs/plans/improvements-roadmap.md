@@ -43,12 +43,15 @@
 | 35 | Coverage gate 50% | v3.30 |
 | 36 | menu:help/about + send_search_results E2E | v3.31 |
 | 37 | Coverage gate 52% | v3.31 |
+| 38 | menu:examples/status/timezone handler tests | v3.32 |
+| 39 | Coverage gate 55%, handler callback roadmap ✅ | v3.32 |
 
 ## Дальше (идеи)
 
 | # | Улучшение | Impact | Effort |
 |---|-----------|--------|--------|
-| B | Поднять coverage gate постепенно | low | ongoing |
+| B | Поднять coverage gate дальше (edit/settings handlers) | low | ongoing |
+| E | Group-варианты menu callbacks (gmenu, collective) | low | medium |
 
 ## Отменено / не актуально
 

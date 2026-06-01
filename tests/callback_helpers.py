@@ -41,6 +41,15 @@ def make_message(user_id: int, chat_id: int | None = None) -> MagicMock:
     return message
 
 
+def make_bot(*, username: str = "testbot", bot_id: int = 1) -> AsyncMock:
+    bot = AsyncMock()
+    me = AsyncMock()
+    me.username = username
+    me.id = bot_id
+    bot.get_me = AsyncMock(return_value=me)
+    return bot
+
+
 def patch_scheduler(monkeypatch) -> list:
     scheduled: list[tuple[int, datetime]] = []
 

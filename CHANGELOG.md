@@ -2,6 +2,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.32.0] — 2026-05-31
+
+### Тесты menu examples/status (закрытие handler-roadmap)
+- **menu:examples / ex:** — picker, confirm-черновик, alert при неверном idx
+- **menu:status** — счётчик активных + версия
+- **menu:timezone** — клавиатура TZ
+- `make_bot`, patched_db для create/chat_status
+- Coverage gate в CI: **52% → 55%** (факт ~56%)
+
 ## [3.31.0] — 2026-05-31
 
 ### Тесты menu help/about и search E2E

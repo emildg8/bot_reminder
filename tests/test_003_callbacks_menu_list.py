@@ -6,11 +6,23 @@ import pytest
 
 from bot.db.repository import create_reminder, get_or_create_user
 from bot.handlers.list_callbacks import list_noop, list_page, list_tab, search_noop, search_page
-from bot.handlers.menu import menu_about, menu_help, menu_home, menu_list, menu_more, menu_search
+from bot.handlers.menu import (
+    example_picked,
+    menu_about,
+    menu_examples,
+    menu_help,
+    menu_home,
+    menu_list,
+    menu_more,
+    menu_search,
+    menu_status,
+    menu_timezone,
+)
+from bot.texts.messages import EXAMPLES_INTRO
 from bot.services.drafts import clear_search_pending, pop_search_pending
 from bot.services.search_ui import _store_cache, send_search_results
 from bot.version import __version__
-from tests.callback_helpers import make_callback, make_message
+from tests.callback_helpers import make_bot, make_callback, make_message
 from tests.db_helpers import patched_db
 
 
@@ -221,3 +233,77 @@ async def test_send_search_results_empty(patched_db):
 
     body = message.answer.await_args[0][0]
     assert "ничего не найдено" in body.lower()
+
+
+@pytest.mark.asyncio
+async def test_menu_examples_shows_picker(patched_db):
+    callback = make_callback("menu:examples", 9120)
+
+    await menu_examples(callback, make_bot())
+
+    callback.message.edit_text.assert_awaited_once()
+    assert EXAMPLES_INTRO.split("<")[0].strip() in callback.message.edit_text.await_args[0][0]
+    markup = callback.message.edit_text.await_args.kwargs["reply_markup"]
+    callbacks = [btn.callback_data for row in markup.inline_keyboard for btn in row]
+    assert any(data.startswith("ex:") for data in callbacks)
+
+
+@pytest.mark.asyncio
+async def test_example_picked_shows_confirm(patched_db, monkeypatch):
+    user_id = 9121
+    monkeypatch.setattr(
+        "bot.handlers.create.resolve_mention_user_id",
+        AsyncMock(return_value=None),
+    )
+    callback = make_callback("ex:5", user_id)
+
+    await example_picked(callback, make_bot())
+
+    callback.message.answer.assert_awaited()
+    body = callback.message.answer.await_args[0][0]
+    assert "таблетки" in body
+    markup = callback.message.answer.await_args.kwargs.get("reply_markup")
+    assert markup is not None
+    confirm_buttons = [
+        btn.callback_data
+        for row in markup.inline_keyboard
+        for btn in row
+        if btn.callback_data and btn.callback_data.startswith("confirm:")
+    ]
+    assert confirm_buttons
+
+
+@pytest.mark.asyncio
+async def test_example_invalid_shows_alert(patched_db):
+    callback = make_callback("ex:999", 9122)
+
+    await example_picked(callback, make_bot())
+
+    callback.answer.assert_awaited()
+    alert = callback.answer.await_args.kwargs.get("text") or callback.answer.await_args[0][0]
+    assert "не найден" in alert.lower()
+
+
+@pytest.mark.asyncio
+async def test_menu_status_shows_active_count(patched_db):
+    user_id = 9123
+    await _seed_reminder(patched_db, user_id, "для статуса")
+    callback = make_callback("menu:status", user_id)
+
+    await menu_status(callback, make_bot())
+
+    body = callback.message.answer.await_args[0][0]
+    assert "Статус" in body
+    assert "Активных: <b>1</b>" in body
+    assert __version__ in body
+
+
+@pytest.mark.asyncio
+async def test_menu_timezone_shows_keyboard(patched_db):
+    callback = make_callback("menu:timezone", 9124)
+
+    await menu_timezone(callback, make_bot())
+
+    body = callback.message.answer.await_args[0][0]
+    assert "Часовой пояс" in body
+    assert callback.message.answer.await_args.kwargs.get("reply_markup") is not None
