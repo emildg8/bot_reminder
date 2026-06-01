@@ -2,6 +2,13 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.27.0] — 2026-05-31
+
+### Тесты callbacks (del_cancel, snooze ±)
+- **del_cancel** — отмена удаления, кнопка «К списку»
+- **sz+ / sz-** — шаг ±15 мин, clamp на минимум 5 мин
+- Coverage gate в CI: **40% → 42%**
+
 ## [3.26.0] — 2026-05-31
 
 ### Тесты callbacks (snooze/delete)

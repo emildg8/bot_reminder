@@ -33,6 +33,8 @@
 | 25 | Handler tests callbacks (confirm/edit/done) | v3.25 |
 | 26 | Snooze/delete handler tests | v3.26 |
 | 27 | Coverage gate 40% | v3.26 |
+| 28 | del_cancel + snooze ± handler tests | v3.27 |
+| 29 | Coverage gate 42% | v3.27 |
 
 ## Дальше (идеи)
 
