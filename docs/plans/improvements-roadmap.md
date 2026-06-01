@@ -45,13 +45,18 @@
 | 37 | Coverage gate 52% | v3.31 |
 | 38 | menu:examples/status/timezone handler tests | v3.32 |
 | 39 | Coverage gate 55%, handler callback roadmap ✅ | v3.32 |
+| 40 | Fix main/admin imports + smoke tests | v3.33 |
+| 41 | Edit/settings handler tests | v3.33 |
+| 42 | Product audit + plan to v1.0 | v3.33 |
 
-## Дальше (идеи)
+## Дальше (из аудита `docs/plans/product-audit-2026.md`)
 
-| # | Улучшение | Impact | Effort |
-|---|-----------|--------|--------|
-| B | Поднять coverage gate дальше (edit/settings handlers) | low | ongoing |
-| E | Group-варианты menu callbacks (gmenu, collective) | low | medium |
+| Фаза | Задача | Effort |
+|------|--------|--------|
+| **B** | create text handler, /search, health/ping, manage pause/clear | ~6 ч |
+| **C** | collective gmenu legacy, group /remind E2E | ~3 ч |
+| **D** | Ops checklist Wispbyte (startup, dismiss, privacy) | ops |
+| **E** | Alembic, PostgreSQL, onboarding — backlog | optional |
 
 ## Отменено / не актуально
 

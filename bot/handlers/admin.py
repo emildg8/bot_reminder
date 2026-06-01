@@ -10,6 +10,7 @@ from bot.services.auto_update import force_update, schedule_process_restart
 from bot.services.bot_avatar import ensure_bot_avatar
 from bot.services.deploy_info import format_deploy_line
 from bot.services.media import describe_stt_backends, is_ffmpeg_available
+from bot.services.runtime import format_uptime, uptime_seconds
 from bot.services.bot_privacy import format_group_privacy_status
 from bot.services.scheduler import count_scheduled_reminder_jobs
 from bot.version import __version__

@@ -2,6 +2,14 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).
 
+## [3.33.0] — 2026-05-31
+
+### Стабильность и аудит продукта
+- **Fix:** missing imports в `main.py` (`write_heartbeat`, `exit_for_restart`) и `admin.py` (`format_uptime`)
+- **Smoke tests** — импорт `bot.main`, startup helpers
+- **Handler tests** — edit button, `/edit` hint, settings presets/step
+- **Аудит:** `docs/plans/product-audit-2026.md` — оценка, план v1.0, оптимизация ресурсов
+
 ## [3.32.0] — 2026-05-31
 
 ### Тесты menu examples/status (закрытие handler-roadmap)
