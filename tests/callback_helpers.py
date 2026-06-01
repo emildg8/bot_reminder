@@ -71,3 +71,10 @@ def patch_scheduler(monkeypatch) -> list:
     monkeypatch.setattr("bot.handlers.callbacks.menu_keyboard_for_chat", lambda _chat_id: None)
     monkeypatch.setattr("bot.handlers.callbacks.safe_callback_answer", AsyncMock())
     return scheduled
+
+
+def patch_create_flow(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "bot.handlers.create.resolve_mention_user_id",
+        AsyncMock(return_value=None),
+    )

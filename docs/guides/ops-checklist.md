@@ -2,6 +2,13 @@
 
 Выполни один раз после деплоя или смены сервера.
 
+## Проверка репозитория (локально / CI)
+
+```bash
+make verify
+# или: python scripts/verify_ops.py
+```
+
 ## Wispbyte / VPS
 
 - [ ] **Startup command:** `bash start.sh` (не `pip install bot`!)
@@ -23,7 +30,7 @@
 
 ## Проверка после деплоя
 
-- [ ] `/ping` → `✅ Бот работает · v3.34.0 · …`
+- [ ] `/ping` → `✅ Бот работает · v3.35.0 · …`
 - [ ] `/sysinfo` → ffmpeg/STT/deploy sha
 - [ ] Личка: «через 5 минут тест» → confirm → срабатывание
 - [ ] Группа: `/remind@бот через 10 минут тест` → confirm в личку

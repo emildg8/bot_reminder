@@ -49,15 +49,16 @@
 | 41 | Edit/settings handler tests | v3.33 |
 | 42 | Product audit + plan to v1.0 | v3.33 |
 | 43 | Documentation refresh (README, guides, GitHub) | v3.34 |
+| 44 | Phases B–D + Pro MVP, v1.0-ready | v3.35 |
 
-## Дальше (из аудита `docs/plans/product-audit-2026.md`)
+## Дальше (backlog E)
 
-| Фаза | Задача | Effort |
-|------|--------|--------|
-| **B** | create text handler, /search, health/ping, manage pause/clear | ~6 ч |
-| **C** | collective gmenu legacy, group /remind E2E | ~3 ч |
-| **D** | Ops checklist Wispbyte (startup, dismiss, privacy) | ops |
-| **E** | Alembic, PostgreSQL, onboarding — backlog | optional |
+| # | Задача |
+|---|--------|
+| E1 | Alembic migrations |
+| E2 | PostgreSQL / multi-instance |
+| E3 | Guided onboarding /start |
+| E4 | Telegram Stars оплата Pro |
 
 ## Отменено / не актуально
 

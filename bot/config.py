@@ -77,6 +77,12 @@ class Settings(BaseSettings):
     auto_update_enabled: bool = True
     auto_update_interval_minutes: int = 1
 
+    free_active_limit: int = 20
+    pro_contact_hint: str = (
+        "Напиши админу бота или открой issue: "
+        "github.com/emildg8/bot_reminder"
+    )
+
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod
     def parse_admin_telegram_ids(cls, value: Any) -> list[int]:

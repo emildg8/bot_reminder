@@ -56,6 +56,10 @@ async def init_db() -> None:
                 await conn.execute(
                     text("ALTER TABLE users ADD COLUMN snooze_step INTEGER DEFAULT 15")
                 )
+            if "is_pro" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN is_pro BOOLEAN DEFAULT 0")
+                )
 
             chat_cols = {
                 row[1]
@@ -318,6 +322,26 @@ async def deactivate_reminder(session: AsyncSession, reminder: Reminder) -> None
 async def get_user_by_telegram_id(session: AsyncSession, telegram_id: int) -> User | None:
     result = await session.execute(select(User).where(User.telegram_id == telegram_id))
     return result.scalar_one_or_none()
+
+
+async def count_active_reminders_for_user(session: AsyncSession, telegram_id: int) -> int:
+    result = await session.execute(
+        select(Reminder).where(
+            Reminder.created_by_telegram_id == telegram_id,
+            Reminder.is_active.is_(True),
+        )
+    )
+    return len(list(result.scalars().all()))
+
+
+async def set_user_pro(session: AsyncSession, telegram_id: int, *, is_pro: bool) -> User | None:
+    user = await get_user_by_telegram_id(session, telegram_id)
+    if user is None:
+        return None
+    user.is_pro = is_pro
+    await session.commit()
+    await session.refresh(user)
+    return user
 
 
 async def update_user_snooze_settings(

@@ -2,6 +2,7 @@
 
 import re
 
+from bot.config import settings
 from bot.services.chat_ctx import ChatKind, collective_noun, collective_place_label, is_group_chat
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
@@ -257,6 +258,7 @@ def format_about(version: str = __version__) -> str:
         "• Статистика за месяц\n"
         "• Группы и личные чаты\n"
         "• Отложить с настраиваемыми вариантами\n\n"
+        f"Free: до {settings.free_active_limit} активных · Pro: /subscribe\n\n"
         "Команды: /help · /list · /journal · /stats"
     )
 

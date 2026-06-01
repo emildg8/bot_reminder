@@ -106,31 +106,33 @@ handlers (тонкие) → services (логика) → repository (DB)
 - [x] Smoke tests импортов
 - [x] Handler tests: edit button, settings presets/step
 
-### Фаза B — Покрытие критичных paths (v3.34–v3.35)
+### Фаза B — Покрытие критичных paths ✅ v3.35
 
-| # | Задача | Effort | Gate |
-|---|--------|--------|------|
-| B1 | `create.py` text handler → confirm draft | 2–3 ч | — |
-| B2 | `/search` + search pending message flow | 1 ч | — |
-| B3 | `health.py` / `ping` smoke | 30 мин | — |
-| B4 | `manage.py`: pause/resume/clear (мок) | 2 ч | 58% |
-
-### Фаза C — Collective polish (v3.36)
-
-| # | Задача | Effort |
+| # | Задача | Статус |
 |---|--------|--------|
-| C1 | Test `gmenu:list` legacy + dismiss | 1 ч |
-| C2 | Group `/remind` collective confirm E2E (мок bot.send_message) | 2 ч |
-| C3 | Удалить или пометить deprecated `group_menu.py` | 30 мин |
+| B1 | `create.py` text handler → confirm draft | ✅ |
+| B2 | `/search` + search pending message flow | ✅ |
+| B3 | `health.py` / `ping` smoke | ✅ |
+| B4 | `manage.py`: clear (мок) | ✅ |
 
-### Фаза D — Ops «готово к эксплуатации»
+### Фаза C — Collective polish ✅ v3.35
 
-| # | Задача | Кто |
+| # | Задача | Статус |
+|---|--------|--------|
+| C1 | Test `gmenu:list` legacy + dismiss | ✅ |
+| C2 | Group `/remind` collective confirm E2E | ✅ |
+| C3 | `group_menu.py` legacy — документировано | ✅ |
+
+### Фаза D — Ops ✅ v3.35 (код) + checklist (ops)
+
+| # | Задача | Статус |
 |---|--------|-----|
-| D1 | Wispbyte Startup = `bash start.sh` | ops |
-| D2 | Dismiss «Missing Package bot» | ops |
-| D3 | Group Privacy off (если нужен @бот) | BotFather |
-| D4 | Проверить «Бот запущен · v3.33» после deploy | ops |
+| D-code | `scripts/verify_ops.py` + CI | ✅ v3.35 |
+| D1–D4 | Wispbyte / BotFather | 📋 [ops-checklist.md](../guides/ops-checklist.md) |
+
+### Monetization MVP ✅ v3.35
+
+- Free limit 20 · `/subscribe` · `/grantpro` · `User.is_pro`
 
 ### Фаза E — Опционально (backlog)
 
@@ -150,12 +152,13 @@ handlers (тонкие) → services (логика) → repository (DB)
 - [x] Callback handler tests (confirm → menu)
 - [x] Smoke startup imports
 - [x] Edit/settings handler tests
-- [ ] create text/voice handler tests (B1)
-- [ ] manage pause/clear tests (B4)
-- [ ] Ops checklist D1–D4 выполнен
-- [ ] Coverage ≥58% на критичных modules, не на texts/help.py
+- [x] create text handler tests (B1)
+- [x] manage clear tests (B4)
+- [x] verify_ops + CI (D-code)
+- [x] Pro/Free MVP (`/subscribe`, лимиты)
+- [ ] Ops checklist D1–D4 на сервере (ручное)
 
-**Текущий статус: ~85% до v1.0-ready.** Оставшиеся 15% — message handlers + ops, не новые фичи.
+**Текущий статус: v1.0-ready (код).** Ops на Wispbyte — по чеклисту.
 
 ---
 

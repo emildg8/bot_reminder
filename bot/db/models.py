@@ -33,6 +33,7 @@ class User(Base):
     timezone_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     snooze_presets: Mapped[str] = mapped_column(String(64), default="5,15,30,60,180,240")
     snooze_step: Mapped[int] = mapped_column(Integer, default=15)
+    is_pro: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     reminders: Mapped[list["Reminder"]] = relationship(back_populates="user", cascade="all, delete-orphan")

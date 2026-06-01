@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy import func, select
 
+from bot.config import settings
 from bot.db.models import Reminder, User
 from bot.db.repository import async_session, get_all_active_reminders
 from bot.services.admin_access import is_bot_admin
@@ -65,6 +66,35 @@ async def cmd_setavatar(message: Message, bot: Bot) -> None:
         await message.answer("✅ Аватар обновлён. Проверь профиль бота.")
     except Exception as exc:
         await message.answer(f"❌ Не удалось: {exc}")
+
+
+@router.message(Command("grantpro"))
+async def cmd_grantpro(message: Message) -> None:
+    if not is_bot_admin(message.from_user.id):
+        await message.answer("Команда доступна только администраторам бота.")
+        return
+
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Формат: <code>/grantpro TELEGRAM_ID</code>")
+        return
+
+    try:
+        target_id = int(parts[1].strip())
+    except ValueError:
+        await message.answer("Некорректный id.")
+        return
+
+    from bot.db.repository import get_or_create_user, set_user_pro
+
+    async with async_session() as session:
+        await get_or_create_user(session, target_id, settings.default_timezone)
+        user = await set_user_pro(session, target_id, is_pro=True)
+
+    if user is None:
+        await message.answer("Пользователь не найден.")
+        return
+    await message.answer(f"⭐ Pro выдан пользователю <code>{target_id}</code>.")
 
 
 @router.message(Command("update"))

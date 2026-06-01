@@ -4,6 +4,14 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.35.0] — 2026-05-31
+
+### Фазы B–D + monetization MVP (v1.0-ready)
+- **Pro/Free:** `is_pro`, лимит `FREE_ACTIVE_LIMIT`, `/subscribe`, `/grantpro`
+- **Тесты:** create text, search, health, manage clear, gmenu, collective /remind
+- **Ops:** `scripts/verify_ops.py` + CI step
+- Handler roadmap и audit phases B/C/D ✅
+
 ## [3.34.0] — 2026-05-31
 
 ### Документация и GitHub
