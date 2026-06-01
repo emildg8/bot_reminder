@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥65%](https://img.shields.io/badge/coverage-≥65%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.38.0](CHANGELOG.md) · **340+ тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
+**Версия:** [v3.39.0](CHANGELOG.md) · **360+ тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 
@@ -136,8 +136,9 @@ Discussion grp → /remind из обсуждений → публикация в
 **Важно для групп**
 
 1. **Group Privacy** в BotFather → **Turn off**, если нужен ручной `@бот` (иначе работает только `/remind@бот`).
-2. В группах **нет inline-меню** — только команды и reply-кнопки в личке.
-3. Кнопки «Готово» / «Отложить» в collective-режиме — в **личке** с ботом.
+2. **На участника:** `@user` из списка или **ответ** на сообщение + `/remind` — [гайд](docs/guides/group-assignee.md).
+3. В группах **нет inline-меню** — `/edit N`, `/delete N`; confirm в личке.
+4. Кнопки «Готово» / «Отложить» в collective-режиме — в **личке** с ботом.
 
 Подробнее: [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md)
 
@@ -221,6 +222,7 @@ docs/           # guides, releases, plans
 | [.github/DEPLOY.md](.github/DEPLOY.md) | Деплой и Wispbyte |
 | [docs/plans/product-audit-2026.md](docs/plans/product-audit-2026.md) | Аудит продукта, roadmap до v1.0 |
 | [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md) | Группы, каналы, privacy |
+| [docs/guides/group-assignee.md](docs/guides/group-assignee.md) | Напоминание на участника |
 | [docs/releases/](docs/releases/) | Release notes по версиям |
 
 ---

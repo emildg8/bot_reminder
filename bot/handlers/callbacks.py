@@ -89,7 +89,16 @@ async def _reply_after_create(
 
     if len(created) == 1:
         rid, when, text = created[0]
-        await callback.message.edit_text(format_created(rid, when, text, collective=collective))
+        assignee_kw = {}
+        if entry and entry.mention_provided:
+            assignee_kw = {
+                "mention_user_id": entry.mention_telegram_id,
+                "mention_username": entry.mention_username,
+                "mention_source": entry.mention_source,
+            }
+        await callback.message.edit_text(
+            format_created(rid, when, text, collective=collective, **assignee_kw)
+        )
     else:
         await callback.message.edit_text(format_batch_created(created, collective=collective))
 
@@ -104,6 +113,9 @@ async def _reply_after_create(
                 when=when,
                 text=text,
                 chat_kind=collective,
+                mention_user_id=entry.mention_telegram_id,
+                mention_username=entry.mention_username,
+                mention_source=entry.mention_source,
             )
         else:
             notice = format_collective_batch_notice(
@@ -185,6 +197,8 @@ async def _create_from_draft(
                     callback.from_user.id,
                     parsed_items=entry.parsed_items,
                     mention_telegram_id=entry.mention_telegram_id,
+                    mention_username=entry.mention_username,
+                    mention_source=entry.mention_source,
                     mention_provided=entry.mention_provided,
                     collective_chat_id=entry.collective_chat_id,
                     collective_chat_kind=entry.collective_chat_kind,

@@ -12,13 +12,18 @@ from bot.services.chat_permissions import bot_can_post_reminders, format_bot_can
 from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
-from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
+from bot.services.mention_create import extract_create_mention, mention_was_provided
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.ambiguous_prompt import offer_ambiguous_time_choice
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.reminder_display import format_batch_parsed_summary_html, format_parsed_summary_html
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
-from bot.texts.messages import format_confirm_card, format_parse_fail, looks_like_task_only
+from bot.texts.messages import (
+    format_confirm_card,
+    format_mention_assignee_line,
+    format_parse_fail,
+    looks_like_task_only,
+)
 
 router = Router()
 
@@ -108,23 +113,6 @@ async def process_edit_phrase(message: Message, phrase: str, bot: Bot) -> bool:
     return True
 
 
-def _extract_mention_from_phrase(
-    message: Message,
-    phrase: str,
-    *,
-    bot_username: str | None = None,
-    bot_id: int | None = None,
-) -> tuple[int | None, str | None, str]:
-    if message.text and message.text.strip() == phrase.strip():
-        return extract_mention_from_message(
-            message,
-            bot_username=bot_username,
-            bot_id=bot_id,
-        )
-    username, clean = extract_leading_username(phrase, bot_username)
-    return None, username, clean
-
-
 async def _parse_and_confirm_edit(
     message: Message,
     reminder_id: int,
@@ -134,16 +122,16 @@ async def _parse_and_confirm_edit(
     bot: Bot,
 ) -> None:
     me = await bot.get_me()
-    mention_id, mention_username, clean_text = _extract_mention_from_phrase(
+    mention = extract_create_mention(
         message,
         phrase,
         bot_username=me.username,
         bot_id=me.id,
     )
     mention_telegram_id = await resolve_mention_user_id(
-        bot, mention_id, mention_username, chat_id=message.chat.id
+        bot, mention.user_id, mention.username, chat_id=message.chat.id
     )
-    phrase_text = (clean_text or phrase).strip()
+    phrase_text = mention.phrase
 
     if await offer_ambiguous_time_choice(
         message, phrase_text, user_id, edit_reminder_id=reminder_id
@@ -178,12 +166,12 @@ async def _parse_and_confirm_edit(
         if len(parsed_items) > 1
         else format_parsed_summary_html(parsed_items[0], timezone)
     )
-    prefix = ""
-    if mention_username and not mention_telegram_id:
-        prefix = f"⚠️ @{mention_username} не в этом чате или не найден — упоминание сброшено.\n\n"
-    elif mention_telegram_id:
-        who = f"@{mention_username}" if mention_username else "участнику"
-        prefix = f"👤 Упоминание: {who}\n\n"
+    prefix = format_mention_assignee_line(
+        mention_telegram_id,
+        mention.username,
+        resolved=mention_telegram_id is not None or not mention.username,
+        source=mention.source,
+    )
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
         if delivery_chat_id != message.chat.id:
@@ -191,12 +179,14 @@ async def _parse_and_confirm_edit(
         if not await bot_can_post_reminders(bot, delivery_chat_id):
             prefix += format_bot_cannot_post_hint() + "\n\n"
 
-    mention_provided = bool(mention_username or mention_id)
+    mention_provided = mention_was_provided(mention)
     chat_kind = chat_kind_from_chat(message.chat)
     draft_id = store_draft(
         user_id,
         parsed_items=parsed_items,
         mention_telegram_id=mention_telegram_id,
+        mention_username=mention.username,
+        mention_source=mention.source,
         mention_provided=mention_provided,
         edit_reminder_id=reminder_id,
         collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,

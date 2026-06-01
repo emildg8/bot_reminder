@@ -152,7 +152,6 @@ async def onboarding_callback(callback: CallbackQuery, bot) -> None:
             phrase,
             bot,
             actor_user_id=callback.from_user.id,
-            use_phrase_text=True,
         )
         return
 

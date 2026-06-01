@@ -10,6 +10,11 @@ def strip_telegram_command(text: str) -> str:
     return TELEGRAM_COMMAND_PREFIX.sub("", text.strip()).strip()
 
 
+def command_prefix_length(text: str) -> int:
+    match = TELEGRAM_COMMAND_PREFIX.match(text.strip())
+    return match.end() if match else 0
+
+
 def _normalize_username(username: str | None) -> str | None:
     if not username:
         return None
@@ -30,6 +35,20 @@ def _is_bot_mention(
     return False
 
 
+def _remove_spans(text: str, spans: list[tuple[int, int]]) -> str:
+    if not spans:
+        return text.strip()
+    parts: list[str] = []
+    pos = 0
+    for start, length in sorted(spans):
+        if start < pos:
+            continue
+        parts.append(text[pos:start])
+        pos = start + length
+    parts.append(text[pos:])
+    return "".join(parts).strip()
+
+
 def extract_leading_username(text: str, bot_username: str | None = None) -> tuple[str | None, str]:
     match = USERNAME_PREFIX.match(text.strip())
     if not match:
@@ -47,19 +66,25 @@ def extract_mention_from_message(
     bot_id: int | None = None,
 ) -> tuple[int | None, str | None, str]:
     """Возвращает (telegram_user_id, username, очищенный текст). Упоминание бота пропускается."""
-    text = (message.text or message.caption or "").strip()
-    if not text:
-        return None, None, text
+    raw = (message.text or message.caption or "").strip()
+    if not raw:
+        return None, None, raw
 
-    text = strip_telegram_command(text)
+    prefix_len = command_prefix_length(raw)
+    text = raw[prefix_len:].strip()
 
     clean = text
     mention_id: int | None = None
     mention_username: str | None = None
+    removed_spans: list[tuple[int, int]] = []
 
     if message.entities:
-        skip_spans: list[tuple[int, int]] = []
         for entity in message.entities:
+            if entity.offset + entity.length <= prefix_len:
+                continue
+
+            rel_start = max(0, entity.offset - prefix_len)
+
             if entity.type == "text_mention" and entity.user:
                 if entity.user.is_bot or _is_bot_mention(
                     entity.user.username,
@@ -67,30 +92,25 @@ def extract_mention_from_message(
                     user_id=entity.user.id,
                     bot_id=bot_id,
                 ):
-                    skip_spans.append((entity.offset, entity.length))
+                    removed_spans.append((rel_start, entity.length))
                     continue
                 mention_id = entity.user.id
                 mention_username = entity.user.username
-                clean = (text[: entity.offset] + text[entity.offset + entity.length :]).strip()
+                removed_spans.append((rel_start, entity.length))
                 break
+
             if entity.type == "mention":
-                username = text[entity.offset + 1 : entity.offset + entity.length]
+                username = raw[entity.offset + 1 : entity.offset + entity.length]
                 if _is_bot_mention(username, bot_username):
-                    skip_spans.append((entity.offset, entity.length))
+                    removed_spans.append((rel_start, entity.length))
                     continue
                 mention_id = None
                 mention_username = username
-                clean = (text[: entity.offset] + text[entity.offset + entity.length :]).strip()
+                removed_spans.append((rel_start, entity.length))
                 break
 
-        if skip_spans and mention_username is None:
-            parts: list[str] = []
-            pos = 0
-            for start, length in sorted(skip_spans):
-                parts.append(text[pos:start])
-                pos = start + length
-            parts.append(text[pos:])
-            clean = "".join(parts).strip()
+        if removed_spans:
+            clean = _remove_spans(text, removed_spans)
 
     if mention_username is None and mention_id is None:
         username, clean = extract_leading_username(clean, bot_username)

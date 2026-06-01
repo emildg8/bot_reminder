@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -59,3 +60,80 @@ async def test_cmd_remind_group_stores_draft(patched_db, monkeypatch):
     await cmd_remind(message, command, make_bot())
 
     collective_mock.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_cmd_remind_group_resolves_user_mention(patched_db, monkeypatch):
+    patch_scheduler(monkeypatch)
+    patch_create_flow(monkeypatch)
+    stored: dict = {}
+
+    def capture_draft(*args, **kwargs):
+        stored.update(kwargs)
+        return "draft-mention"
+
+    monkeypatch.setattr("bot.handlers.create.store_draft", capture_draft)
+    monkeypatch.setattr("bot.handlers.create.parse_all_reminders", AsyncMock(return_value=[MagicMock()]))
+    monkeypatch.setattr(
+        "bot.handlers.create.format_batch_parsed_summary_html",
+        lambda *a, **k: "summary",
+    )
+    monkeypatch.setattr("bot.handlers.create.send_collective_confirm", AsyncMock(return_value=True))
+    resolve = AsyncMock(return_value=4242)
+    monkeypatch.setattr("bot.handlers.create.resolve_mention_user_id", resolve)
+    monkeypatch.setattr("bot.handlers.create.offer_ambiguous_time_choice", AsyncMock(return_value=False))
+    monkeypatch.setattr("bot.handlers.create.bot_can_post_reminders", AsyncMock(return_value=True))
+
+    user_id = 9503
+    message = _group_message(user_id, "/remind@bot @alice через 30 минут созвон")
+    message.entities = [
+        SimpleNamespace(
+            type="text_mention",
+            offset=12,
+            length=6,
+            user=SimpleNamespace(id=4242, username="alice", is_bot=False),
+        ),
+    ]
+    command = MagicMock()
+    command.args = "@alice через 30 минут созвон"
+
+    await cmd_remind(message, command, make_bot(username="bot", bot_id=1))
+
+    resolve.assert_awaited()
+    assert stored.get("mention_telegram_id") == 4242
+    assert stored.get("mention_provided") is True
+
+
+@pytest.mark.asyncio
+async def test_cmd_remind_reply_assigns_target(patched_db, monkeypatch):
+    patch_scheduler(monkeypatch)
+    stored: dict = {}
+
+    monkeypatch.setattr(
+        "bot.handlers.create.store_draft",
+        lambda *a, **kw: stored.update(kw) or "draft-reply",
+    )
+    monkeypatch.setattr("bot.handlers.create.parse_all_reminders", AsyncMock(return_value=[MagicMock()]))
+    monkeypatch.setattr(
+        "bot.handlers.create.format_batch_parsed_summary_html",
+        lambda *a, **k: "summary",
+    )
+    monkeypatch.setattr("bot.handlers.create.send_collective_confirm", AsyncMock(return_value=True))
+    monkeypatch.setattr("bot.handlers.create.resolve_mention_user_id", AsyncMock(return_value=7777))
+    monkeypatch.setattr("bot.handlers.create.offer_ambiguous_time_choice", AsyncMock(return_value=False))
+    monkeypatch.setattr("bot.handlers.create.bot_can_post_reminders", AsyncMock(return_value=True))
+
+    user_id = 9504
+    message = _group_message(user_id, "/remind@bot завтра созвон")
+    message.entities = []
+    message.reply_to_message = MagicMock()
+    message.reply_to_message.from_user = SimpleNamespace(
+        id=7777, username="target", is_bot=False
+    )
+    command = MagicMock()
+    command.args = "завтра созвон"
+
+    await cmd_remind(message, command, make_bot(username="bot", bot_id=1))
+
+    assert stored.get("mention_telegram_id") == 7777
+    assert stored.get("mention_provided") is True

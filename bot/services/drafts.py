@@ -19,6 +19,8 @@ class DraftEntry:
     user_id: int
     created_at: datetime
     mention_telegram_id: int | None = None
+    mention_username: str | None = None
+    mention_source: str | None = None  # "text" | "reply"
     mention_provided: bool = False
     edit_reminder_id: int | None = None
     collective_chat_id: int | None = None
@@ -41,6 +43,8 @@ def store_draft(
     *,
     parsed_items: list[ParsedReminder] | None = None,
     mention_telegram_id: int | None = None,
+    mention_username: str | None = None,
+    mention_source: str | None = None,
     mention_provided: bool = False,
     edit_reminder_id: int | None = None,
     collective_chat_id: int | None = None,
@@ -58,6 +62,8 @@ def store_draft(
         user_id=user_id,
         created_at=datetime.now(timezone.utc),
         mention_telegram_id=mention_telegram_id,
+        mention_username=mention_username,
+        mention_source=mention_source,
         mention_provided=mention_provided,
         edit_reminder_id=edit_reminder_id,
         collective_chat_id=collective_chat_id,

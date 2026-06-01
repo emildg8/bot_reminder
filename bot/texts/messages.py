@@ -1,6 +1,7 @@
 """Тексты интерфейса — единый тон и оформление."""
 
 import re
+from html import escape
 
 from bot.config import settings
 from bot.services.chat_ctx import ChatKind, collective_noun
@@ -47,10 +48,10 @@ def format_group_welcome(bot_username: str | None = None, *, privacy_hint: str =
     return (
         f"👋 <b>{BOT_NAME}</b> теперь в этой группе!\n\n"
         f"✅ <b>Надёжно</b> — <code>/remind@{uname} через 30 минут созвон</code>\n"
-        f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n\n"
-        f"Или {at} <b>из списка</b> + фраза:\n"
-        f"• <code>{at} через 30 минут созвон</code>\n\n"
-        "⚠️ @, набранный вручную, бот <b>не увидит</b> — ответа не будет."
+        f"• <code>/remind@{uname} @user завтра в 14:00 задача</code>\n"
+        f"• ответ на сообщение + <code>/remind@{uname} …</code>\n\n"
+        f"Или {at} <b>из списка</b> + @user + фраза.\n\n"
+        "⚠️ @ с клавиатуры бот может не увидеть — выбирай из списка Telegram."
         f"{privacy_hint}\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
@@ -91,7 +92,9 @@ def format_group_commands_hint(bot_username: str | None = None) -> str:
     return (
         f"📋 <b>Команды в группе</b>\n\n"
         f"• <code>/remind@{uname} через 30 минут …</code>\n"
-        f"• {at} <b>из списка</b> + фраза\n\n"
+        f"• <code>/remind@{uname} @user …</code> — напоминание участнику\n"
+        f"• ответ на сообщение + <code>/remind@{uname} …</code>\n"
+        f"• {at} <b>из списка</b> + @user + фраза\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
 
@@ -101,8 +104,9 @@ def format_group_menu_home(bot_username: str | None = None) -> str:
     at = f"@{uname}"
     return (
         f"📋 <b>Меню группы</b>\n\n"
-        f"✅ <code>/remind@{uname} через 30 минут …</code>\n"
-        f"Или {at} <b>из списка</b> (не вводи @ руками)."
+        f"✅ <code>/remind@{uname} через час …</code>\n"
+        f"Или {at} + @user + фраза · ответ + /remind\n"
+        "📔 Дневник — только в личке."
     )
 
 
@@ -112,9 +116,10 @@ def format_group_create_hint(bot_username: str | None = None) -> str:
     return (
         "✍️ <b>Как создать</b>\n\n"
         f"• <code>/remind@{uname} через час созвон</code> — всегда работает\n"
-        f"• <code>/remind@{uname} по будням в 09:00 стендап</code>\n"
-        f"• {at} <b>из списка</b> + фраза\n\n"
-        "⚠️ @ вручную — бот может не увидеть сообщение.\n"
+        f"• <code>/remind@{uname} @user завтра в 14:00 задача</code> — на участника\n"
+        f"• ответ на сообщение + <code>/remind@{uname} завтра задача</code>\n"
+        f"• {at} <b>из списка</b> + @user + фраза\n\n"
+        "⚠️ @ вручную — бот может не увидеть; выбирай @ из списка Telegram.\n"
         "Подтверждение и кнопки — в личке с ботом."
     )
 
@@ -315,12 +320,19 @@ def format_collective_created_notice(
     when: str,
     text: str,
     chat_kind: ChatKind,
+    mention_user_id: int | None = None,
+    mention_username: str | None = None,
+    mention_source: str | None = None,
 ) -> str:
     if creator_username:
         who = f"@{creator_username}"
     else:
         who = f'<a href="tg://user?id={creator_user_id}">участник</a>'
-    return f"✅ {who} · #{reminder_id} · {when} · <b>{text}</b>"
+    assignee = format_assignee_compact(
+        mention_user_id, mention_username, source=mention_source
+    )
+    suffix = f" · {assignee}" if assignee else ""
+    return f"✅ {who} · #{reminder_id} · {when} · <b>{text}</b>{suffix}"
 
 
 def format_collective_batch_notice(
@@ -375,13 +387,14 @@ HELP_TEXT_GROUP = f"""\
 
 <b>Создать</b> — надёжно:
 <code>/remind@бот через 1 час созвон</code>
+<code>/remind@бот @user завтра в 14:00 задача</code>
 
-Или @бот <b>из списка</b> + фраза:
-<code>@бот завтра в 14:00 созвон</code>
+👤 <b>На участника</b> — три способа:
+1. <code>/remind@бот @ivan через 1 час созвон</code> (@ivan из списка)
+2. @бот из списка + @user + фраза
+3. <b>Ответ</b> на сообщение человека + <code>/remind@бот завтра задача</code>
 
-⚠️ @, набранный вручную, бот не увидит — используй /remind.
-
-Участнику: <code>@user @бот через 1 час задача</code> (только если user в чате)
+⚠️ @ с клавиатуры бот может не увидеть — выбирай из списка Telegram.
 
 💬 <b>Группа обсуждений канала</b> — /remind публикует в канал, confirm в личке.
 
@@ -475,6 +488,56 @@ def format_dm_failed_in_group(
     return f"👤 {who}, напиши /start @{link} — кнопки управления в личке"
 
 
+def format_assignee_compact(
+    mention_user_id: int | None,
+    mention_username: str | None,
+    *,
+    source: str | None = None,
+) -> str:
+    """Короткая строка «кому» для success-сообщений."""
+    if not mention_user_id and not mention_username:
+        return ""
+    icon = "↩️" if source == "reply" else "👤"
+    if mention_user_id and mention_username:
+        who = f'<a href="tg://user?id={mention_user_id}">@{escape(mention_username)}</a>'
+    elif mention_user_id:
+        who = f'<a href="tg://user?id={mention_user_id}">участник</a>'
+    else:
+        who = f"@{escape(mention_username or '')}"
+    return f"{icon} {who}"
+
+
+def format_mention_assignee_line(
+    mention_user_id: int | None,
+    mention_username: str | None,
+    *,
+    resolved: bool = True,
+    source: str | None = None,
+) -> str:
+    """Строка «кому» для confirm-карточки."""
+    if not mention_user_id and not mention_username:
+        return ""
+
+    if mention_username and not resolved:
+        return (
+            f"⚠️ @{escape(mention_username)} не в этом чате или не найден — "
+            "напомню создателю.\n\n"
+        )
+
+    if mention_user_id and mention_username:
+        who = f'<a href="tg://user?id={mention_user_id}">@{escape(mention_username)}</a>'
+    elif mention_user_id:
+        who = f'<a href="tg://user?id={mention_user_id}">участник</a>'
+    elif mention_username:
+        who = f"@{escape(mention_username)}"
+    else:
+        return ""
+
+    if source == "reply":
+        return f"↩️ <b>Кому:</b> {who} <i>(ответ на сообщение)</i>\n\n"
+    return f"👤 <b>Кому:</b> {who}\n\n"
+
+
 def format_confirm_card(summary: str, *, is_edit: bool = False) -> str:
     header = CONFIRM_EDIT_HEADER if is_edit else CONFIRM_CREATE_HEADER
     return f"{header}\n\n{summary}\n\nПодтверди действие:"
@@ -487,12 +550,20 @@ def format_created(
     *,
     in_group: bool = False,
     collective: ChatKind | None = None,
+    mention_user_id: int | None = None,
+    mention_username: str | None = None,
+    mention_source: str | None = None,
 ) -> str:
     body = (
         f"✅ <b>Готово!</b> Напоминание #{reminder_id}\n\n"
         f"🕐 {when}\n"
         f"📝 {text}"
     )
+    assignee = format_assignee_compact(
+        mention_user_id, mention_username, source=mention_source
+    )
+    if assignee:
+        body += f"\n{assignee}"
     kind = collective
     if kind is None and in_group:
         kind = ChatKind.SUPERGROUP

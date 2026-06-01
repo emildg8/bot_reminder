@@ -12,4 +12,9 @@ venv/
 *.mp4
 .pytest_cache/
 .ruff_cache/
+.coverage
+coverage.json
+cov.txt
+coverage_out.txt
+pytest_cov.log
 *.egg-info/

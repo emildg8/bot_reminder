@@ -249,7 +249,6 @@ async def example_picked(callback: CallbackQuery, bot) -> None:
             phrase,
             bot,
             actor_user_id=callback.from_user.id,
-            use_phrase_text=True,
         )
     except Exception:
         logger.exception("Example callback failed idx=%s chat=%s", idx, callback.message.chat.id)
@@ -288,7 +287,6 @@ async def task_time_picked(callback: CallbackQuery, bot) -> None:
         phrase,
         bot,
         actor_user_id=callback.from_user.id,
-        use_phrase_text=True,
     )
 
 
@@ -337,5 +335,4 @@ async def ambiguous_hour_picked(callback: CallbackQuery, bot) -> None:
         phrase,
         bot,
         actor_user_id=callback.from_user.id,
-        use_phrase_text=True,
     )

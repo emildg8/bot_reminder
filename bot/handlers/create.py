@@ -22,13 +22,14 @@ from bot.services.reminder_display import format_batch_parsed_summary_html
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import (
     format_confirm_card,
+    format_mention_assignee_line,
     format_parse_fail,
     format_pending_ambiguous_hint,
     looks_like_task_only,
 )
 from bot.services.ambiguous_prompt import offer_ambiguous_time_choice
 from bot.services.media import download_telegram_file, transcribe_audio
-from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
+from bot.services.mention_create import extract_create_mention, mention_was_provided
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.nlp.speech_cleanup import cleanup_stt_text, is_stt_text_too_short
@@ -60,28 +61,21 @@ async def _process_text_and_reply(
     source_label: str = "",
     *,
     actor_user_id: int | None = None,
-    use_phrase_text: bool = False,
 ) -> None:
     user_id = actor_user_id or message.from_user.id
     me = await bot.get_me()
 
-    if use_phrase_text or source_label:
-        mention_id, mention_username, clean_text = None, None, text
-        u, cleaned = extract_leading_username(text, me.username)
-        if u:
-            mention_username = u
-            clean_text = cleaned
-    else:
-        mention_id, mention_username, clean_text = extract_mention_from_message(
-            message,
-            bot_username=me.username,
-            bot_id=me.id,
-        )
-
-    mention_telegram_id = await resolve_mention_user_id(
-        bot, mention_id, mention_username, chat_id=message.chat.id
+    mention = extract_create_mention(
+        message,
+        text,
+        bot_username=me.username,
+        bot_id=me.id,
+        from_transcription=source_label in ("voice", "video_note"),
     )
-    phrase = (clean_text or text).strip()
+    mention_telegram_id = await resolve_mention_user_id(
+        bot, mention.user_id, mention.username, chat_id=message.chat.id
+    )
+    phrase = mention.phrase
 
     delivery_chat_id = await _resolve_delivery(message)
     async with async_session() as session:
@@ -120,14 +114,12 @@ async def _process_text_and_reply(
         prefix = f"🔵 Из кружочка: {text}\n\n"
     else:
         prefix = ""
-    if mention_username and not mention_telegram_id:
-        prefix += (
-            f"⚠️ @{mention_username} не в этом чате или не найден — "
-            "напомню создателю.\n\n"
-        )
-    elif mention_telegram_id or mention_username:
-        who = f"@{mention_username}" if mention_username else "участнику"
-        prefix += f"👤 Упоминание: {who}\n\n"
+    prefix += format_mention_assignee_line(
+        mention_telegram_id,
+        mention.username,
+        resolved=mention_telegram_id is not None or not mention.username,
+        source=mention.source,
+    )
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
         if delivery_chat_id != message.chat.id:
@@ -146,12 +138,14 @@ async def _process_text_and_reply(
             )
             return
 
-    mention_provided = bool(mention_username or mention_id)
+    mention_provided = mention_was_provided(mention)
     chat_kind = chat_kind_from_chat(message.chat)
     draft_id = store_draft(
         user_id,
         parsed_items=parsed_items,
         mention_telegram_id=mention_telegram_id,
+        mention_username=mention.username,
+        mention_source=mention.source,
         mention_provided=mention_provided,
         collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,
         collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
@@ -223,12 +217,12 @@ async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None
         await message.answer(
             "✍️ <b>Создать напоминание в группе</b>\n\n"
             f"<code>/remind@{uname} завтра в 14:00 созвон</code>\n"
-            f"<code>/remind@{uname} через 30 минут таблетки</code>\n\n"
-            f"💡 @{uname} — только <b>из списка</b>. "
-            "Если набрал @ вручную и бот молчит — используй /remind."
+            f"<code>/remind@{uname} @user завтра в 14:00 задача</code>\n"
+            "↩️ Ответ на сообщение + <code>/remind …</code> — напоминание этому человеку\n\n"
+            "👤 @user — только <b>из списка</b> Telegram (тап по имени)."
         )
         return
-    await _process_text_and_reply(message, phrase, bot, use_phrase_text=True)
+    await _process_text_and_reply(message, phrase, bot)
 
 
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))

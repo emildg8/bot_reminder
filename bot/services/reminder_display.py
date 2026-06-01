@@ -109,7 +109,9 @@ def format_reminder_list_line(reminder: Reminder, timezone: str | None = None) -
     icon = KIND_ICONS.get(reminder.kind, "📌")
     kind = KIND_LABELS.get(reminder.kind, reminder.kind)
     when = format_reminder_schedule(reminder, tz_name)
-    mention = " 👤" if reminder.mention_telegram_id else ""
+    mention = " 👤"
+    if reminder.mention_telegram_id:
+        mention = f' <a href="tg://user?id={reminder.mention_telegram_id}">👤</a>'
     text = escape(reminder.text)
     if len(reminder.text) > 70:
         text = escape(reminder.text[:67]) + "…"
