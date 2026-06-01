@@ -34,14 +34,23 @@
 | I3 | Smoke e2e admin panel в CI | S | ✅ |
 | I4 | Карта admin-тестов в quality-metrics | S | ✅ |
 
+## Волна K — NLP v3.42.2 ✅
+
+| # | Задача | Статус |
+|---|--------|--------|
+| K1 | «завтра в 2 дня» → 14:00, задача без артефакта | ✅ |
+| K2 | strip_day_words для interval/daily/weekly | ✅ |
+| K3 | `test_nlp_time_priority.py` + `scripts/smoke_nlp.py` | ✅ |
+| K4 | docs [nlp-time-priority.md](../guides/nlp-time-priority.md) | ✅ |
+
 ## Волна J — Ops (ручное на проде)
 
 | # | Задача | Статус |
 |---|--------|--------|
-| J1 | GitHub Secrets полный набор | 📋 [ops-checklist](../guides/ops-checklist.md) |
-| J2 | Wispbyte smoke v3.42.1 | 📋 |
+| J1 | GitHub Secrets: `BOT_TOKEN`, `ADMIN_TELEGRAM_IDS` | ✅ CI deploy notify |
+| J2 | Wispbyte smoke v3.42.2 | 📋 [ops-checklist](../guides/ops-checklist.md) |
 | J3 | BotFather Group Privacy + Stars | 📋 |
-| J4 | `/ping` → v3.42.1 на проде | 📋 |
+| J4 | `/ping` → v3.42.2 + `smoke_nlp.py` на сервере | 📋 |
 
 ---
 
@@ -53,6 +62,15 @@
 | G — UX | inline ✏️🗑, тур, release CI |
 | H — Pro/ops | Stars, audit/draft в БД, pg_backup doc |
 | I — Quality | pre-commit verify_ops, smoke admin, coverage |
+| K — NLP | «через N», «в 2 дня», test_nlp_time_priority, smoke_nlp |
+
+## Definition of Done (волна K)
+
+- [x] normalize_part_of_day + BARE_HOUR fix
+- [x] `_schedule_task` / strip_day для расписаний
+- [x] test_nlp_time_priority.py (457 тестов)
+- [x] scripts/smoke_nlp.py + ops-checklist smoke table
+- [x] CHANGELOG + release v3.42.2
 
 ## Definition of Done (волна H+I)
 

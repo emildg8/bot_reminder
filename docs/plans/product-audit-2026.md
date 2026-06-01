@@ -181,4 +181,4 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 **Актуально (v3.42.2):** roadmap A–E + F + G + **H/I phase2** закрыты в коде. CI: lint-and-test + Release **green**, **457** тестов, coverage **≥65%**, `verify_ops`, pre-commit.
 
-**Дальше:** ops на Wispbyte ([ops-checklist](../guides/ops-checklist.md)) — smoke, Stars, `/ping` v3.42.2. Backlog phase 3: coverage scheduler, e2e Stars.
+**Дальше:** ops на Wispbyte — `/ping` v3.42.2, `python scripts/smoke_nlp.py`, Telegram smoke ([ops-checklist](../guides/ops-checklist.md)). Backlog phase 3: coverage scheduler, e2e Stars.

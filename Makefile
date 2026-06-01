@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate
+.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate smoke-nlp
 
 help:
 	@echo "bot_reminder — make targets:"
@@ -6,6 +6,7 @@ help:
 	@echo "  test         pytest with coverage gate 65%%"
 	@echo "  lint         ruff check"
 	@echo "  verify       ops artifacts check"
+	@echo "  smoke-nlp    key NLP phrases (post-deploy)"
 	@echo "  test-count   pytest --collect-only"
 	@echo "  migrate      alembic upgrade head"
 	@echo "  run          python -m bot.main"
@@ -37,6 +38,9 @@ run:
 
 verify:
 	python scripts/verify_ops.py
+
+smoke-nlp:
+	python scripts/smoke_nlp.py
 
 test-count:
 	python -m pytest --collect-only -q

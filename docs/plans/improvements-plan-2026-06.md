@@ -6,14 +6,14 @@
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
-| NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
+| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 457 тестов |
 | Группы / collective | 10/10 | assignee, inline ✏️🗑 своих |
 | Admin | 10/10 | audit + broadcast draft в БД |
 | Pro / Stars | 9/10 | код готов; включение на проде — ops |
 | Тесты | 9/10 | 457 тестов, gate 65% |
 | CI | 10/10 | green v3.42.2; release = lint CI |
-| Docs | 9/10 | phase2 закрыт, postgres-backup |
-| Ops | 7/10 | Wispbyte — ручной чеклист (волна J) |
+| Docs | 9/10 | phase2 + K закрыты, postgres-backup |
+| Ops | 7/10 | CI green; Wispbyte smoke — [ops-checklist](../guides/ops-checklist.md) |
 
 **Phase 2:** [improvements-plan-phase2.md](improvements-plan-phase2.md)
 

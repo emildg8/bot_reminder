@@ -78,6 +78,7 @@ pytest -v --cov=bot --cov-fail-under=65
 | Assignee / mention | `test_mention_create`, `test_mention_from_message`, `test_mention_assignee_text` | 20+ |
 | Scheduler / STT | `test_scheduler_*`, `test_media_stt`, `test_llm_*` | 30+ |
 | Инфра | `test_verify_ops`, `test_smoke_imports`, `test_config`, `test_version` | 15+ |
+| NLP smoke | `scripts/smoke_nlp.py`, `test_nlp_time_priority` | 5 + 22 |
 
 Точное число: `pytest --collect-only -q` → `N tests collected`.
 
