@@ -23,9 +23,15 @@ def extract_reply_target(message: Message) -> tuple[int | None, str | None]:
     if reply is None or reply.from_user is None:
         return None, None
     user = reply.from_user
-    if user.is_bot:
+    if getattr(user, "is_bot", False):
         return None, None
-    return user.id, user.username
+    user_id = getattr(user, "id", None)
+    if not isinstance(user_id, int):
+        return None, None
+    username = getattr(user, "username", None)
+    if username is not None and not isinstance(username, str):
+        username = None
+    return user_id, username
 
 
 def extract_create_mention(

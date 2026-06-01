@@ -66,7 +66,10 @@ def extract_mention_from_message(
     bot_id: int | None = None,
 ) -> tuple[int | None, str | None, str]:
     """Возвращает (telegram_user_id, username, очищенный текст). Упоминание бота пропускается."""
-    raw = (message.text or message.caption or "").strip()
+    raw = message.text or message.caption or ""
+    if not isinstance(raw, str):
+        raw = ""
+    raw = raw.strip()
     if not raw:
         return None, None, raw
 
