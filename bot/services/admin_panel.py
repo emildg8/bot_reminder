@@ -18,14 +18,13 @@ from bot.db.models import Reminder, User
 from bot.db.repository import (
     async_session,
     count_active_reminders_for_user,
+    delete_broadcast_draft,
+    get_broadcast_draft,
     get_user_by_telegram_id,
+    upsert_broadcast_draft,
 )
 from bot.services.admin_access import get_admin_tools_enabled, is_admin_listed, is_bot_admin
-from bot.services.subscription import (
-    can_add_reminder,
-    is_pro_user,
-    monetization_active,
-)
+from bot.services.subscription import can_add_reminder, is_pro_user, monetization_active, pro_expires_label
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
@@ -72,9 +71,6 @@ class BroadcastArgs:
     action: str  # preview | send | test | help
     filter: BroadcastFilter
     text: str
-
-
-_pending_broadcast: dict[int, PendingBroadcast] = {}
 
 
 def is_userinfo_card(text: str | None) -> bool:
@@ -174,16 +170,36 @@ def parse_broadcast_message(message: Message) -> BroadcastArgs | None:
     return BroadcastArgs(action=action, filter=filt, text=text)
 
 
-def set_pending_broadcast(admin_id: int, text: str, *, filter: BroadcastFilter = BroadcastFilter.ALL) -> None:
-    _pending_broadcast[admin_id] = PendingBroadcast(text=text, filter=filter)
+async def set_pending_broadcast(
+    admin_id: int, text: str, *, filter: BroadcastFilter = BroadcastFilter.ALL
+) -> None:
+    async with async_session() as session:
+        await upsert_broadcast_draft(session, admin_id, text, filter=filter.value)
 
 
-def pop_pending_broadcast(admin_id: int) -> PendingBroadcast | None:
-    return _pending_broadcast.pop(admin_id, None)
+async def pop_pending_broadcast(admin_id: int) -> PendingBroadcast | None:
+    async with async_session() as session:
+        draft = await get_broadcast_draft(session, admin_id)
+        if draft is None:
+            return None
+        await delete_broadcast_draft(session, admin_id)
+        try:
+            filt = BroadcastFilter(draft.filter)
+        except ValueError:
+            filt = BroadcastFilter.ALL
+        return PendingBroadcast(text=draft.text, filter=filt)
 
 
-def get_pending_broadcast(admin_id: int) -> PendingBroadcast | None:
-    return _pending_broadcast.get(admin_id)
+async def get_pending_broadcast(admin_id: int) -> PendingBroadcast | None:
+    async with async_session() as session:
+        draft = await get_broadcast_draft(session, admin_id)
+        if draft is None:
+            return None
+        try:
+            filt = BroadcastFilter(draft.filter)
+        except ValueError:
+            filt = BroadcastFilter.ALL
+        return PendingBroadcast(text=draft.text, filter=filt)
 
 
 async def count_broadcast_recipients(filter: BroadcastFilter = BroadcastFilter.ALL) -> int:
@@ -488,7 +504,11 @@ async def format_user_info(telegram_id: int) -> str:
     if limit_line:
         lines.append(limit_line)
     if monetization:
-        lines.append(f"⭐ Pro: <b>{'да' if pro else 'нет'}</b>")
+        pro_label = "да" if pro else "нет"
+        exp = pro_expires_label(user) if pro else None
+        if exp:
+            pro_label += f" до {exp}"
+        lines.append(f"⭐ Pro: <b>{pro_label}</b>")
     if is_admin_listed(telegram_id):
         mode = "администратор" if user.admin_tools_enabled else "пользователь (тест)"
         lines.append(f"🛠 Админ бота: <b>{mode}</b>")

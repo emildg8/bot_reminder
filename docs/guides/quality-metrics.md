@@ -2,7 +2,7 @@
 
 Кратко, что проверяется перед каждым merge в `main`.
 
-## 413 тестов (pytest)
+## 428 тестов (pytest)
 
 Автоматические сценарии: парсинг фраз, БД, callbacks, группы, удаление и т.д.
 
@@ -66,7 +66,7 @@ python scripts/verify_ops.py
 pytest -v --cov=bot --cov-fail-under=65
 ```
 
-## Карта тестов (413)
+## Карта тестов (428)
 
 | Категория | Примеры файлов | ~кол-во |
 |-----------|----------------|---------|
@@ -92,6 +92,18 @@ pytest -v --cov=bot --cov-fail-under=65
 | `test_006_collective_handlers.py` | `/remind` + reply в группе |
 | `test_reminder_display.py` | `tg://user?id=` в списке |
 | `test_delete_command.py` | `/delete N yes` |
+
+### Admin + Pro (v3.40–v3.42)
+
+| Файл | Фокус |
+|------|--------|
+| `test_admin_mode.py` | `/adminmode`, кэш, меню |
+| `test_admin_panel.py` | панель, broadcast, grantpro |
+| `test_admin_panel_service.py` | stats, userfind, draft DB |
+| `test_admin_audit.py` | журнал в БД |
+| `test_admin_smoke.py` | smoke panel + log + broadcast (CI) |
+| `test_stars_payments.py` | Stars, pro_expires, idempotency |
+| `test_subscription.py` | Free limit, Pro bypass |
 
 ## История coverage gate
 

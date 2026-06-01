@@ -84,9 +84,9 @@ async def test_format_admin_stats(patched_db):
 
 
 @pytest.mark.asyncio
-async def test_pending_broadcast_roundtrip():
-    set_pending_broadcast(99, "hello", filter=BroadcastFilter.ACTIVE)
-    pending = pop_pending_broadcast(99)
+async def test_pending_broadcast_roundtrip(patched_db):
+    await set_pending_broadcast(99, "hello", filter=BroadcastFilter.ACTIVE)
+    pending = await pop_pending_broadcast(99)
     assert pending is not None
     assert pending.text == "hello"
     assert pending.filter == BroadcastFilter.ACTIVE

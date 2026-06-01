@@ -34,6 +34,7 @@ class User(Base):
     snooze_presets: Mapped[str] = mapped_column(String(64), default="5,15,30,60,180,240")
     snooze_step: Mapped[int] = mapped_column(Integer, default=15)
     is_pro: Mapped[bool] = mapped_column(Boolean, default=False)
+    pro_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     onboarding_done: Mapped[bool] = mapped_column(Boolean, default=False)
     admin_tools_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -86,3 +87,31 @@ class ReminderEvent(Base):
     event_kind: Mapped[str] = mapped_column(String(16), index=True)
     event_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     extra: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+
+class AdminAction(Base):
+    __tablename__ = "admin_actions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    admin_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    action: Mapped[str] = mapped_column(String(512))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class BroadcastDraft(Base):
+    __tablename__ = "broadcast_drafts"
+
+    admin_telegram_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    text: Mapped[str] = mapped_column(String(4096))
+    filter: Mapped[str] = mapped_column(String(16), default="all")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class StarPayment(Base):
+    __tablename__ = "star_payments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    charge_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    stars_amount: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

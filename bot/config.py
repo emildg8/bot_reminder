@@ -84,6 +84,9 @@ class Settings(BaseSettings):
         "Напиши админу бота или открой issue: "
         "github.com/emildg8/bot_reminder"
     )
+    stars_payments_enabled: bool = False
+    pro_stars_price: int = 250
+    pro_duration_days: int = 30
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod

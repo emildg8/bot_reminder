@@ -9,7 +9,7 @@
 | NLP / время | 9/10 | HHMM, ambiguous, голос — закрыто |
 | Группы / collective | 10/10 | assignee, /delete yes; **v3.41:** inline ✏️🗑 своих |
 | Admin | 9/10 | v3.40 панель; audit in-memory |
-| Тесты | 9/10 | 413 тестов, gate 65% |
+| Тесты | 9/10 | 428 тестов, gate 65% |
 | CI | 9/10 | green v3.40.3; release = CI в v3.41 |
 | Docs | 9/10 | phase2 plan, admin-mode |
 | Ops | 7/10 | Wispbyte — ручной чеклист |
@@ -70,8 +70,8 @@
 | # | Задача | Effort |
 |---|--------|--------|
 | F3.2 | Inline ✏️🗑 в группе только для своих | M | ✅ v3.41 |
-| F3.3 | Telegram Stars / Pro | L | backlog |
-| F3.4 | pg_dump для PostgreSQL | M | 🔄 скрипт v3.41 |
+| F3.3 | Telegram Stars / Pro | L | ✅ v3.42 |
+| F3.4 | pg_dump для PostgreSQL | M | ✅ v3.42 |
 | F3.5 | Guided onboarding v2 (повторный тур) | S | ✅ v3.41 |
 
 ## Фаза F4 — Ops (ручное)

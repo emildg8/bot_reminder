@@ -10,7 +10,7 @@ from aiogram.enums import ParseMode
 from apscheduler.triggers.interval import IntervalTrigger
 
 from bot.config import settings
-from bot.db.repository import dispose_engine, init_db
+from bot.db.repository import async_session, dispose_engine, expire_pro_subscriptions, init_db
 from bot.handlers import (
     admin,
     callbacks,
@@ -25,6 +25,7 @@ from bot.handlers import (
     list_cmd,
     manage,
     menu,
+    payments,
     search,
     settings as settings_handler,
     start,
@@ -61,6 +62,13 @@ async def _notify_admins(bot: Bot, text: str) -> None:
             await bot.send_message(admin_id, text)
         except Exception as exc:
             logger.warning("Cannot notify admin %s: %s", admin_id, exc)
+
+
+async def _expire_pro_job() -> None:
+    async with async_session() as session:
+        count = await expire_pro_subscriptions(session)
+    if count:
+        logger.info("Expired %s Pro subscription(s)", count)
 
 
 async def _run_backup_job() -> None:
@@ -174,6 +182,7 @@ async def main() -> None:
     dp = Dispatcher()
     register_shutdown_dispatcher(dp)
     dp.include_router(errors.router)
+    dp.include_router(payments.router)
     dp.include_router(start.router)
     dp.include_router(group.router)
     dp.include_router(group_menu.router)
@@ -203,6 +212,12 @@ async def main() -> None:
         prune_all_caches,
         trigger=IntervalTrigger(minutes=15),
         id="cache_cleanup",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _expire_pro_job,
+        trigger=IntervalTrigger(hours=6),
+        id="expire_pro",
         replace_existing=True,
     )
     scheduler.add_job(

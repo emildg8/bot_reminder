@@ -2,12 +2,12 @@ import logging
 from datetime import datetime, time
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from bot.config import BASE_DIR, settings
-from bot.db.models import ChatSettings, Reminder, ReminderEvent, User
+from bot.db.models import AdminAction, BroadcastDraft, ChatSettings, Reminder, ReminderEvent, StarPayment, User
 from bot.services.reminder_utils import storage_next_run_at
 
 engine = create_async_engine(
@@ -260,11 +260,18 @@ async def count_active_reminders_for_user(session: AsyncSession, telegram_id: in
     return len(list(result.scalars().all()))
 
 
-async def set_user_pro(session: AsyncSession, telegram_id: int, *, is_pro: bool) -> User | None:
+async def set_user_pro(
+    session: AsyncSession,
+    telegram_id: int,
+    *,
+    is_pro: bool,
+    pro_expires_at: datetime | None = None,
+) -> User | None:
     user = await get_user_by_telegram_id(session, telegram_id)
     if user is None:
         return None
     user.is_pro = is_pro
+    user.pro_expires_at = pro_expires_at if is_pro else None
     await session.commit()
     await session.refresh(user)
     return user
@@ -340,3 +347,94 @@ async def deactivate_all_chat_reminders(session: AsyncSession, chat_id: int) -> 
     if reminders:
         await session.commit()
     return len(reminders)
+
+
+async def insert_admin_action(session: AsyncSession, admin_id: int, action: str) -> AdminAction:
+    row = AdminAction(admin_telegram_id=admin_id, action=action[:512])
+    session.add(row)
+    await session.commit()
+    await session.refresh(row)
+    return row
+
+
+async def fetch_admin_actions(session: AsyncSession, *, limit: int = 15) -> list[AdminAction]:
+    result = await session.execute(
+        select(AdminAction).order_by(AdminAction.created_at.desc()).limit(limit)
+    )
+    return list(result.scalars().all())
+
+
+async def upsert_broadcast_draft(
+    session: AsyncSession,
+    admin_id: int,
+    text: str,
+    *,
+    filter: str = "all",
+) -> BroadcastDraft:
+    result = await session.execute(
+        select(BroadcastDraft).where(BroadcastDraft.admin_telegram_id == admin_id)
+    )
+    draft = result.scalar_one_or_none()
+    if draft is None:
+        draft = BroadcastDraft(admin_telegram_id=admin_id, text=text, filter=filter)
+        session.add(draft)
+    else:
+        draft.text = text
+        draft.filter = filter
+    await session.commit()
+    await session.refresh(draft)
+    return draft
+
+
+async def get_broadcast_draft(session: AsyncSession, admin_id: int) -> BroadcastDraft | None:
+    result = await session.execute(
+        select(BroadcastDraft).where(BroadcastDraft.admin_telegram_id == admin_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def delete_broadcast_draft(session: AsyncSession, admin_id: int) -> None:
+    await session.execute(
+        delete(BroadcastDraft).where(BroadcastDraft.admin_telegram_id == admin_id)
+    )
+    await session.commit()
+
+
+async def record_star_payment(
+    session: AsyncSession,
+    *,
+    user_telegram_id: int,
+    charge_id: str,
+    stars_amount: int,
+) -> StarPayment | None:
+    payment = StarPayment(
+        user_telegram_id=user_telegram_id,
+        charge_id=charge_id,
+        stars_amount=stars_amount,
+    )
+    session.add(payment)
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        return None
+    await session.refresh(payment)
+    return payment
+
+
+async def expire_pro_subscriptions(session: AsyncSession) -> int:
+    now = datetime.now().astimezone()
+    result = await session.execute(
+        select(User).where(
+            User.is_pro.is_(True),
+            User.pro_expires_at.is_not(None),
+            User.pro_expires_at < now,
+        )
+    )
+    users = list(result.scalars().all())
+    for user in users:
+        user.is_pro = False
+        user.pro_expires_at = None
+    if users:
+        await session.commit()
+    return len(users)

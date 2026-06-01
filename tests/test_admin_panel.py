@@ -90,7 +90,8 @@ async def test_grantpro_from_reply(monkeypatch, patched_db):
     assert "888003" in message.answer.await_args[0][0]
     from bot.services.admin_audit import format_admin_log
 
-    assert "grant Pro" in format_admin_log()
+    log_text = await format_admin_log()
+    assert "grant Pro" in log_text
 
 
 @pytest.mark.asyncio
@@ -104,7 +105,7 @@ async def test_broadcast_preview_flow(monkeypatch, patched_db):
     body = message.answer.await_args[0][0]
     assert "Превью" in body
     assert "активными" in body
-    pending = pop_pending_broadcast(73)
+    pending = await pop_pending_broadcast(73)
     assert pending is not None
     assert pending.text == "Привет"
     assert pending.filter == BroadcastFilter.ACTIVE

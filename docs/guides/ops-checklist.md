@@ -54,7 +54,13 @@ make migrate   # alembic upgrade head (на сервере — автомати�
 # DATABASE_URL=postgresql+asyncpg://reminder:reminder@db:5432/reminder
 ```
 
-Бэкап SQLite: `data/backups/` (авто). PostgreSQL — `pg_dump` вручную или managed DB.
+Бэкап SQLite: `data/backups/` (авто). PostgreSQL — [postgres-backup.md](postgres-backup.md) (`scripts/pg_backup.sh`, cron).
+
+### Stars / Pro (v3.42)
+
+- [ ] `MONETIZATION_ENABLED=true` только после smoke
+- [ ] `STARS_PAYMENTS_ENABLED=true`, цена в BotFather Stars
+- [ ] `/subscribe` → кнопка оплаты · тестовый платёж
 
 ## Мониторинг
 

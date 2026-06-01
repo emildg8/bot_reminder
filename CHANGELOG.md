@@ -4,6 +4,23 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.42.0] — 2026-06-02
+
+### Pro / Stars (H1)
+- Telegram Stars: `/subscribe`, кнопка «Купить Pro», `successful_payment`
+- `pro_expires_at`, `star_payments`, авто-expire Pro
+- Env: `STARS_PAYMENTS_ENABLED`, `PRO_STARS_PRICE`, `PRO_DURATION_DAYS`
+
+### Admin persistence (H3–H4)
+- `admin_actions` — журнал в БД
+- `broadcast_drafts` — черновик рассылки переживает рестарт
+- Миграция `20260602_0003`
+
+### Ops / quality (H2, I)
+- [postgres-backup.md](docs/guides/postgres-backup.md)
+- pre-commit: `verify_ops`
+- Тесты: Stars, history, scheduler, admin smoke (+15 → 428)
+
 ## [3.41.0] — 2026-06-02
 
 ### Гroups + onboarding

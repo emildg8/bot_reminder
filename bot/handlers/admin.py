@@ -99,7 +99,7 @@ async def _set_user_pro(
         await message.answer("Пользователь не найден.")
         return False
     verb = "grant" if is_pro else "revoke"
-    log_admin_action(admin_id, f"{verb} Pro → {target_id}")
+    await log_admin_action(admin_id, f"{verb} Pro → {target_id}")
     body = message.text or message.caption or ""
     await _reply_userinfo(message, target_id, edit=is_userinfo_card(body))
     return True
@@ -117,7 +117,7 @@ async def _finish_broadcast(
     summary = (
         f"📢 рассылка ({label}): доставлено {delivered}/{total}, ошибок {failed}"
     )
-    log_admin_action(admin_id, summary)
+    await log_admin_action(admin_id, summary)
     await notify_other_admins(
         bot,
         admin_id,
@@ -266,7 +266,7 @@ async def cmd_adminlog(message: Message) -> None:
     if not is_bot_admin(message.from_user.id):
         await _deny_admin(message)
         return
-    await message.answer(format_admin_log())
+    await message.answer(await format_admin_log())
 
 
 @router.message(Command("adminstats"))
@@ -351,7 +351,7 @@ async def cmd_broadcast(message: Message, bot: Bot) -> None:
         return
 
     total_users = await count_broadcast_recipients(parsed.filter)
-    set_pending_broadcast(message.from_user.id, parsed.text, filter=parsed.filter)
+    await set_pending_broadcast(message.from_user.id, parsed.text, filter=parsed.filter)
     await message.answer(
         format_broadcast_preview(parsed.text, total_users, filter=parsed.filter),
         reply_markup=broadcast_preview_keyboard(current=parsed.filter),
@@ -423,7 +423,7 @@ async def cb_broadcast_filter(callback: CallbackQuery) -> None:
     if not is_bot_admin(callback.from_user.id):
         await callback.answer("Недоступно", show_alert=True)
         return
-    pending = get_pending_broadcast(callback.from_user.id)
+    pending = await get_pending_broadcast(callback.from_user.id)
     if pending is None:
         await callback.answer("Сначала /broadcast текст", show_alert=True)
         return
@@ -432,7 +432,7 @@ async def cb_broadcast_filter(callback: CallbackQuery) -> None:
     except ValueError:
         await callback.answer("Неизвестный фильтр", show_alert=True)
         return
-    set_pending_broadcast(callback.from_user.id, pending.text, filter=filt)
+    await set_pending_broadcast(callback.from_user.id, pending.text, filter=filt)
     total = await count_broadcast_recipients(filt)
     await callback.message.edit_text(
         format_broadcast_preview(pending.text, total, filter=filt),
@@ -446,7 +446,7 @@ async def cb_broadcast_self(callback: CallbackQuery, bot: Bot) -> None:
     if not is_bot_admin(callback.from_user.id):
         await callback.answer("Недоступно", show_alert=True)
         return
-    pending = get_pending_broadcast(callback.from_user.id)
+    pending = await get_pending_broadcast(callback.from_user.id)
     if pending is None:
         await callback.answer("Нет черновика", show_alert=True)
         return
@@ -460,11 +460,11 @@ async def cb_broadcast_confirm(callback: CallbackQuery, bot: Bot) -> None:
         await callback.answer("Недоступно", show_alert=True)
         return
     if callback.data == "admin:bcast:cancel":
-        pop_pending_broadcast(callback.from_user.id)
+        await pop_pending_broadcast(callback.from_user.id)
         await callback.message.edit_text("❌ Рассылка отменена.")
         await callback.answer()
         return
-    pending = pop_pending_broadcast(callback.from_user.id)
+    pending = await pop_pending_broadcast(callback.from_user.id)
     if pending is None:
         await callback.answer("Текст устарел — создай /broadcast заново", show_alert=True)
         return
@@ -529,7 +529,7 @@ async def cb_admin_run(callback: CallbackQuery, bot: Bot) -> None:
     elif action == "stats":
         await callback.message.answer(await format_admin_stats())
     elif action == "log":
-        await callback.message.answer(format_admin_log())
+        await callback.message.answer(await format_admin_log())
     elif action == "adminmode":
         await cmd_adminmode(callback.message, bot)
 
