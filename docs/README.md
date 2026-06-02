@@ -20,6 +20,7 @@
 | [guides/group-assignee.md](guides/group-assignee.md) | Напоминание на участника (@user, reply) |
 | [guides/nlp-time-priority.md](guides/nlp-time-priority.md) | Приоритеты: «сегодня» + «через N минут» |
 | [guides/stars-tips.md](guides/stars-tips.md) | Благодарность автору Stars |
+| [guides/yookassa-submission-pack.md](guides/yookassa-submission-pack.md) | Тексты для анкеты ЮKassa (Stars `/thanks`) |
 | [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (558), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
@@ -40,23 +41,19 @@
 ## Релизы
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
-- [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
+- [releases/](releases/) — заметки по версиям
+- [releases/v3.45.2.md](releases/v3.45.2.md) — **текущий:** assignee кнопками + quality gate
+- [releases/v3.45.0.md](releases/v3.45.0.md) — группы: выбор «Кому?» кнопками
+- [releases/v3.44.8.md](releases/v3.44.8.md) — группы: auto-pick, edited_message, превью
 - [releases/v3.44.7.md](releases/v3.44.7.md) — группы: варианты assignee + clean punctuation
-- [releases/v3.44.6.md](releases/v3.44.6.md) — группы: парсинг polish
-- [releases/v3.44.5.md](releases/v3.44.5.md) — группы: multi-@user
 - [releases/v3.44.4.md](releases/v3.44.4.md) — Stars passthrough + deploy check
-- [releases/v3.44.3.md](releases/v3.44.3.md) — Stars tips polish
-- [releases/v3.44.2.md](releases/v3.44.2.md) — Stars tips (логика)
-- [releases/v3.44.1.md](releases/v3.44.1.md) — Stars tips UX polish
 - [releases/v3.44.0.md](releases/v3.44.0.md) — Stars tips prod-ready
-- [releases/v3.43.3.md](releases/v3.43.3.md) — Stars tips polish
-- [releases/v3.43.2.md](releases/v3.43.2.md) — Stars tips расширение
-- [releases/v3.43.1.md](releases/v3.43.1.md) — Stars tips UX polish
 - [releases/v3.43.0.md](releases/v3.43.0.md) — Stars: благодарность автору
 - [releases/v3.42.2.md](releases/v3.42.2.md) — NLP «в 2 дня», strip_day для расписаний
-- [releases/v3.42.1.md](releases/v3.42.1.md) — patch CI
 - [releases/v3.42.0.md](releases/v3.42.0.md) — Stars, audit DB, broadcast draft
 - [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee (F3.0) закрыт
+
+Старые patch-релизы v3.44.x / v3.43.x — в [releases/](releases/) и [CHANGELOG.md](../CHANGELOG.md).
 
 ## CI / GitHub
 

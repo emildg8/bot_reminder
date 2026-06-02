@@ -83,15 +83,20 @@ pytest -v --cov=bot --cov-fail-under=65
 
 Точное число: `pytest --collect-only -q` → `N tests collected`.
 
-### Assignee (F3.0)
+### Assignee (F3.0 + v3.45)
 
 | Файл | Фокус |
 |------|--------|
 | `test_mention_create.py` | @ vs reply, приоритет, голос |
 | `test_mention_from_message.py` | entities, `command_prefix_length` |
+| `test_mention_parse.py` | auto-pick, префиксы, candidates |
 | `test_mention_assignee_text.py` | confirm, created, list 👤 |
-| `test_mention_resolve.py` | участник в чате |
-| `test_006_collective_handlers.py` | `/remind` + reply в группе |
+| `test_assignee_prompt.py` | кнопки, pending, should_offer |
+| `test_assignee_callbacks.py` | callback `as:*` |
+| `test_assignee_pick_note.py` | pick_note, превью, prompt |
+| `test_collective_preview.py` | превью в группе |
+| `test_create_assignee_raw.py` | голос → кандидаты из фразы |
+| `test_006_collective_handlers.py` | `/remind`, multi-@ без времени |
 | `test_reminder_display.py` | `tg://user?id=` в списке |
 | `test_delete_command.py` | `/delete N yes` |
 

@@ -1,6 +1,6 @@
 # Напоминание на участника группы
 
-**Статус:** ✅ готово · **v3.39.0–3.45.0** · код: `mention_create.py`, `mention_parse.py`, `assignee_prompt.py`
+**Статус:** ✅ готово · **v3.39.0–3.45.2** · код: `mention_create.py`, `mention_parse.py`, `assignee_prompt.py`, `create_confirm.py`
 
 Назначьте, **кому** в группе придёт упоминание при срабатывании.
 
