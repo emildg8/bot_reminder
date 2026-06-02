@@ -26,6 +26,8 @@ jobs:
         run: ruff check bot tests
 
       - name: Verify ops artifacts
+        env:
+          BOT_TOKEN: "0:ci-test-token"
         run: python scripts/verify_ops.py
 
       - name: Tests
