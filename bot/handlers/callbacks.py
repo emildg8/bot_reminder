@@ -13,6 +13,7 @@ from bot.db.repository import (
     get_or_create_user,
     get_reminder,
     get_user_by_telegram_id,
+    set_user_tip_nudge_shown,
     update_reminder_next_run,
 )
 from bot.keyboards.inline import (
@@ -28,6 +29,12 @@ from bot.services.reminder_create import create_and_schedule_items
 from bot.services.reminder_history import log_reminder_event
 from bot.services.reminder_apply import apply_parsed_to_reminder
 from bot.services.snooze_picker import clear_picker, get_picker, set_picker
+from bot.services.stars_tips import (
+    format_tip_nudge,
+    should_send_tip_nudge,
+    tip_nudge_keyboard,
+    tips_enabled,
+)
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
 from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
 from bot.services.collective_confirm import send_collective_duplicate_confirm
@@ -531,6 +538,28 @@ async def done_reminder(callback: CallbackQuery, bot: Bot) -> None:
 
     await callback.message.edit_text("✅ Готово. Напоминание закрыто.")
     await safe_callback_answer(callback)
+    await _maybe_send_tip_nudge(callback.bot, callback.from_user.id, callback.message.chat.id)
+
+
+async def _maybe_send_tip_nudge(bot: Bot, user_id: int, chat_id: int) -> None:
+    if chat_id != user_id:
+        return
+    if not tips_enabled():
+        return
+    async with async_session() as session:
+        if not await should_send_tip_nudge(session, user_id):
+            return
+    try:
+        await bot.send_message(
+            chat_id,
+            format_tip_nudge(),
+            reply_markup=tip_nudge_keyboard(),
+        )
+    except Exception:
+        logger.exception("Failed to send tip nudge to user %s", user_id)
+        return
+    async with async_session() as session:
+        await set_user_tip_nudge_shown(session, user_id)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("del_confirm:"))

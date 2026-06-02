@@ -633,6 +633,7 @@ def format_status(
     delivery_line: str | None = None,
     post_ok: bool | None = None,
     admin_mode_line: str | None = None,
+    tips_line: str | None = None,
 ) -> str:
     tz_label = format_timezone_label(tz)
     state = "⏸ на паузе" if paused else "▶️ активны"
@@ -655,6 +656,8 @@ def format_status(
         lines.append("✅ Бот может публиковать напоминания")
     if admin_mode_line:
         lines.append(admin_mode_line)
+    if tips_line:
+        lines.append(tips_line)
     return "\n".join(lines) + extra
 
 

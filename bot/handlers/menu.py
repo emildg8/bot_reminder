@@ -46,6 +46,7 @@ from bot.texts.messages import (
     phrase_from_task_preset,
 )
 from bot.handlers.tips import send_thanks_screen
+from bot.services.tip_custom_state import clear_all_tip_custom, is_pending_confirm, is_waiting_custom_amount
 from bot.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ def _clear_modes(user_id: int) -> None:
     clear_edit_pending(user_id)
     clear_search_pending(user_id)
     clear_pending_task(user_id)
+    clear_all_tip_custom(user_id)
 
 
 @router.message(Command("help"))
@@ -67,9 +69,12 @@ async def cmd_help(message: Message) -> None:
 
 @router.message(Command("cancel"))
 async def cmd_cancel(message: Message) -> None:
-    _clear_modes(message.from_user.id)
+    user_id = message.from_user.id
+    was_tip = is_waiting_custom_amount(user_id) or is_pending_confirm(user_id)
+    _clear_modes(user_id)
+    text = "Режим Stars отменён." if was_tip else "Отменено."
     await message.answer(
-        "Отменено.",
+        text,
         reply_markup=menu_keyboard_for_chat(message.chat.id, message.from_user.id),
     )
 
@@ -103,6 +108,7 @@ async def handle_menu_buttons(message: Message, bot) -> None:
     if text == BTN_SEARCH:
         clear_edit_pending(message.from_user.id)
         clear_pending_task(message.from_user.id)
+        clear_all_tip_custom(message.from_user.id)
         set_search_pending(message.from_user.id)
         await message.answer(
             "🔍 <b>Поиск</b>\n\nНапиши слово или фразу — найду среди активных напоминаний.\n"

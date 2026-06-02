@@ -37,6 +37,10 @@ class User(Base):
     pro_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     onboarding_done: Mapped[bool] = mapped_column(Boolean, default=False)
     admin_tools_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    tip_nudge_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    tip_nudge_dismissed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     reminders: Mapped[list["Reminder"]] = relationship(back_populates="user", cascade="all, delete-orphan")

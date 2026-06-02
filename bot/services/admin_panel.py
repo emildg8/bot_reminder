@@ -22,6 +22,7 @@ from bot.db.repository import (
     delete_broadcast_draft,
     get_broadcast_draft,
     get_star_tips_summary,
+    get_top_star_tippers,
     get_user_by_telegram_id,
     upsert_broadcast_draft,
 )
@@ -301,7 +302,15 @@ async def format_quick_stats() -> str:
     if tips_enabled():
         async with async_session() as session:
             tip_count, tip_total = await get_star_tips_summary(session)
+            tippers_7 = await get_top_star_tippers(session, days=7, limit=3)
+            tippers = await get_top_star_tippers(session, days=30, limit=3)
         lines.append(f"⭐ Stars: <b>{tip_count}</b> · сумма <b>{tip_total}</b>")
+        if tippers_7:
+            top7 = " · ".join(f"<code>{uid}</code>: {total}⭐" for uid, _, total in tippers_7)
+            lines.append(f"🏆 7d: {top7}")
+        if tippers:
+            top = " · ".join(f"<code>{uid}</code>: {total}⭐" for uid, _, total in tippers)
+            lines.append(f"🏆 30d: {top}")
     return "\n".join(lines)
 
 

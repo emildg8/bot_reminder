@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.43.1** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.44.3** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -35,11 +35,18 @@
 | [plans/improvements-plan-phase2.md](plans/improvements-plan-phase2.md) | План после v3.40 (волны G–J) |
 | [plans/groups-channels.md](plans/groups-channels.md) | Архитектура collective |
 | [plans/groups-phase5-ux.md](plans/groups-phase5-ux.md) | UX групп (фаза 5) |
+| [plans/stars-tips-polish.md](plans/stars-tips-polish.md) | **Stars tips → prod** (P0–P3, волна M) |
 
 ## Релизы
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
+- [releases/v3.44.3.md](releases/v3.44.3.md) — Stars tips polish
+- [releases/v3.44.2.md](releases/v3.44.2.md) — Stars tips (логика)
+- [releases/v3.44.1.md](releases/v3.44.1.md) — Stars tips UX polish
+- [releases/v3.44.0.md](releases/v3.44.0.md) — Stars tips prod-ready
+- [releases/v3.43.3.md](releases/v3.43.3.md) — Stars tips polish
+- [releases/v3.43.2.md](releases/v3.43.2.md) — Stars tips расширение
 - [releases/v3.43.1.md](releases/v3.43.1.md) — Stars tips UX polish
 - [releases/v3.43.0.md](releases/v3.43.0.md) — Stars: благодарность автору
 - [releases/v3.42.2.md](releases/v3.42.2.md) — NLP «в 2 дня», strip_day для расписаний

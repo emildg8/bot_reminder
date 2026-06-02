@@ -79,8 +79,14 @@ class Settings(BaseSettings):
     auto_update_interval_minutes: int = 1
 
     stars_tips_enabled: bool = False
-    stars_tip_presets: str = "50,100,250"
+    stars_tip_presets: str = "25,50,100,250,500"
+    stars_tip_min: int = 1
+    stars_tip_max: int = 2500
     stars_tips_notify_admin: bool = True
+    stars_tip_nudge_enabled: bool = True
+    stars_tip_nudge_days: int = 14
+    stars_tip_nudge_min_dones: int = 3
+    stars_tip_nudge_once: bool = True
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod

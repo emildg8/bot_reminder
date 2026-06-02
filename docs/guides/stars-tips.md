@@ -1,30 +1,54 @@
 # Stars: благодарность автору
 
-**Дата:** 2026-06-03 · v3.43.0
+**Дата:** 2026-06-04 · v3.44.3
 
 Добровольные чаевые через Telegram Stars — **не** подписка, **не** лимиты.
 
 ## Пользователь
 
 - `/thanks` · `/support` · кнопка **⭐ Поддержать автора** в «⋯ Ещё»
-- Presets: 50 / 100 / 250 ⭐ (настраивается)
-- После оплаты — «Спасибо!», функции не меняются
+- Presets: 25 / 50 / 100 / 250 / 500 ⭐ (настраивается)
+- **✨ Другая сумма** — ввод числа (`75`, `75 ⭐`, `1 000`); фраза с буквами → напоминание
+- После валидной суммы — confirm «✅ Отправить N ⭐»; invoice только после подтверждения
+- Invoice **всегда в личку** (в группе — подсказка «отправлен в личку»)
+- После оплаты — «Спасибо, {имя}!», «⭐ Поддержать ещё»
+- Nudge после «Готово»: личка, ≥3 закрытых; «Не сейчас» → `tip_nudge_dismissed_at` в БД
+- `/status` — «Поддержать автора: /thanks»
 
 ## Включение
 
 ```env
 STARS_TIPS_ENABLED=true
-STARS_TIP_PRESETS=50,100,250
+STARS_TIP_PRESETS=25,50,100,250,500
+STARS_TIP_MIN=1
+STARS_TIP_MAX=2500
 STARS_TIPS_NOTIFY_ADMIN=true
+STARS_TIP_NUDGE_ENABLED=true
+STARS_TIP_NUDGE_DAYS=14
+STARS_TIP_NUDGE_MIN_DONES=3
+STARS_TIP_NUDGE_ONCE=true
 ```
 
 BotFather → Payments → Telegram Stars.
 
 ## Smoke
 
-1. `/thanks` → кнопки сумм
-2. Оплата → «Спасибо! ⭐ …»
-3. Admin panel → «Stars: N · сумма …»
+```bash
+python scripts/smoke_stars.py
+```
+
+1. `/thanks` → preset → оплата
+2. «Другая сумма» → `75` → confirm → invoice в личку
+3. «Другая сумма» → «завтра созвон» → напоминание, не Stars
+4. «✅ Готово» ×3+ → nudge (если не платил)
+5. Admin panel → Stars + топ 7d / 30d
+
+## Миграции
+
+`alembic upgrade head`:
+
+- `20260604_0005` — `users.tip_nudge_at`
+- `20260604_0006` — `users.tip_nudge_dismissed_at`
 
 ## Убрано
 

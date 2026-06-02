@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, time
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 from sqlalchemy import delete, func, select
@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from bot.config import BASE_DIR, settings
-from bot.db.models import AdminAction, BroadcastDraft, ChatSettings, Reminder, ReminderEvent, StarPayment, User
+from bot.db.models import AdminAction, BroadcastDraft, ChatSettings, Reminder, ReminderEvent, ReminderEventKind, StarPayment, User
 from bot.services.reminder_utils import storage_next_run_at
 
 engine = create_async_engine(
@@ -457,3 +457,66 @@ async def count_user_star_tips(session: AsyncSession, telegram_id: int) -> tuple
         )
     )
     return int(count_q.scalar_one()), int(sum_q.scalar_one())
+
+
+async def count_user_done_reminders(session: AsyncSession, telegram_id: int) -> int:
+    result = await session.execute(
+        select(func.count())
+        .select_from(ReminderEvent)
+        .where(
+            ReminderEvent.user_telegram_id == telegram_id,
+            ReminderEvent.event_kind == ReminderEventKind.DONE.value,
+        )
+    )
+    return int(result.scalar_one())
+
+
+async def set_user_tip_nudge_shown(
+    session: AsyncSession,
+    telegram_id: int,
+    *,
+    at: datetime | None = None,
+) -> None:
+    user = await get_user_by_telegram_id(session, telegram_id)
+    if user is None:
+        return
+    user.tip_nudge_at = at or datetime.now(timezone.utc)
+    await session.commit()
+
+
+async def set_user_tip_nudge_dismissed(
+    session: AsyncSession,
+    telegram_id: int,
+    *,
+    at: datetime | None = None,
+) -> None:
+    user = await get_user_by_telegram_id(session, telegram_id)
+    if user is None:
+        return
+    user.tip_nudge_dismissed_at = at or datetime.now(timezone.utc)
+    await session.commit()
+
+
+async def get_top_star_tippers(
+    session: AsyncSession,
+    *,
+    days: int = 30,
+    limit: int = 5,
+) -> list[tuple[int, int, int]]:
+    """(telegram_id, payment_count, total_stars) за период."""
+    since = datetime.now(timezone.utc) - timedelta(days=max(1, days))
+    rows = await session.execute(
+        select(
+            StarPayment.user_telegram_id,
+            func.count(),
+            func.sum(StarPayment.stars_amount),
+        )
+        .where(
+            StarPayment.kind == "tip",
+            StarPayment.created_at >= since,
+        )
+        .group_by(StarPayment.user_telegram_id)
+        .order_by(func.sum(StarPayment.stars_amount).desc())
+        .limit(limit)
+    )
+    return [(int(r[0]), int(r[1]), int(r[2])) for r in rows.all()]
