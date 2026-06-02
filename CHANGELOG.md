@@ -4,6 +4,13 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.44.4] — 2026-06-04
+
+### Stars tips + ops
+- «abc» в своей сумме → ошибка, режим остаётся; фразы напоминаний — passthrough
+- Стартовое сообщение админам: версия + deploy sha
+- `scripts/check_deploy.py` — проверка перед/после деплоя
+
 ## [3.44.3] — 2026-06-04
 
 ### Stars tips (polish)

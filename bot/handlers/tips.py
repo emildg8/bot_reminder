@@ -21,11 +21,11 @@ from bot.services.stars_tips import (
     format_thanks_screen,
     format_tips_disabled,
     is_valid_tip_amount,
+    looks_like_reminder_phrase,
     looks_like_tip_amount,
     parse_tip_amount_input,
     tip_keyboard,
     tips_enabled,
-    text_has_letters,
     user_had_pro,
 )
 from bot.services.tip_custom_state import (
@@ -151,7 +151,7 @@ async def handle_custom_tip_amount(message: Message) -> None:
     text = message.text or ""
 
     if is_pending_confirm(user_id):
-        if text_has_letters(text):
+        if looks_like_reminder_phrase(text):
             clear_all_tip_custom(user_id)
             return
         await message.answer(format_custom_amount_pending_hint())
@@ -160,8 +160,11 @@ async def handle_custom_tip_amount(message: Message) -> None:
     if not is_waiting_custom_amount(user_id):
         return
 
-    if text_has_letters(text) or not looks_like_tip_amount(text):
+    if looks_like_reminder_phrase(text):
         clear_custom_amount(user_id)
+        return
+    if not looks_like_tip_amount(text):
+        await message.answer(format_custom_amount_invalid(text))
         return
     amount = parse_tip_amount_input(text)
     if amount is None:

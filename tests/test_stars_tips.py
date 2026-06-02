@@ -11,6 +11,7 @@ from bot.services.stars_tips import (
     format_amount_out_of_range,
     format_custom_amount_invalid,
     format_thank_you,
+    looks_like_reminder_phrase,
     looks_like_tip_amount,
     parse_tip_amount_input,
     pre_checkout_error,
@@ -220,6 +221,13 @@ def test_format_amount_out_of_range():
     assert "2500" in text
 
 
+def test_looks_like_reminder_phrase():
+    assert looks_like_reminder_phrase("завтра в 14 созвон")
+    assert looks_like_reminder_phrase("завтра")
+    assert not looks_like_reminder_phrase("abc")
+    assert not looks_like_reminder_phrase("75 ⭐")
+
+
 @pytest.mark.asyncio
 async def test_custom_amount_non_numeric_stays_waiting(patched_db, monkeypatch):
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
@@ -230,6 +238,25 @@ async def test_custom_amount_non_numeric_stays_waiting(patched_db, monkeypatch):
     message.from_user.id = user_id
     message.chat.id = user_id
     message.text = "abc"
+    message.bot = MagicMock()
+    message.answer = AsyncMock()
+
+    await handle_custom_tip_amount(message)
+    message.answer.assert_awaited_once()
+    assert is_waiting_custom_amount(user_id)
+    assert "число" in message.answer.await_args[0][0].lower()
+
+
+@pytest.mark.asyncio
+async def test_custom_amount_single_reminder_word_passthrough(patched_db, monkeypatch):
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    user_id = 77013
+    start_custom_amount(user_id)
+
+    message = MagicMock()
+    message.from_user.id = user_id
+    message.chat.id = user_id
+    message.text = "завтра"
     message.bot = MagicMock()
     message.answer = AsyncMock()
 
@@ -474,4 +501,5 @@ async def test_cancel_in_tip_mode(patched_db, monkeypatch):
 
 def test_format_custom_amount_invalid_hint():
     text = format_custom_amount_invalid("???")
-    assert "напоминание" in text.lower()
+    assert "число" in text.lower()
+    assert "напоминан" in text.lower()

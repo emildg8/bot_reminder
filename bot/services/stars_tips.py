@@ -15,6 +15,13 @@ from bot.db.repository import count_user_done_reminders, count_user_star_tips, g
 
 _TIP_TOKENS = ("⭐", "stars", "star", "xtr", "звёзд", "звезд", "звезда", "звезды")
 _LETTERS_RE = re.compile(r"[a-zA-Zа-яА-ЯёЁ]")
+_REMINDER_HINTS = re.compile(
+    r"(?:завтра|сегодня|послезавтра|через|кажд|минут|мин\.?|час|ч\.?|"
+    r"недел|месяц|утром|вечером|ночью|"
+    r"пн|вт|ср|чт|пт|сб|вс|"
+    r"remind|tomorrow|today|every|minute|hour)",
+    re.IGNORECASE,
+)
 
 
 def tips_enabled() -> bool:
@@ -31,6 +38,16 @@ def tip_amount_bounds() -> tuple[int, int]:
 
 def text_has_letters(text: str) -> bool:
     return bool(_LETTERS_RE.search(text or ""))
+
+
+def looks_like_reminder_phrase(text: str) -> bool:
+    """Фраза напоминания — не перехватывать в режиме «своя сумма»."""
+    raw = (text or "").strip()
+    if not text_has_letters(raw):
+        return False
+    if len(raw.split()) >= 2:
+        return True
+    return bool(_REMINDER_HINTS.search(raw))
 
 
 def parse_tip_amount_input(text: str) -> int | None:
@@ -256,7 +273,8 @@ def format_custom_amount_prompt() -> str:
         f"✨ <b>Своя сумма</b>\n\n"
         f"Напиши число от <b>{lo}</b> до <b>{hi}</b> ⭐ "
         f"(можно «75» или «75 ⭐»).\n"
-        "Фраза с буквами — создаст напоминание. /cancel — выход."
+        "Фраза напоминания («завтра созвон») — выйдет из режима суммы.\n"
+        "/cancel — отмена."
     )
 
 
@@ -277,7 +295,7 @@ def format_custom_amount_invalid(text: str) -> str:
     return (
         f"Не понял: «{shown}».\n"
         f"Нужно целое число от {lo} до {hi} ⭐.\n"
-        "Если хотел напоминание — напиши фразу; режим суммы сброшен."
+        "Или напиши фразу напоминания — тогда режим суммы сбросится."
     )
 
 

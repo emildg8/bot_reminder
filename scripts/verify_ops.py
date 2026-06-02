@@ -21,6 +21,8 @@ REQUIRED = (
     "alembic/env.py",
     "alembic/versions/20260531_0001_initial_schema.py",
     "bot/db/migrate.py",
+    "scripts/smoke_stars.py",
+    "scripts/check_deploy.py",
     "docker-compose.yml",
 )
 
