@@ -4,6 +4,20 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.43.0] — 2026-06-03
+
+### Stars — благодарность автору
+- `/thanks` · `/support` — добровольные чаевые через Telegram Stars (presets 50/100/250)
+- Кнопка «⭐ Поддержать автора» в «⋯ Ещё»; уведомление админу
+- Бот **полностью бесплатный** — без лимитов и Pro
+
+### Removed
+- Pro-подписка, `/subscribe`, `/grantpro`, `/revokepro`, лимит активных напоминаний
+
+### Infra
+- `star_payments.kind`, миграция `20260603_0004`
+- Env: `STARS_TIPS_ENABLED`, `STARS_TIP_PRESETS`, `STARS_TIPS_NOTIFY_ADMIN`
+
 ## [3.42.2] — 2026-06-01
 
 ### Fix (NLP)

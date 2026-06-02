@@ -117,6 +117,18 @@ def more_menu_keyboard(telegram_id: int | None = None) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🎯 Тур по боту", callback_data="onb:restart"),
         ],
     ]
+    from bot.services.stars_tips import tips_enabled
+
+    if tips_enabled():
+        rows.insert(
+            -1 if rows else 0,
+            [
+                InlineKeyboardButton(
+                    text="⭐ Поддержать автора",
+                    callback_data="menu:thanks",
+                )
+            ],
+        )
     if telegram_id is not None and is_admin_listed(telegram_id):
         admin_row: list[InlineKeyboardButton] = []
         if is_bot_admin(telegram_id):

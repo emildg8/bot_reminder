@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from bot.handlers.admin import cmd_admin_panel, cmd_broadcast, cmd_grantpro, cmd_userinfo
+from bot.handlers.admin import cmd_admin_panel, cmd_broadcast, cmd_userinfo
 from bot.services.admin_access import set_admin_tools_cached
 from bot.services.admin_panel import (
     BroadcastFilter,
@@ -69,29 +69,6 @@ async def test_userinfo_from_reply(monkeypatch, patched_db):
     await get_or_create_user(patched_db, 888002, "Europe/Moscow")
     await cmd_userinfo(message)
     assert "888002" in message.answer.await_args[0][0]
-
-
-@pytest.mark.asyncio
-async def test_grantpro_from_reply(monkeypatch, patched_db):
-    monkeypatch.setattr("bot.handlers.admin.is_bot_admin", lambda _u: True)
-    monkeypatch.setattr("bot.handlers.admin.monetization_active", lambda: True)
-    message = MagicMock()
-    message.from_user.id = 72
-    message.text = "/grantpro"
-    message.reply_to_message = MagicMock()
-    message.reply_to_message.from_user = MagicMock()
-    message.reply_to_message.from_user.id = 888003
-    message.reply_to_message.from_user.is_bot = False
-    message.answer = AsyncMock()
-    from bot.db.repository import get_or_create_user
-
-    await get_or_create_user(patched_db, 888003, "Europe/Moscow")
-    await cmd_grantpro(message)
-    assert "888003" in message.answer.await_args[0][0]
-    from bot.services.admin_audit import format_admin_log
-
-    log_text = await format_admin_log()
-    assert "grant Pro" in log_text
 
 
 @pytest.mark.asyncio

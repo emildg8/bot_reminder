@@ -114,4 +114,5 @@ class StarPayment(Base):
     user_telegram_id: Mapped[int] = mapped_column(BigInteger, index=True)
     charge_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     stars_amount: Mapped[int] = mapped_column(Integer)
+    kind: Mapped[str] = mapped_column(String(16), default="tip")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

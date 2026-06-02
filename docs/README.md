@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.42.2** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.43.0** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -19,7 +19,8 @@
 | [guides/ops-checklist.md](guides/ops-checklist.md) | Чеклист после деплоя |
 | [guides/group-assignee.md](guides/group-assignee.md) | Напоминание на участника (@user, reply) |
 | [guides/nlp-time-priority.md](guides/nlp-time-priority.md) | Приоритеты: «сегодня» + «через N минут» |
-| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (457), coverage 65%, ruff, verify_ops |
+| [guides/stars-tips.md](guides/stars-tips.md) | Благодарность автору Stars |
+| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (456), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
 | [guides/postgres-backup.md](guides/postgres-backup.md) | Бэкап PostgreSQL, cron |
@@ -39,6 +40,7 @@
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
+- [releases/v3.43.0.md](releases/v3.43.0.md) — Stars: благодарность автору
 - [releases/v3.42.2.md](releases/v3.42.2.md) — NLP «в 2 дня», strip_day для расписаний
 - [releases/v3.42.1.md](releases/v3.42.1.md) — patch CI
 - [releases/v3.42.0.md](releases/v3.42.0.md) — Stars, audit DB, broadcast draft

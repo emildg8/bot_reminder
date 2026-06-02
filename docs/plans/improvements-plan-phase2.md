@@ -1,6 +1,6 @@
 # План улучшений · phase 2 (после v3.40)
 
-**Актуально:** v3.42.2 · **457** тестов · CI + Release green
+**Актуально:** v3.43.0 · **456** тестов · CI + Release green
 
 Приоритет: impact × effort. Одна волна = один minor/patch релиз.
 
@@ -34,6 +34,15 @@
 | I3 | Smoke e2e admin panel в CI | S | ✅ |
 | I4 | Карта admin-тестов в quality-metrics | S | ✅ |
 
+## Волна L — Stars tips v3.43.0 ✅
+
+| # | Задача | Статус |
+|---|--------|--------|
+| L1 | `/thanks` + presets Stars | ✅ |
+| L2 | Убрать Pro/лимиты из UX | ✅ |
+| L3 | Admin stats Stars | ✅ |
+| L4 | docs [stars-tips.md](../guides/stars-tips.md) | ✅ |
+
 ## Волна K — NLP v3.42.2 ✅
 
 | # | Задача | Статус |
@@ -50,7 +59,7 @@
 | J1 | GitHub Secrets: `BOT_TOKEN`, `ADMIN_TELEGRAM_IDS` | ✅ CI deploy notify |
 | J2 | Wispbyte smoke v3.42.2 | 📋 [ops-checklist](../guides/ops-checklist.md) |
 | J3 | BotFather Group Privacy + Stars | 📋 |
-| J4 | `/ping` → v3.42.2 + `smoke_nlp.py` на сервере | 📋 |
+| J4 | `/ping` v3.43.0 + `/thanks` smoke | 📋 |
 
 ---
 
@@ -63,6 +72,13 @@
 | H — Pro/ops | Stars, audit/draft в БД, pg_backup doc |
 | I — Quality | pre-commit verify_ops, smoke admin, coverage |
 | K — NLP | «через N», «в 2 дня», test_nlp_time_priority, smoke_nlp |
+
+## Definition of Done (волна L)
+
+- [x] `/thanks` + presets Stars + invoice XTR
+- [x] Убраны Pro/лимиты из UX
+- [x] Admin stats Stars + notify
+- [x] CHANGELOG + release v3.43.0
 
 ## Definition of Done (волна K)
 

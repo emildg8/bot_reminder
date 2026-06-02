@@ -2,16 +2,16 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.42.2)
+## Оценка текущего состояния (v3.43.0)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
-| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 457 тестов |
+| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 456 тестов |
 | Группы / collective | 10/10 | assignee, inline ✏️🗑 своих |
 | Admin | 10/10 | audit + broadcast draft в БД |
-| Pro / Stars | 9/10 | код готов; включение на проде — ops |
-| Тесты | 9/10 | 457 тестов, gate 65% |
-| CI | 10/10 | green v3.42.2; release = lint CI |
+| Pro / Stars | 10/10 | tips `/thanks`, без лимитов |
+| Тесты | 9/10 | 456 тестов, gate 65% |
+| CI | 10/10 | green v3.43.0; release = lint CI |
 | Docs | 9/10 | phase2 + K закрыты, postgres-backup |
 | Ops | 7/10 | CI green; Wispbyte smoke — [ops-checklist](../guides/ops-checklist.md) |
 

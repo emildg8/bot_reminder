@@ -3,7 +3,6 @@
 import re
 from html import escape
 
-from bot.config import settings
 from bot.services.chat_ctx import ChatKind, collective_noun
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
@@ -274,13 +273,17 @@ def format_about(version: str = __version__) -> str:
         "• Статистика за месяц\n"
         "• Группы и личные чаты\n"
         "• Отложить с настраиваемыми вариантами\n\n"
-        + (
-            f"Free: до {settings.free_active_limit} активных · Pro: /subscribe\n\n"
-            if settings.monetization_enabled
-            else ""
-        )
+        + _about_tips_line()
         + "Команды: /help · /list · /journal · /stats"
     )
+
+
+def _about_tips_line() -> str:
+    from bot.services.stars_tips import tips_enabled
+
+    if tips_enabled():
+        return "Нравится бот? Добровольная благодарность: /thanks\n\n"
+    return ""
 
 GROUP_CREATED_SUFFIX = ""
 CHANNEL_CREATED_SUFFIX = ""
@@ -652,7 +655,7 @@ def format_status(
 
 def format_admin_mode_ack(*, admin_tools: bool) -> str:
     if admin_tools:
-        return "✅ <b>Режим администратора</b> — инструменты и Pro-bypass включены."
+        return "✅ <b>Режим администратора</b> — инструменты ops включены."
     return "✅ <b>Режим пользователя</b> — тестируешь бота как обычный аккаунт."
 
 
@@ -663,8 +666,7 @@ def format_admin_mode_status(*, admin_tools: bool) -> str:
             "<b>Сейчас доступно</b>\n"
             "• <code>/admin</code> — панель · кнопка 🎛 ниже\n"
             "• /health · /sysinfo · /userinfo · /admins\n"
-            "• /update · /grantpro · /revokepro · /broadcast\n"
-            "• Лимиты Free/Pro — как у Pro (если монетизация on)\n"
+            "• /update · /broadcast\n"
             "• В группах — /pause и /clear без админа чата\n\n"
             "Проверить UX пользователя: кнопка «👤 Как пользователь» внизу "
             "или <code>/adminmode user</code>"
@@ -673,7 +675,6 @@ def format_admin_mode_status(*, admin_tools: bool) -> str:
         "👤 <b>Режим пользователя</b>\n\n"
         "<b>Сейчас как у обычного аккаунта</b>\n"
         "• Админ-команды скрыты (попробуй /health — подсказка)\n"
-        "• Лимиты Free · /subscribe\n"
         "• В группах — только свои напоминания\n\n"
         "<code>/adminmode</code> и кнопка «🛠 Режим админа» всегда под рукой.\n"
         "Ops-уведомления о падении бота приходят в любом режиме."

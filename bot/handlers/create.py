@@ -126,17 +126,6 @@ async def _process_text_and_reply(
             prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
         if not await bot_can_post_reminders(bot, delivery_chat_id):
             prefix += format_bot_cannot_post_hint() + "\n\n"
-    else:
-        from bot.services.subscription import can_add_reminder, format_limit_reached
-
-        async with async_session() as session:
-            allowed, current, limit = await can_add_reminder(session, user_id)
-        if not allowed:
-            await message.answer(
-                format_limit_reached(current, limit),
-                reply_markup=menu_keyboard_for_chat(message.chat.id),
-            )
-            return
 
     mention_provided = mention_was_provided(mention)
     chat_kind = chat_kind_from_chat(message.chat)

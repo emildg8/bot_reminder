@@ -24,7 +24,6 @@ ADMIN_EXTRA_COMMANDS = [
     BotCommand(command="admins", description="Список админов бота"),
     BotCommand(command="update", description="Обновить с GitHub (админ)"),
     BotCommand(command="setavatar", description="Аватар бота (админ)"),
-    BotCommand(command="grantpro", description="Выдать Pro (админ)"),
     BotCommand(command="adminlog", description="Журнал админ-действий"),
 ]
 

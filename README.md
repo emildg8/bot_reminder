@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥65%](https://img.shields.io/badge/coverage-≥65%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.42.2](CHANGELOG.md) · **457 тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
+**Версия:** [v3.43.0](CHANGELOG.md) · **456 тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 
@@ -100,7 +100,7 @@ docker compose logs -f bot
 | `/export` / `/import` | Резервная копия JSON |
 | `/help` | Справка |
 | `/about` | О боте |
-| `/subscribe` | Pro (зарезервировано, сейчас выкл.) |
+| `/thanks` | Благодарность автору Stars (если включено) |
 | `/cancel` | Выйти из режима (поиск, edit, уточнение времени) |
 
 ### Группы
@@ -120,8 +120,6 @@ docker compose logs -f bot
 | `/health` | Состояние сервера, repair scheduler |
 | `/update` | Обновление с GitHub + restart |
 | `/sysinfo` | STT, ffmpeg, deploy sha, Group Privacy |
-| `/grantpro` | Выдать Pro (админ, когда включена монетизация) |
-
 ---
 
 ## Группы и каналы
@@ -186,7 +184,7 @@ bot/
   services/     # NLP, scheduler, drafts, collective UX
   db/           # models, repository
   keyboards/    # inline + reply
-tests/          # unit + handler tests (457, см. quality-metrics.md)
+tests/          # unit + handler tests (456, см. quality-metrics.md)
 scripts/        # deploy, backup, healthcheck
 docs/           # guides, releases, plans
 ```

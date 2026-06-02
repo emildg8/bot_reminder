@@ -78,15 +78,9 @@ class Settings(BaseSettings):
     auto_update_enabled: bool = True
     auto_update_interval_minutes: int = 1
 
-    free_active_limit: int = 20
-    monetization_enabled: bool = False
-    pro_contact_hint: str = (
-        "Напиши админу бота или открой issue: "
-        "github.com/emildg8/bot_reminder"
-    )
-    stars_payments_enabled: bool = False
-    pro_stars_price: int = 250
-    pro_duration_days: int = 30
+    stars_tips_enabled: bool = False
+    stars_tip_presets: str = "50,100,250"
+    stars_tips_notify_admin: bool = True
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod
@@ -97,6 +91,16 @@ class Settings(BaseSettings):
     @classmethod
     def merge_builtin_admin_ids(cls, value: list[int]) -> list[int]:
         return _merge_admin_ids(value)
+
+    def stars_tip_preset_list(self) -> list[int]:
+        values: list[int] = []
+        for part in self.stars_tip_presets.split(","):
+            part = part.strip()
+            if part.isdigit():
+                n = int(part)
+                if n > 0:
+                    values.append(n)
+        return values or [50, 100, 250]
 
     groq_model: str = "llama-3.1-8b-instant"
     groq_whisper_model: str = "whisper-large-v3-turbo"

@@ -56,7 +56,14 @@ CHANNEL_COMMANDS = [
 
 
 async def setup_bot_commands(bot: Bot) -> None:
-    await bot.set_my_commands(PRIVATE_COMMANDS, scope=BotCommandScopeDefault())
+    commands = list(PRIVATE_COMMANDS)
+    from bot.services.stars_tips import tips_enabled
+
+    if tips_enabled():
+        commands.append(
+            BotCommand(command="thanks", description="Благодарность Stars автору")
+        )
+    await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
     await bot.set_my_commands(COLLECTIVE_COMMANDS, scope=BotCommandScopeAllGroupChats())
     from bot.services.admin_mode import setup_all_admin_command_menus
 

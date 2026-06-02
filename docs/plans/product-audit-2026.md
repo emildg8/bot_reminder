@@ -139,7 +139,7 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ### Monetization MVP ✅ v3.35
 
-- Free limit 20 · `/subscribe` · `/grantpro` · `User.is_pro`
+- Free limit 20 · `/thanks` Stars (v3.43, без лимитов) · legacy `User.is_pro` в БД
 
 ### Фаза E — Инфра ✅ v3.37
 
@@ -179,6 +179,6 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ## 7. Итог (июнь 2026)
 
-**Актуально (v3.42.2):** roadmap A–E + F + G + **H/I phase2** закрыты в коде. CI: lint-and-test + Release **green**, **457** тестов, coverage **≥65%**, `verify_ops`, pre-commit.
+**Актуально (v3.43.0):** roadmap A–E + F + G + **H/I phase2** закрыты в коде. CI: lint-and-test + Release **green**, **456** тестов, coverage **≥65%**, `verify_ops`, pre-commit.
 
-**Дальше:** ops на Wispbyte — `/ping` v3.42.2, `python scripts/smoke_nlp.py`, Telegram smoke ([ops-checklist](../guides/ops-checklist.md)). Backlog phase 3: coverage scheduler, e2e Stars.
+**Дальше:** ops — `/ping` v3.43.0, `/thanks` smoke, [stars-tips.md](../guides/stars-tips.md).

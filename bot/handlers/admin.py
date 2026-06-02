@@ -3,9 +3,8 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy import func, select
 
-from bot.config import settings
 from bot.db.models import Reminder, User
-from bot.db.repository import async_session, get_all_active_reminders, get_or_create_user, set_user_pro
+from bot.db.repository import async_session, get_all_active_reminders
 from bot.keyboards.reply import (
     ADMIN_MODE_BUTTON_TEXTS,
     menu_keyboard_for_chat,
@@ -58,7 +57,6 @@ from bot.services.media import describe_stt_backends, is_ffmpeg_available
 from bot.services.runtime import format_uptime, uptime_seconds
 from bot.services.bot_privacy import format_group_privacy_status
 from bot.services.scheduler import count_scheduled_reminder_jobs
-from bot.services.subscription import monetization_active
 from bot.texts.messages import format_admin_mode_ack, format_admin_mode_status
 from bot.version import __version__
 
@@ -83,26 +81,6 @@ async def _reply_userinfo(message: Message, target_id: int, *, edit: bool = Fals
         await message.edit_text(text, **kwargs)
     else:
         await message.answer(text, **kwargs)
-
-
-async def _set_user_pro(
-    message: Message,
-    admin_id: int,
-    target_id: int,
-    *,
-    is_pro: bool,
-) -> bool:
-    async with async_session() as session:
-        await get_or_create_user(session, target_id, settings.default_timezone)
-        user = await set_user_pro(session, target_id, is_pro=is_pro)
-    if user is None:
-        await message.answer("Пользователь не найден.")
-        return False
-    verb = "grant" if is_pro else "revoke"
-    await log_admin_action(admin_id, f"{verb} Pro → {target_id}")
-    body = message.text or message.caption or ""
-    await _reply_userinfo(message, target_id, edit=is_userinfo_card(body))
-    return True
 
 
 async def _finish_broadcast(
@@ -301,24 +279,6 @@ async def cmd_admins(message: Message) -> None:
     await message.answer(await format_admins_list(message.from_user.id))
 
 
-@router.message(Command("revokepro"))
-async def cmd_revokepro(message: Message) -> None:
-    if not monetization_active():
-        await message.answer("⭐ Pro пока отключён — монетизация в разработке.")
-        return
-    if not is_bot_admin(message.from_user.id):
-        await _deny_admin(message)
-        return
-    target_id = parse_target_telegram_id(message)
-    if target_id is None:
-        await message.answer(
-            "Формат: <code>/revokepro TELEGRAM_ID</code>\n"
-            "Или <b>ответ</b> на сообщение + <code>/revokepro</code>"
-        )
-        return
-    await _set_user_pro(message, message.from_user.id, target_id, is_pro=False)
-
-
 @router.message(Command("broadcast"))
 async def cmd_broadcast(message: Message, bot: Bot) -> None:
     if not is_bot_admin(message.from_user.id):
@@ -480,34 +440,6 @@ async def cb_broadcast_confirm(callback: CallbackQuery, bot: Bot) -> None:
     )
 
 
-@router.callback_query(F.data.startswith("admin:pro:"))
-async def cb_admin_pro(callback: CallbackQuery) -> None:
-    if not is_bot_admin(callback.from_user.id):
-        await callback.answer("Недоступно", show_alert=True)
-        return
-    if not monetization_active():
-        await callback.answer("Монетизация выкл.", show_alert=True)
-        return
-    parts = (callback.data or "").split(":")
-    if len(parts) != 4:
-        await callback.answer("Ошибка", show_alert=True)
-        return
-    action, target_raw = parts[2], parts[3]
-    try:
-        target_id = int(target_raw)
-    except ValueError:
-        await callback.answer("Некорректный id", show_alert=True)
-        return
-    grant = action == "grant"
-    if not await _set_user_pro(
-        callback.message, callback.from_user.id, target_id, is_pro=grant
-    ):
-        await callback.answer("Не найден", show_alert=True)
-        return
-    label = "выдан" if grant else "снят"
-    await callback.answer(f"Pro {label}")
-
-
 @router.callback_query(F.data.startswith("admin:run:"))
 async def cb_admin_run(callback: CallbackQuery, bot: Bot) -> None:
     if not is_admin_listed(callback.from_user.id):
@@ -602,27 +534,6 @@ async def cmd_setavatar(message: Message, bot: Bot) -> None:
         await message.answer("✅ Аватар обновлён. Проверь профиль бота.")
     except Exception as exc:
         await message.answer(f"❌ Не удалось: {exc}")
-
-
-@router.message(Command("grantpro"))
-async def cmd_grantpro(message: Message) -> None:
-    if not monetization_active():
-        await message.answer("⭐ Pro пока отключён — монетизация в разработке.")
-        return
-
-    if not is_bot_admin(message.from_user.id):
-        await message.answer(format_bot_admin_denied(message.from_user.id))
-        return
-
-    target_id = parse_target_telegram_id(message)
-    if target_id is None:
-        await message.answer(
-            "Формат: <code>/grantpro TELEGRAM_ID</code>\n"
-            "Или <b>ответ</b> на сообщение + <code>/grantpro</code>"
-        )
-        return
-
-    await _set_user_pro(message, message.from_user.id, target_id, is_pro=True)
 
 
 @router.message(Command("update"))

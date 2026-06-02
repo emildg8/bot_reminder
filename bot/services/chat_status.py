@@ -38,10 +38,6 @@ async def build_status_text(bot: Bot, message: Message) -> str:
     admin_mode_line = None
     if kind == ChatKind.PRIVATE and is_admin_listed(message.from_user.id):
         admin_mode_line = format_admin_mode_line(admin_tools=is_bot_admin(message.from_user.id))
-        from bot.services.subscription import monetization_active
-
-        if monetization_active() and not is_bot_admin(message.from_user.id):
-            admin_mode_line += "\n📊 Лимиты Free/Pro — как у обычного пользователя"
 
     return format_status(
         count=len(reminders),

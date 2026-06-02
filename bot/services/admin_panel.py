@@ -18,13 +18,15 @@ from bot.db.models import Reminder, User
 from bot.db.repository import (
     async_session,
     count_active_reminders_for_user,
+    count_user_star_tips,
     delete_broadcast_draft,
     get_broadcast_draft,
+    get_star_tips_summary,
     get_user_by_telegram_id,
     upsert_broadcast_draft,
 )
 from bot.services.admin_access import get_admin_tools_enabled, is_admin_listed, is_bot_admin
-from bot.services.subscription import can_add_reminder, is_pro_user, monetization_active, pro_expires_label
+from bot.services.stars_tips import tips_enabled
 from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
@@ -84,11 +86,7 @@ async def build_userinfo_reply(telegram_id: int) -> tuple[str, InlineKeyboardMar
         if user is None:
             return text, None
         active = await count_active_reminders_for_user(session, telegram_id)
-    kb = user_info_keyboard(
-        telegram_id,
-        is_pro=is_pro_user(user, telegram_id),
-        active_count=active,
-    )
+    kb = user_info_keyboard(telegram_id, active_count=active)
     return text, kb
 
 
@@ -300,14 +298,10 @@ async def format_quick_stats() -> str:
         f"👤 с напоминаниями: <b>{with_active}</b> · ⏱ в планировщике: <b>{jobs}</b>",
         f"🆕 за 7 дней: <b>{new_week}</b>",
     ]
-    if monetization_active():
+    if tips_enabled():
         async with async_session() as session:
-            pro_count = (
-                await session.execute(
-                    select(func.count()).select_from(User).where(User.is_pro.is_(True))
-                )
-            ).scalar_one()
-        lines.append(f"⭐ Pro в БД: <b>{pro_count}</b>")
+            tip_count, tip_total = await get_star_tips_summary(session)
+        lines.append(f"⭐ Stars: <b>{tip_count}</b> · сумма <b>{tip_total}</b>")
     return "\n".join(lines)
 
 
@@ -318,7 +312,6 @@ async def format_admin_panel_intro() -> str:
         f"{stats}\n\n"
         "Кнопки ниже или команды:\n"
         "• <code>/userinfo ID</code> или <b>ответ</b> + /userinfo\n"
-        "• <code>/grantpro</code> · <code>/revokepro</code> — ID или ответ\n"
         "• <code>/broadcast текст</code> — превью\n"
         "• фильтры: <code>активные</code> · <code>pro</code> · <code>free</code>\n"
         "• <code>/broadcast test текст</code> — пример себе\n"
@@ -382,7 +375,7 @@ def admin_panel_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def user_info_keyboard(target_id: int, *, is_pro: bool, active_count: int = 0) -> InlineKeyboardMarkup:
+def user_info_keyboard(target_id: int, *, active_count: int = 0) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [
             InlineKeyboardButton(
@@ -400,16 +393,6 @@ def user_info_keyboard(target_id: int, *, is_pro: bool, active_count: int = 0) -
                 )
             ]
         )
-    if monetization_active():
-        grant = InlineKeyboardButton(
-            text="⭐ Выдать Pro",
-            callback_data=f"admin:pro:grant:{target_id}",
-        )
-        revoke = InlineKeyboardButton(
-            text="➖ Снять Pro",
-            callback_data=f"admin:pro:revoke:{target_id}",
-        )
-        rows.append([revoke, grant] if is_pro else [grant, revoke])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -480,15 +463,7 @@ async def format_user_info(telegram_id: int) -> str:
             .limit(1)
         )
         next_reminder = next_row.first()
-        pro = is_pro_user(user, telegram_id)
-        monetization = monetization_active()
-        limit_line = ""
-        if monetization and not pro:
-            allowed, current, limit = await can_add_reminder(session, telegram_id)
-            if limit:
-                limit_line = f"📊 Лимит Free: <b>{current}/{limit}</b>" + (
-                    " · можно ещё" if allowed else " · лимит исчерпан"
-                )
+        tip_count, tip_total = await count_user_star_tips(session, telegram_id)
 
     lines = [
         f"👤 <b>Пользователь</b> <code>{telegram_id}</code>",
@@ -501,14 +476,8 @@ async def format_user_info(telegram_id: int) -> str:
         when = nrun.strftime("%d.%m %H:%M") if nrun else "?"
         short = escape((ntext or "")[:60]) + ("…" if len(ntext or "") > 60 else "")
         lines.append(f"⏭ Ближайшее: <b>{when}</b> — {short}")
-    if limit_line:
-        lines.append(limit_line)
-    if monetization:
-        pro_label = "да" if pro else "нет"
-        exp = pro_expires_label(user) if pro else None
-        if exp:
-            pro_label += f" до {exp}"
-        lines.append(f"⭐ Pro: <b>{pro_label}</b>")
+    if tip_count:
+        lines.append(f"⭐ Stars: <b>{tip_count}</b> · сумма <b>{tip_total}</b>")
     if is_admin_listed(telegram_id):
         mode = "администратор" if user.admin_tools_enabled else "пользователь (тест)"
         lines.append(f"🛠 Админ бота: <b>{mode}</b>")

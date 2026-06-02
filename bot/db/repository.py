@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, time
 from pathlib import Path
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -406,11 +406,13 @@ async def record_star_payment(
     user_telegram_id: int,
     charge_id: str,
     stars_amount: int,
+    kind: str = "tip",
 ) -> StarPayment | None:
     payment = StarPayment(
         user_telegram_id=user_telegram_id,
         charge_id=charge_id,
         stars_amount=stars_amount,
+        kind=kind,
     )
     session.add(payment)
     try:
@@ -422,19 +424,36 @@ async def record_star_payment(
     return payment
 
 
-async def expire_pro_subscriptions(session: AsyncSession) -> int:
-    now = datetime.now().astimezone()
-    result = await session.execute(
-        select(User).where(
-            User.is_pro.is_(True),
-            User.pro_expires_at.is_not(None),
-            User.pro_expires_at < now,
+async def get_star_tips_summary(session: AsyncSession) -> tuple[int, int]:
+    """(count, total_stars) для kind=tip."""
+    count_q = await session.execute(
+        select(func.count())
+        .select_from(StarPayment)
+        .where(StarPayment.kind == "tip")
+    )
+    sum_q = await session.execute(
+        select(func.coalesce(func.sum(StarPayment.stars_amount), 0))
+        .select_from(StarPayment)
+        .where(StarPayment.kind == "tip")
+    )
+    return int(count_q.scalar_one()), int(sum_q.scalar_one())
+
+
+async def count_user_star_tips(session: AsyncSession, telegram_id: int) -> tuple[int, int]:
+    count_q = await session.execute(
+        select(func.count())
+        .select_from(StarPayment)
+        .where(
+            StarPayment.user_telegram_id == telegram_id,
+            StarPayment.kind == "tip",
         )
     )
-    users = list(result.scalars().all())
-    for user in users:
-        user.is_pro = False
-        user.pro_expires_at = None
-    if users:
-        await session.commit()
-    return len(users)
+    sum_q = await session.execute(
+        select(func.coalesce(func.sum(StarPayment.stars_amount), 0))
+        .select_from(StarPayment)
+        .where(
+            StarPayment.user_telegram_id == telegram_id,
+            StarPayment.kind == "tip",
+        )
+    )
+    return int(count_q.scalar_one()), int(sum_q.scalar_one())

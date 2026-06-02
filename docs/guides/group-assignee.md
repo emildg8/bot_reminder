@@ -76,4 +76,4 @@
 
 - [groups-and-channels.md](groups-and-channels.md) — collective-режим
 - [improvements-plan F3.0](../plans/improvements-plan-2026-06.md) — roadmap
-- [quality-metrics.md](quality-metrics.md) — карта всех 457 тестов
+- [quality-metrics.md](quality-metrics.md) — карта всех 456 тестов
