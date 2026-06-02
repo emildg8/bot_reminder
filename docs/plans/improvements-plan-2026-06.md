@@ -2,18 +2,18 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.43.0)
+## Оценка текущего состояния (v3.45.2)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
-| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 513 тестов |
-| Группы / collective | 10/10 | assignee, inline ✏️🗑 своих |
+| NLP / время | 10/10 | smoke_nlp в verify_ops, 556 тестов, приоритеты v3.42.2 |
+| Группы / collective | 10/10 | assignee кнопками v3.45, smoke_group_mentions |
 | Admin | 10/10 | audit + broadcast draft в БД |
-| Pro / Stars | 10/10 | tips v3.44.4 · [stars-tips-polish.md](stars-tips-polish.md) ✅ |
-| Тесты | 9/10 | 513 тестов, gate 65% |
-| CI | 10/10 | green v3.43.0; release = lint CI |
-| Docs | 9/10 | phase2 + K закрыты, postgres-backup |
-| Ops | 7/10 | CI green; Wispbyte smoke — [ops-checklist](../guides/ops-checklist.md) |
+| Pro / Stars | 10/10 | tips v3.44.4 · smoke_stars в verify_ops |
+| Тесты | 10/10 | **556** тестов, assignee callbacks + handler; gate 65% (~66%) |
+| CI | 10/10 | verify_ops + smokes + pytest + ruff |
+| Docs | 10/10 | v3.45.x assignee, ops-checklist, verify_ops |
+| Ops | 10/10 | verify_ops = файлы + docs + 3 smoke; Wispbyte — [ops-checklist](../guides/ops-checklist.md) (ручной `/ping`) |
 
 **Phase 2:** [improvements-plan-phase2.md](improvements-plan-phase2.md)
 

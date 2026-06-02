@@ -7,9 +7,12 @@ from dataclasses import dataclass
 from aiogram.types import Message
 
 from bot.services.mention_parse import (
+    assignee_pick_for_count,
     extract_leading_username,
     extract_mention_from_message,
     extract_username_anywhere,
+    extract_username_candidates,
+    format_assignee_pick_note,
     strip_leading_bot_mention,
 )
 
@@ -20,6 +23,33 @@ class CreateMention:
     username: str | None
     phrase: str
     source: str | None  # "text" | "reply" | None
+    pick_note: str | None = None
+
+
+def _enrich_pick_context(
+    message: Message,
+    mention: CreateMention,
+    *,
+    bot_username: str | None,
+) -> CreateMention:
+    if mention.source != "text" or not mention.username:
+        return mention
+    raw = (message.text or message.caption or "").strip()
+    candidates, _ = extract_username_candidates(raw, bot_username)
+    if len(candidates) <= 1:
+        return mention
+    note = format_assignee_pick_note(
+        raw,
+        chosen=mention.username,
+        candidates=candidates,
+    )
+    return CreateMention(
+        mention.user_id,
+        mention.username,
+        mention.phrase,
+        mention.source,
+        pick_note=note,
+    )
 
 
 def extract_reply_target(message: Message) -> tuple[int | None, str | None]:
@@ -58,9 +88,12 @@ def extract_create_mention(
         stripped = strip_leading_bot_mention(phrase, bot_username)
         username, clean = extract_leading_username(stripped, bot_username)
         if not username:
-            username, clean = extract_username_anywhere(stripped, bot_username)
+            candidates, _ = extract_username_candidates(stripped, bot_username)
+            pick = assignee_pick_for_count(len(candidates))
+            username, clean = extract_username_anywhere(stripped, bot_username, pick=pick)
         if username:
-            return CreateMention(None, username, clean, "text")
+            base = CreateMention(None, username, clean, "text")
+            return _enrich_pick_context(message, base, bot_username=bot_username)
         reply_id, reply_uname = extract_reply_target(message)
         if reply_id:
             return CreateMention(reply_id, reply_uname, phrase, "reply")
@@ -72,7 +105,8 @@ def extract_create_mention(
         bot_id=bot_id,
     )
     if mention_username or mention_id:
-        return CreateMention(mention_id, mention_username, clean or phrase, "text")
+        base = CreateMention(mention_id, mention_username, clean or phrase, "text")
+        return _enrich_pick_context(message, base, bot_username=bot_username)
 
     reply_id, reply_uname = extract_reply_target(message)
     if reply_id:

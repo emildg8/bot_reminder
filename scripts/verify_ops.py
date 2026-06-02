@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -22,9 +23,35 @@ REQUIRED = (
     "alembic/versions/20260531_0001_initial_schema.py",
     "bot/db/migrate.py",
     "scripts/smoke_stars.py",
+    "scripts/smoke_group_mentions.py",
+    "scripts/smoke_nlp.py",
     "scripts/check_deploy.py",
     "docker-compose.yml",
 )
+
+
+_SMOKE_SCRIPTS = (
+    "smoke_nlp.py",
+    "smoke_group_mentions.py",
+    "smoke_stars.py",
+)
+
+
+def _run_smoke_scripts() -> list[str]:
+    errors: list[str] = []
+    for name in _SMOKE_SCRIPTS:
+        path = ROOT / "scripts" / name
+        proc = subprocess.run(
+            [sys.executable, str(path)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if proc.returncode != 0:
+            tail = (proc.stdout or "") + (proc.stderr or "")
+            errors.append(f"{name} failed (exit {proc.returncode}): {tail.strip()[-200:]}")
+    return errors
 
 
 def _read_version(path: Path) -> str:
@@ -64,6 +91,7 @@ def main() -> int:
 
     errors.extend(verify_doc_version(ROOT, ver_py))
     errors.extend(verify_doc_test_counts(ROOT))
+    errors.extend(_run_smoke_scripts())
 
     if errors:
         print("verify_ops FAILED:")

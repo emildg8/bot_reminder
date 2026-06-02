@@ -2,11 +2,37 @@
 
 from __future__ import annotations
 
+import re
+
 from aiogram.enums import ChatType
 from aiogram.types import Message
 
 from bot.services.chat_ctx import is_collective_chat
 from bot.services.mention_parse import _is_bot_mention
+
+
+def _contains_bot_mention_text(text: str, bot_username: str | None) -> bool:
+    if not text or not bot_username:
+        return False
+    uname = re.escape(bot_username.lstrip("@"))
+    pattern = re.compile(rf"(?<!\w)@{uname}(?=[^\w]|$)", re.IGNORECASE)
+    return bool(pattern.search(text))
+
+
+def _iter_message_entities(message: Message):
+    for bucket in (message.entities, message.caption_entities):
+        if bucket:
+            yield from bucket
+
+
+def is_reply_to_bot(message: Message, bot_id: int | None) -> bool:
+    """Голос/текст ответом на сообщение бота — как @бот в группе."""
+    if bot_id is None:
+        return False
+    reply = message.reply_to_message
+    if reply is None or reply.from_user is None:
+        return False
+    return reply.from_user.id == bot_id
 
 
 def is_bot_mentioned(
@@ -16,11 +42,8 @@ def is_bot_mentioned(
     bot_id: int | None,
 ) -> bool:
     text = message.text or message.caption or ""
-    if not text:
-        return False
-
-    if message.entities:
-        for entity in message.entities:
+    if text:
+        for entity in _iter_message_entities(message):
             if entity.type == "mention":
                 username = text[entity.offset + 1 : entity.offset + entity.length]
                 if _is_bot_mention(username, bot_username, bot_id=bot_id):
@@ -33,12 +56,10 @@ def is_bot_mentioned(
                     bot_id=bot_id,
                 ):
                     return True
-
-    if bot_username:
-        token = f"@{bot_username}".lower()
-        if token in text.lower():
+        if _contains_bot_mention_text(text, bot_username):
             return True
-    return False
+
+    return is_reply_to_bot(message, bot_id)
 
 
 def _is_command_message(message: Message) -> bool:

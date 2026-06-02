@@ -7,22 +7,21 @@ from aiogram.types import Message
 
 from bot.db.repository import async_session
 from bot.handlers.edit import process_edit_phrase
-from bot.keyboards.inline import confirm_reminder_keyboard, task_time_keyboard
+from bot.keyboards.inline import task_time_keyboard
 from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
 from bot.services.bot_mention import should_handle_collective_message
-from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
+from bot.services.assignee_prompt import offer_assignee_choice
+from bot.services.create_confirm import deliver_create_confirm
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat, is_group_chat
 from bot.services.chat_delivery import resolve_delivery_chat_id
-from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
 from bot.services.stt_errors import format_stt_error
 from bot.services.timezone_ctx import get_effective_timezone
-from bot.services.drafts import pop_search_pending, store_draft
+from bot.services.drafts import pop_search_pending
 from bot.services.pending_tasks import get_pending_task, store_pending_task
-from bot.services.reminder_display import format_batch_parsed_summary_html
+from bot.services.mention_parse import extract_username_candidates, strip_leading_bot_mention
+from bot.services.pending_assignee import clear_pending_assignee
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import (
-    format_confirm_card,
-    format_mention_assignee_line,
     format_parse_fail,
     format_pending_ambiguous_hint,
     looks_like_task_only,
@@ -33,7 +32,6 @@ from bot.services.mention_create import extract_create_mention, mention_was_prov
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.nlp.speech_cleanup import cleanup_stt_text, is_stt_text_too_short
-from bot.services.mention_parse import strip_leading_bot_mention
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -41,6 +39,15 @@ router = Router()
 MAX_VOICE_SECONDS = 120
 MAX_VIDEO_NOTE_SECONDS = 60
 MIN_AUDIO_SECONDS = 1
+
+
+def _raw_for_assignee_candidates(
+    message: Message, phrase_text: str, *, source_label: str
+) -> str:
+    """Текст для поиска @user: в голосе — распознанная фраза, иначе сообщение."""
+    if source_label in ("voice", "video_note"):
+        return phrase_text.strip()
+    return (message.text or message.caption or phrase_text or "").strip()
 
 
 async def _get_parse_timezone(chat_id: int, user_id: int) -> str:
@@ -64,6 +71,7 @@ async def _process_text_and_reply(
     actor_user_id: int | None = None,
 ) -> None:
     user_id = actor_user_id or message.from_user.id
+    clear_pending_assignee(user_id)
     me = await bot.get_me()
 
     mention = extract_create_mention(
@@ -108,65 +116,37 @@ async def _process_text_and_reply(
             )
         return
 
-    summary = format_batch_parsed_summary_html(parsed_items, timezone)
-    if source_label == "voice":
-        prefix = f"🎤 Распознано: {text}\n\n"
-    elif source_label == "video_note":
-        prefix = f"🔵 Из кружочка: {text}\n\n"
-    else:
-        prefix = ""
-    prefix += format_mention_assignee_line(
-        mention_telegram_id,
-        mention.username,
-        resolved=mention_telegram_id is not None or not mention.username,
-        source=mention.source,
-    )
-
-    if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
-        if delivery_chat_id != message.chat.id:
-            prefix += "📢 Публикация — в <b>канале</b> (из группы обсуждений).\n\n"
-        if not await bot_can_post_reminders(bot, delivery_chat_id):
-            prefix += format_bot_cannot_post_hint() + "\n\n"
-
-    mention_provided = mention_was_provided(mention)
-    chat_kind = chat_kind_from_chat(message.chat)
-    draft_id = store_draft(
-        user_id,
+    raw = _raw_for_assignee_candidates(message, text, source_label=source_label)
+    candidates, _ = extract_username_candidates(raw, me.username)
+    if await offer_assignee_choice(
+        message,
+        user_id=user_id,
         parsed_items=parsed_items,
+        phrase=phrase,
+        candidates=candidates,
+        timezone=timezone,
+        delivery_chat_id=delivery_chat_id,
+        source_label=source_label,
+        heard_text=text,
+    ):
+        return
+
+    mention_resolved = mention_telegram_id is not None or not mention.username
+    await deliver_create_confirm(
+        message,
+        bot,
+        user_id=user_id,
+        parsed_items=parsed_items,
+        timezone=timezone,
+        delivery_chat_id=delivery_chat_id,
         mention_telegram_id=mention_telegram_id,
         mention_username=mention.username,
         mention_source=mention.source,
-        mention_provided=mention_provided,
-        collective_chat_id=message.chat.id if chat_kind != ChatKind.PRIVATE else None,
-        collective_chat_kind=chat_kind if chat_kind != ChatKind.PRIVATE else None,
-        delivery_chat_id=delivery_chat_id if chat_kind != ChatKind.PRIVATE else None,
-    )
-
-    body = format_confirm_card(summary) if chat_kind == ChatKind.PRIVATE else (prefix + summary)
-    if chat_kind == ChatKind.PRIVATE and prefix:
-        body = prefix + body
-
-    if chat_kind != ChatKind.PRIVATE:
-        me = await bot.get_me()
-        sent_dm = await send_collective_confirm(
-            bot,
-            user_id=user_id,
-            collective_chat_id=message.chat.id,
-            collective_kind=chat_kind,
-            chat_title=message.chat.title,
-            body=body,
-            reply_markup=confirm_reminder_keyboard(draft_id),
-        )
-        if not sent_dm:
-            await message.answer(
-                body + collective_dm_failed_suffix(me.username),
-                reply_markup=confirm_reminder_keyboard(draft_id),
-            )
-        return
-
-    await message.answer(
-        body,
-        reply_markup=confirm_reminder_keyboard(draft_id),
+        mention_provided=mention_was_provided(mention),
+        mention_pick_note=mention.pick_note,
+        source_label=source_label,
+        heard_text=text,
+        mention_resolved=mention_resolved,
     )
 
 
@@ -215,28 +195,45 @@ async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None
     await _process_text_and_reply(message, phrase, bot)
 
 
+async def _handle_collective_phrase_message(message: Message, bot: Bot) -> None:
+    """Текст в личке или @бот в группе (в т.ч. после правки сообщения)."""
+    me = await bot.get_me()
+    if not should_handle_collective_message(
+        message, bot_username=me.username, bot_id=me.id
+    ):
+        return
+
+    raw_text = (message.text or "").strip()
+    if is_group_chat(message.chat.id):
+        logger.info(
+            "Group text chat=%s user=%s: %s",
+            message.chat.id,
+            message.from_user.id if message.from_user else "?",
+            raw_text[:120],
+        )
+    text = strip_leading_bot_mention(raw_text, me.username)
+    await _route_user_phrase(message, text, bot)
+
+
 @router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
 async def handle_text(message: Message, bot: Bot) -> None:
     try:
-        me = await bot.get_me()
-        if not should_handle_collective_message(
-            message, bot_username=me.username, bot_id=me.id
-        ):
-            return
-
-        if is_group_chat(message.chat.id):
-            logger.info(
-                "Group text chat=%s user=%s: %s",
-                message.chat.id,
-                message.from_user.id if message.from_user else "?",
-                (message.text or "")[:120],
-            )
-        text = strip_leading_bot_mention(message.text.strip(), me.username)
-        await _route_user_phrase(message, text, bot)
+        await _handle_collective_phrase_message(message, bot)
     except Exception:
         logger.exception("Failed to handle text in chat %s", message.chat.id)
         await message.answer(
             "⚠️ Не удалось обработать сообщение. Попробуй ещё раз или <code>/ping</code>."
+        )
+
+
+@router.edited_message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
+async def handle_edited_text(message: Message, bot: Bot) -> None:
+    try:
+        await _handle_collective_phrase_message(message, bot)
+    except Exception:
+        logger.exception("Failed to handle edited text in chat %s", message.chat.id)
+        await message.answer(
+            "⚠️ Не удалось обработать правку. Попробуй ещё раз или <code>/ping</code>."
         )
 
 
@@ -286,6 +283,8 @@ async def _handle_audio_message(
                 return
 
         await status.delete()
+        if is_group_chat(message.chat.id):
+            text = strip_leading_bot_mention(text, me.username)
         await _route_user_phrase(message, text, bot, source_label=source_label)
     except Exception as exc:
         logger.exception("STT failed")

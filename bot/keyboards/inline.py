@@ -329,6 +329,28 @@ def ambiguous_day_only_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def assignee_choice_keyboard(candidates: list[str]) -> InlineKeyboardMarkup:
+    """as:0 … as:N — индекс в candidates; as:_none — без assignee."""
+    rows: list[list[InlineKeyboardButton]] = []
+    row: list[InlineKeyboardButton] = []
+    for idx, username in enumerate(candidates[:6]):
+        row.append(
+            InlineKeyboardButton(text=f"@{username}", callback_data=f"as:{idx}")
+        )
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append(
+        [
+            InlineKeyboardButton(text="Только мне", callback_data="as:_none"),
+            InlineKeyboardButton(text="❌ Отмена", callback_data="as:_cancel"),
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

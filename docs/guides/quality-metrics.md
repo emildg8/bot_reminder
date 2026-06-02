@@ -2,7 +2,7 @@
 
 Кратко, что проверяется перед каждым merge в `main`.
 
-## 513 тестов (pytest)
+## 556 тестов (pytest)
 
 Автоматические сценарии: парсинг фраз, БД, callbacks, группы, удаление и т.д.
 
@@ -51,11 +51,12 @@ ruff check bot tests
 - `start.sh` запускает `python -m bot.main`;
 - версия в `bot/version.py` = `pyproject.toml` и в `README.md` / `docs/README.md`;
 - **число тестов** в docs = `pytest --collect-only` (`scripts/doc_metrics.py`);
+- **smoke** (офлайн): `smoke_nlp.py`, `smoke_group_mentions.py`, `smoke_stars.py`;
 - в `.env.example` дефолты для Wispbyte (например `LOCAL_WHISPER_ENABLED=false`).
 
 ```bash
 python scripts/verify_ops.py
-# → verify_ops OK · v3.40.0
+# → verify_ops OK · v3.45.2
 ```
 
 ## Локально как в CI
@@ -66,7 +67,7 @@ python scripts/verify_ops.py
 pytest -v --cov=bot --cov-fail-under=65
 ```
 
-## Карта тестов (513)
+## Карта тестов (556)
 
 | Категория | Примеры файлов | ~кол-во |
 |-----------|----------------|---------|
@@ -75,7 +76,7 @@ pytest -v --cov=bot --cov-fail-under=65
 | Callbacks / UI | `test_001`–`test_003`, `test_confirm_flow`, `test_pagination` | 60+ |
 | Handlers | `test_004`–`test_008`, `test_005_handlers_core`, `test_007_onboarding` | 50+ |
 | Collective / группы | `test_006_collective_handlers`, `test_008_group_manage`, `test_collective_*` | 40+ |
-| Assignee / mention | `test_mention_create`, `test_mention_from_message`, `test_mention_assignee_text` | 20+ |
+| Assignee / mention | `test_mention_*`, `test_assignee_*`, `test_create_assignee_raw` | 30+ |
 | Scheduler / STT | `test_scheduler_*`, `test_media_stt`, `test_llm_*` | 30+ |
 | Инфра | `test_verify_ops`, `test_smoke_imports`, `test_config`, `test_version` | 15+ |
 | NLP smoke | `scripts/smoke_nlp.py`, `test_nlp_time_priority` | 5 + 22 |

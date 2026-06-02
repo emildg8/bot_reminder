@@ -118,6 +118,31 @@ def format_reminder_list_line(reminder: Reminder, timezone: str | None = None) -
     return f"{icon} <b>#{reminder.id}</b> · {kind} · {when}\n   {text}{mention}"
 
 
+def format_parsed_one_liner(parsed: ParsedReminder, timezone: str) -> str:
+    """Одна строка для превью в группе: «через 1 мин · тест»."""
+    text = str(getattr(parsed, "text", None) or "").strip()
+    if len(text) > 36:
+        text = text[:33] + "…"
+    tz = ZoneInfo(timezone)
+    when = ""
+    try:
+        if parsed.kind == "once" and parsed.delay_seconds:
+            when = format_delay_label(parsed.delay_seconds)
+        elif parsed.kind == "once" and parsed.run_at:
+            when = parsed.run_at.astimezone(tz).strftime("%d.%m %H:%M")
+        elif parsed.kind == "daily" and parsed.daily_time:
+            when = f"ежедневно {parsed.daily_time.strftime('%H:%M')}"
+        elif parsed.kind == "interval" and parsed.interval_seconds:
+            when = format_interval_seconds(parsed.interval_seconds)
+        elif parsed.kind in KIND_LABELS:
+            when = compute_next_run(parsed, timezone).astimezone(tz).strftime("%d.%m %H:%M")
+    except (ValueError, TypeError, AttributeError):
+        when = ""
+    if not when:
+        return text or "напоминание"
+    return f"{when} · {text}"
+
+
 def format_parsed_summary_html(parsed: ParsedReminder, timezone: str) -> str:
     tz = ZoneInfo(timezone)
     next_run = compute_next_run(parsed, timezone).astimezone(tz)

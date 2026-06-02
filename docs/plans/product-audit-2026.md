@@ -179,6 +179,6 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ## 7. Итог (июнь 2026)
 
-**Актуально (v3.44.6):** roadmap A–E + F + G + **H/I phase2** + **Stars prod** закрыты. CI green, **513** тестов.
+**Актуально (v3.45.2):** roadmap A–E + F + G + **H/I phase2** + **Stars** + **assignee v3.45** закрыты. CI green, **556** тестов, verify_ops + 3 smoke, оценки **10/10** в [improvements-plan-2026-06.md](improvements-plan-2026-06.md).
 
-**Дальше:** ops — `/ping` v3.44.4, `/thanks` smoke, [stars-tips.md](../guides/stars-tips.md).
+**Дальше:** Wispbyte — `/ping` v3.45.2, Telegram smoke в [ops-checklist.md](../guides/ops-checklist.md).

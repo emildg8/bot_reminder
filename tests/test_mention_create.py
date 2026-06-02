@@ -108,3 +108,15 @@ def test_voice_reply_assigns_target():
 def test_mention_was_provided():
     assert mention_was_provided(CreateMention(1, "a", "x", "reply"))
     assert not mention_was_provided(CreateMention(None, None, "x", None))
+
+
+def test_create_mention_pick_note_for_multiple_users():
+    mention = extract_create_mention(
+        _msg("@bot @alice @bobby через час задача"),
+        "через час задача",
+        bot_username="bot",
+        bot_id=1,
+    )
+    assert mention.username == "bobby"
+    assert mention.pick_note is not None
+    assert "alice" in mention.pick_note

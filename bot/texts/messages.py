@@ -50,7 +50,8 @@ def format_group_welcome(bot_username: str | None = None, *, privacy_hint: str =
         f"• <code>/remind@{uname} @user завтра в 14:00 задача</code>\n"
         f"• ответ на сообщение + <code>/remind@{uname} …</code>\n\n"
         f"Или {at} <b>из списка</b> + @user + фраза "
-        f"(<code>{at}@user …</code>, <code>{at} + @user …</code>).\n\n"
+        f"(<code>{at}@user …</code>, <code>{at} + @user …</code>).\n"
+        "Несколько @user — бот сам выберет ближайшего к времени и покажет в confirm.\n\n"
         "⚠️ @ с клавиатуры бот может не увидеть — выбирай из списка Telegram."
         f"{privacy_hint}\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
@@ -95,7 +96,8 @@ def format_group_commands_hint(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} @user …</code> — напоминание участнику\n"
         f"• ответ на сообщение + <code>/remind@{uname} …</code>\n"
         f"• {at} <b>из списка</b> + @user + фраза "
-        f"(<code>{at}@user</code>, <code>{at} + @user</code>)\n\n"
+        f"(<code>{at}@user</code>, <code>{at} + @user</code>)\n"
+        "Несколько @user — выбор ближайшего к времени; в группе — превью до confirm.\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
 
@@ -205,6 +207,28 @@ def format_pending_ambiguous_hint() -> str:
     return "🕐 Сначала выбери время кнопкой ↑ или отмени: /cancel"
 
 
+def format_assignee_choice_prompt(
+    candidates: list[str],
+    *,
+    task_preview: str | None = None,
+) -> str:
+    tags = ", ".join(f"@{u}" for u in candidates[:4])
+    if len(candidates) > 4:
+        tags += "…"
+    body = (
+        "👤 <b>Кому напомнить?</b>\n\n"
+        f"В фразе несколько участников ({tags}), а <b>время не указано</b> — "
+        "выбери одного, «Только мне» или отмени."
+    )
+    if task_preview:
+        body = f"{task_preview}\n\n{body}"
+    return body
+
+
+def format_pending_assignee_hint() -> str:
+    return "👤 Сначала выбери, кому напомнить — кнопкой выше или /cancel"
+
+
 def phrase_from_task_preset(task: str, code: str) -> str:
     templates = {
         "30m": "через 30 минут {task}",
@@ -246,7 +270,13 @@ def format_parse_fail(
         body = f"🎤 Распознано: {heard.strip()}\n\n{body}"
     if chat_kind in (ChatKind.GROUP, ChatKind.SUPERGROUP):
         uname = bot_username or "бот"
-        body += f"\n\n💡 В группе: <code>/remind@{uname} через час …</code>"
+        at = f"@{uname}"
+        body += (
+            f"\n\n💡 В группе:\n"
+            f"• <code>{at} @user через час …</code> или <code>{at} + @user …</code>\n"
+            f"• <code>/remind@{uname} @user завтра в 14:00 …</code>\n"
+            "Время: <code>в 18:20</code> и <code>в 18.20</code> — оба формата."
+        )
     return body
 
 CONFIRM_CREATE_HEADER = "📌 <b>Проверь напоминание</b>"
@@ -305,8 +335,26 @@ def format_collective_dm_confirm_header(chat_kind: ChatKind, chat_title: str | N
     return f"📣 <b>{title}</b>\n\n"
 
 
-def format_collective_check_dm(chat_kind: ChatKind, chat_title: str | None) -> str:
+def format_collective_check_dm(
+    chat_kind: ChatKind,
+    chat_title: str | None,
+    *,
+    preview: str | None = None,
+) -> str:
+    if preview:
+        return f"👌 {preview}\nПодтвердите в личке с ботом"
     return "👌 Подтвердите в личке с ботом"
+
+
+def format_assignee_preview_plain(
+    mention_username: str | None,
+    *,
+    source: str | None = None,
+) -> str:
+    if not mention_username:
+        return ""
+    icon = "↩️" if source == "reply" else "👤"
+    return f"{icon} @{mention_username}"
 
 
 def format_collective_dm_failed_fallback(bot_username: str | None) -> str:
@@ -524,6 +572,7 @@ def format_mention_assignee_line(
     *,
     resolved: bool = True,
     source: str | None = None,
+    pick_note: str | None = None,
 ) -> str:
     """Строка «кому» для confirm-карточки."""
     if not mention_user_id and not mention_username:
@@ -545,8 +594,12 @@ def format_mention_assignee_line(
         return ""
 
     if source == "reply":
-        return f"↩️ <b>Кому:</b> {who} <i>(ответ на сообщение)</i>\n\n"
-    return f"👤 <b>Кому:</b> {who}\n\n"
+        body = f"↩️ <b>Кому:</b> {who} <i>(ответ на сообщение)</i>\n"
+    else:
+        body = f"👤 <b>Кому:</b> {who}\n"
+    if pick_note:
+        body += f"{pick_note}\n"
+    return body + "\n"
 
 
 def format_confirm_card(summary: str, *, is_edit: bool = False) -> str:

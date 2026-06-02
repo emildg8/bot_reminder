@@ -5,6 +5,14 @@ from bot.services.nlp.absolute_time_parse import (
 )
 
 
+def test_at_time_only_dot_separator():
+    parsed = parse_absolute_datetime("в 18.20 тест", "Europe/Moscow")
+    assert parsed is not None
+    assert parsed.text == "тест"
+    assert parsed.run_at.hour == 18
+    assert parsed.run_at.minute == 20
+
+
 def test_zavtra_v_14_dot():
     parsed = parse_absolute_datetime("бот анекдот завтра в 14.00", "Europe/Moscow")
     assert parsed is not None

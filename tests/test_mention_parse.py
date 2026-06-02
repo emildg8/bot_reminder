@@ -5,6 +5,7 @@ from bot.services.mention_parse import (
     extract_mention_from_message,
     extract_username_anywhere,
     extract_username_candidates,
+    strip_text_before_bot_mention,
     strip_leading_bot_mention,
 )
 
@@ -71,6 +72,30 @@ def test_extract_mention_from_message_compact_bot_then_user():
     assert clean == "через минуту тест"
 
 
+def test_extract_leading_username_for_user_prefix():
+    username, clean = extract_leading_username("для @alice завтра в 10:00 созвон")
+    assert username == "alice"
+    assert "созвон" in clean
+
+
+def test_extract_leading_username_napomni_prefix():
+    username, clean = extract_leading_username("напомни @ivan через час задача")
+    assert username == "ivan"
+    assert clean == "через час задача"
+
+
+def test_extract_leading_username_napominanie_dlya_prefix():
+    username, clean = extract_leading_username("напоминание для @ivan через час задача")
+    assert username == "ivan"
+    assert clean == "через час задача"
+
+
+def test_extract_username_trailing_after_time():
+    username, clean = extract_username_anywhere("через час задача @alice")
+    assert username == "alice"
+    assert clean == "через час задача"
+
+
 def test_extract_leading_username_with_plus_separator():
     username, clean = extract_leading_username("+ @alice через минуту тест")
     assert username == "alice"
@@ -97,6 +122,30 @@ def test_strip_leading_bot_mention_dash_separator():
         "break_remind_bot",
     )
     assert clean == "@mokew2222 через минуту тест"
+
+
+def test_strip_text_before_bot_mention_middle_of_phrase():
+    clean = strip_text_before_bot_mention(
+        "ребят смотрим @break_remind_bot + @mokew2222 через минуту тест",
+        "break_remind_bot",
+    )
+    assert clean == "@mokew2222 через минуту тест"
+
+
+def test_extract_mention_from_message_plus_separator():
+    message = SimpleNamespace(
+        text="@break_remind_bot + @mokew2222 через 1 минуту тест",
+        caption=None,
+        entities=[],
+    )
+    mention_id, mention_username, clean = extract_mention_from_message(
+        message,
+        bot_username="break_remind_bot",
+        bot_id=1,
+    )
+    assert mention_id is None
+    assert mention_username == "mokew2222"
+    assert clean == "через 1 минуту тест"
 
 
 def test_extract_mention_from_message_bot_dash_user():
@@ -127,6 +176,12 @@ def test_extract_username_anywhere_trailing_punctuation():
     assert clean == "через минуту тест!"
 
 
+def test_extract_username_anywhere_drops_empty_brackets_after_mention():
+    username, clean = extract_username_anywhere("через минуту тест (@alice)")
+    assert username == "alice"
+    assert clean == "через минуту тест"
+
+
 def test_extract_username_anywhere_skips_bot_then_user():
     username, clean = extract_username_anywhere(
         "@break_remind_bot через минуту @alice",
@@ -152,14 +207,24 @@ def test_extract_mention_from_message_user_in_tail():
     assert clean == "через минуту тест"
 
 
-def test_extract_username_anywhere_multiple_users_first_wins():
+def test_extract_username_anywhere_multiple_users_auto_nearest_time():
     username, clean = extract_username_anywhere(
         "@alice @bobby через час задача",
         bot_username="break_remind_bot",
     )
-    assert username == "alice"
+    assert username == "bobby"
     assert clean == "через час задача"
     assert "bobby" not in clean.lower()
+
+
+def test_extract_username_anywhere_multiple_users_explicit_first():
+    username, clean = extract_username_anywhere(
+        "@alice @bobby через час задача",
+        bot_username="break_remind_bot",
+        pick="first",
+    )
+    assert username == "alice"
+    assert clean == "через час задача"
 
 
 def test_extract_username_anywhere_multiple_users_last_variant():
@@ -172,6 +237,36 @@ def test_extract_username_anywhere_multiple_users_last_variant():
     assert clean == "через час задача"
 
 
+def test_extract_username_anywhere_nearest_time_dot_clock():
+    username, clean = extract_username_anywhere(
+        "@alice @bobby в 18.20 созвон",
+        bot_username="break_remind_bot",
+        pick="nearest_time",
+    )
+    assert username == "bobby"
+    assert clean == "в 18.20 созвон"
+
+
+def test_extract_username_anywhere_nearest_time_prefers_user_before_time():
+    username, clean = extract_username_anywhere(
+        "@alice @bobby завтра в 10:00 созвон",
+        bot_username="break_remind_bot",
+        pick="nearest_time",
+    )
+    assert username == "bobby"
+    assert clean == "завтра в 10:00 созвон"
+
+
+def test_extract_username_anywhere_nearest_time_fallbacks_to_first():
+    username, clean = extract_username_anywhere(
+        "@alice @bobby просто созвон без времени",
+        bot_username="break_remind_bot",
+        pick="nearest_time",
+    )
+    assert username == "alice"
+    assert clean == "просто созвон без времени"
+
+
 def test_extract_username_candidates_list_and_clean():
     usernames, clean = extract_username_candidates(
         "@break_remind_bot @alice @bobby через час задача",
@@ -179,6 +274,24 @@ def test_extract_username_candidates_list_and_clean():
     )
     assert usernames == ["alice", "bobby"]
     assert clean == "через час задача"
+
+
+def test_extract_username_candidates_ignores_mentions_before_bot():
+    usernames, clean = extract_username_candidates(
+        "@alice ребят @break_remind_bot @bobby через час задача",
+        bot_username="break_remind_bot",
+    )
+    assert usernames == ["bobby"]
+    assert clean == "через час задача"
+
+
+def test_extract_username_candidates_keeps_prefix_if_no_user_after_mid_bot():
+    usernames, clean = extract_username_candidates(
+        "через минуту @break_remind_bot тест",
+        bot_username="break_remind_bot",
+    )
+    assert usernames == []
+    assert clean == "через минуту @break_remind_bot тест"
 
 
 def test_extract_leading_username_strips_second_user():
@@ -234,5 +347,12 @@ def test_extract_mention_from_message_multiple_users_no_entities():
         bot_id=1,
     )
     assert mention_id is None
-    assert mention_username == "alice"
+    assert mention_username == "bobby"
     assert clean == "через час задача"
+
+
+def test_assignee_pick_for_count():
+    from bot.services.mention_parse import assignee_pick_for_count
+
+    assert assignee_pick_for_count(1) == "first"
+    assert assignee_pick_for_count(2) == "nearest_time"

@@ -10,6 +10,7 @@ from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_delivery import resolve_delivery_chat_id
 from bot.services.chat_permissions import bot_can_post_reminders, format_bot_cannot_post_hint
 from bot.services.collective_confirm import collective_dm_failed_suffix, send_collective_confirm
+from bot.services.collective_preview import build_group_confirm_preview
 from bot.services.drafts import clear_edit_pending, pop_edit_pending, set_edit_pending, store_draft
 from bot.services.pending_tasks import store_pending_task
 from bot.services.mention_create import extract_create_mention, mention_was_provided
@@ -171,6 +172,7 @@ async def _parse_and_confirm_edit(
         mention.username,
         resolved=mention_telegram_id is not None or not mention.username,
         source=mention.source,
+        pick_note=mention.pick_note,
     )
 
     if chat_kind_from_chat(message.chat) != ChatKind.PRIVATE:
@@ -202,7 +204,15 @@ async def _parse_and_confirm_edit(
         if prefix:
             body = prefix + body
 
+    mention_resolved = mention_telegram_id is not None or not mention.username
     if chat_kind != ChatKind.PRIVATE:
+        group_preview = build_group_confirm_preview(
+            parsed_items,
+            timezone,
+            mention_username=mention.username,
+            mention_source=mention.source,
+            mention_resolved=mention_resolved,
+        )
         sent_dm = await send_collective_confirm(
             bot,
             user_id=user_id,
@@ -211,6 +221,7 @@ async def _parse_and_confirm_edit(
             chat_title=message.chat.title,
             body=body,
             reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),
+            group_preview=group_preview,
         )
         if not sent_dm:
             me = await bot.get_me()

@@ -24,6 +24,16 @@ def test_check_dm_text():
     assert len(text) < 80
 
 
+def test_check_dm_with_preview():
+    text = format_collective_check_dm(
+        ChatKind.SUPERGROUP,
+        "Test",
+        preview="👤 @u · через 5 мин · задача",
+    )
+    assert "@u" in text
+    assert "личке" in text
+
+
 def test_created_notice():
     text = format_collective_created_notice(
         creator_username="alice",

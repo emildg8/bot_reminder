@@ -16,7 +16,24 @@ USERNAME_ANYWHERE = re.compile(
 )
 _COLLAPSE_WS = re.compile(r"\s+")
 _SPACE_BEFORE_PUNCT = re.compile(r"\s+([,.:;!?%])")
-MentionPick = Literal["first", "last"]
+_EMPTY_BRACKETS = re.compile(r"\s*(\(\s*\)|\[\s*\]|\{\s*\})\s*")
+_TIME_ANCHOR_RE = re.compile(
+    r"(?:"
+    r"\bчерез\b|"
+    r"завтра|сегодня|послезавтра|после\s+завтра|"
+    r"кажд|утром|вечером|ночью|днём|днем|"
+    r"понедельник|вторник|сред[ау]|четверг|пятниц[ау]|суббот[ау]|воскресень[ея]|"
+    r"в\s*\d{1,2}(?:[.:]\d{2})?|"
+    r"в\s+\d{3,4}\b"
+    r")",
+    re.IGNORECASE,
+)
+FOR_USER_PREFIX = re.compile(
+    rf"^(?:для|кому|напомни(?:ть)?|напоминание\s+для)\s*(?:{_MENTION_SEP_CHARS}+)?"
+    rf"@(\w{{4,32}})(?:{_MENTION_SEP_CHARS}+)",
+    re.IGNORECASE,
+)
+MentionPick = Literal["first", "last", "nearest_time", "auto"]
 
 
 def strip_telegram_command(text: str) -> str:
@@ -61,6 +78,21 @@ def strip_leading_bot_mention(text: str, bot_username: str | None) -> str:
     return tail.strip()
 
 
+def strip_text_before_bot_mention(text: str, bot_username: str | None) -> str:
+    """Обрезает всё до первого @бот (включая его), если он есть в сообщении."""
+    raw = (text or "").strip()
+    if not raw or not bot_username:
+        return raw
+    lowered = raw.lower()
+    token = f"@{_normalize_username(bot_username)}"
+    idx = lowered.find(token)
+    if idx < 0:
+        return raw
+    tail = raw[idx + len(token) :]
+    tail = LEADING_MENTION_SEPARATORS.sub("", tail)
+    return tail.strip()
+
+
 def _remove_spans(text: str, spans: list[tuple[int, int]]) -> str:
     if not spans:
         return text.strip()
@@ -93,16 +125,76 @@ def _user_mention_spans(
 
 
 def _normalize_phrase_whitespace(text: str) -> str:
-    compact = _COLLAPSE_WS.sub(" ", (text or "").strip())
-    return _SPACE_BEFORE_PUNCT.sub(r"\1", compact)
+    no_empty_brackets = _EMPTY_BRACKETS.sub(" ", (text or "").strip())
+    compact = _COLLAPSE_WS.sub(" ", no_empty_brackets)
+    return _SPACE_BEFORE_PUNCT.sub(r"\1", compact).strip()
 
 
-def _pick_username(spans: list[tuple[int, int, str]], pick: MentionPick) -> str | None:
+def _time_anchor_index(text: str) -> int | None:
+    match = _TIME_ANCHOR_RE.search(text or "")
+    return match.start() if match else None
+
+
+def assignee_pick_for_count(count: int) -> MentionPick:
+    """При нескольких @user в группе — ближайший к тайм-фразе, иначе первый."""
+    return "nearest_time" if count > 1 else "first"
+
+
+def format_assignee_pick_note(
+    source_text: str,
+    *,
+    chosen: str,
+    candidates: list[str],
+) -> str | None:
+    """Пояснение автовыбора assignee — показываем в confirm, если @user несколько."""
+    others = [u for u in candidates if u.lower() != chosen.lower()]
+    if len(candidates) <= 1:
+        return None
+    anchor_match = _TIME_ANCHOR_RE.search(source_text or "")
+    if not anchor_match:
+        if len(others) == 1:
+            return f"ℹ️ Также @{others[0]} — взят @{chosen} (нет времени в фразе)."
+        return (
+            f"ℹ️ {len(candidates)} @user — взят @{chosen}. "
+            "Добавь «через …» / «завтра в …» или оставь одного."
+        )
+    anchor = anchor_match.group(0)
+    if len(others) == 1:
+        return f"ℹ️ Также @{others[0]} — взят @{chosen} (ближе к «{anchor}»)."
+    tags = ", ".join(f"@{u}" for u in others[:3])
+    if len(others) > 3:
+        tags += "…"
+    return f"ℹ️ Взят @{chosen} (ближе к «{anchor}»). Ещё: {tags}."
+
+
+def _resolve_pick(pick: MentionPick, span_count: int) -> MentionPick:
+    if pick == "auto":
+        return assignee_pick_for_count(span_count)
+    return pick
+
+
+def _pick_username(spans: list[tuple[int, int, str]], pick: MentionPick, source_text: str) -> str | None:
     if not spans:
         return None
+    pick = _resolve_pick(pick, len(spans))
     if pick == "last":
         return spans[-1][2]
+    if pick == "nearest_time":
+        anchor = _time_anchor_index(source_text)
+        if anchor is None:
+            return spans[0][2]
+        before = [item for item in spans if item[0] <= anchor]
+        if before:
+            return before[-1][2]
+        return min(spans, key=lambda item: abs(item[0] - anchor))[2]
     return spans[0][2]
+
+
+def _candidate_source_text(original: str, bot_username: str | None) -> tuple[str, bool]:
+    starts_with_bot = strip_leading_bot_mention(original, bot_username) != original
+    raw = strip_text_before_bot_mention(original, bot_username)
+    has_mid_bot = raw != original and not starts_with_bot
+    return raw, has_mid_bot
 
 
 def extract_username_candidates(
@@ -113,8 +205,12 @@ def extract_username_candidates(
     Возвращает всех найденных @user (не бот) в порядке слева-направо + clean без @user.
     Нужен для A/B-логики выбора assignee на уровне вызывающего кода.
     """
-    raw = strip_leading_bot_mention((text or "").strip(), bot_username)
+    original = (text or "").strip()
+    raw, has_mid_bot = _candidate_source_text(original, bot_username)
+
     spans = _user_mention_spans(raw, bot_username)
+    if not spans and has_mid_bot:
+        return [], original
     usernames = [username for _, _, username in spans]
     clean = strip_all_user_mentions(raw, bot_username) if spans else raw
     return usernames, clean
@@ -149,31 +245,72 @@ def strip_all_user_mentions(text: str, bot_username: str | None = None) -> str:
 
 
 def extract_leading_username(text: str, bot_username: str | None = None) -> tuple[str | None, str]:
-    match = USERNAME_PREFIX.match(text.strip())
-    if not match:
-        return None, text.strip()
-    username = match.group(1)
-    if _is_bot_mention(username, bot_username):
-        return None, text[match.end() :].strip()
-    clean = text[match.end() :].strip()
-    return username, strip_all_user_mentions(clean, bot_username)
+    raw = text.strip()
+    for pattern in (FOR_USER_PREFIX, USERNAME_PREFIX):
+        match = pattern.match(raw)
+        if not match:
+            continue
+        username = match.group(1)
+        if _is_bot_mention(username, bot_username):
+            return None, raw[match.end() :].strip()
+        clean = raw[match.end() :].strip()
+        return username, strip_all_user_mentions(clean, bot_username)
+    return None, raw
 
 
 def extract_username_anywhere(
     text: str,
     bot_username: str | None = None,
     *,
-    pick: MentionPick = "first",
+    pick: MentionPick = "auto",
 ) -> tuple[str | None, str]:
     """
     Выбор assignee из текста по варианту:
-    - first (default): первый @user слева
+    - auto (default): первый @user, при нескольких — nearest_time
+    - first: всегда первый @user слева
     - last: последний @user
+    - nearest_time: ближайший к тайм-фразе (например, "завтра", "через", "в 10:00")
     """
-    usernames, clean = extract_username_candidates(text, bot_username)
-    if not usernames:
-        return None, clean
-    return (usernames[-1] if pick == "last" else usernames[0]), clean
+    original = (text or "").strip()
+    raw, has_mid_bot = _candidate_source_text(original, bot_username)
+    spans = _user_mention_spans(raw, bot_username)
+    if len(spans) <= 1:
+        leading_user, leading_clean = extract_leading_username(raw, bot_username)
+        if leading_user:
+            return leading_user, leading_clean
+    if not spans and has_mid_bot:
+        return None, original
+    if not spans:
+        return None, raw
+    clean = strip_all_user_mentions(raw, bot_username)
+    return _pick_username(spans, pick, raw), clean
+
+
+def _apply_entity_user_mentions(
+    text: str,
+    user_hits: list[tuple[int, int, str, int | None]],
+) -> tuple[int | None, str | None]:
+    """Выбор assignee из entities; при нескольких — nearest_time."""
+    if not user_hits:
+        return None, None
+    if len(user_hits) == 1:
+        _, _, username, user_id = user_hits[0]
+        return user_id, username or None
+    spans = [(start, start + length, username or f"\0{idx}") for idx, (start, length, username, _) in enumerate(user_hits)]
+    pick = assignee_pick_for_count(len(spans))
+    chosen = _pick_username(spans, pick, text)
+    if not chosen:
+        return None, None
+    if chosen.startswith("\0"):
+        idx = int(chosen[1:])
+        _, _, username, user_id = user_hits[idx]
+        return user_id, username or None
+    chosen_id: int | None = None
+    for _, _, username, user_id in user_hits:
+        if username and username.lower() == chosen.lower():
+            chosen_id = user_id
+            break
+    return chosen_id, chosen or None
 
 
 def extract_mention_from_message(
@@ -197,6 +334,7 @@ def extract_mention_from_message(
     mention_id: int | None = None
     mention_username: str | None = None
     removed_spans: list[tuple[int, int]] = []
+    user_hits: list[tuple[int, int, str, int | None]] = []
 
     if message.entities:
         for entity in sorted(message.entities, key=lambda e: e.offset):
@@ -214,9 +352,8 @@ def extract_mention_from_message(
                 ):
                     removed_spans.append((rel_start, entity.length))
                     continue
-                if mention_id is None and mention_username is None:
-                    mention_id = entity.user.id
-                    mention_username = entity.user.username
+                username = entity.user.username or ""
+                user_hits.append((rel_start, entity.length, username, entity.user.id))
                 removed_spans.append((rel_start, entity.length))
                 continue
 
@@ -225,25 +362,22 @@ def extract_mention_from_message(
                 if _is_bot_mention(username, bot_username):
                     removed_spans.append((rel_start, entity.length))
                     continue
-                if mention_id is None and mention_username is None:
-                    mention_id = None
-                    mention_username = username
+                user_hits.append((rel_start, entity.length, username, None))
                 removed_spans.append((rel_start, entity.length))
                 continue
+
+        if user_hits:
+            mention_id, mention_username = _apply_entity_user_mentions(text, user_hits)
 
         if removed_spans:
             clean = _remove_spans(text, removed_spans)
             clean = strip_all_user_mentions(clean, bot_username)
 
     if mention_username is None and mention_id is None:
-        clean = strip_leading_bot_mention(clean, bot_username)
-        username, clean = extract_leading_username(clean, bot_username)
+        clean = strip_text_before_bot_mention(clean, bot_username)
+        username, clean = extract_username_anywhere(clean, bot_username, pick="auto")
         if username:
             mention_username = username
-        else:
-            username, clean = extract_username_anywhere(clean, bot_username)
-            if username:
-                mention_username = username
 
     clean = strip_all_bot_mentions(clean or text, bot_username)
     clean = _normalize_phrase_whitespace(clean)

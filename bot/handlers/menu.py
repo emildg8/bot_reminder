@@ -1,6 +1,6 @@
 import logging
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
@@ -36,6 +36,9 @@ from bot.services.drafts import clear_edit_pending, clear_search_pending, set_se
 from bot.services.reminders_ui import send_active_reminders
 from bot.services.chat_ctx import chat_kind_from_chat, tz_scope_label
 from bot.services.chat_status import build_status_text
+from bot.services.create_confirm import deliver_create_confirm
+from bot.services.mention_resolve import resolve_mention_user_id
+from bot.services.pending_assignee import clear_pending_assignee, pop_pending_assignee
 from bot.services.pending_tasks import clear_pending_task, pop_pending_task
 from bot.services.nlp.ambiguous_time import phrase_from_ambiguous_choice, phrase_from_day_only_choice
 from bot.services.help_display import format_help_for_chat, format_help_for_message
@@ -58,6 +61,7 @@ def _clear_modes(user_id: int) -> None:
     clear_edit_pending(user_id)
     clear_search_pending(user_id)
     clear_pending_task(user_id)
+    clear_pending_assignee(user_id)
     clear_all_tip_custom(user_id)
 
 
@@ -325,6 +329,68 @@ async def task_time_picked(callback: CallbackQuery, bot) -> None:
         phrase,
         bot,
         actor_user_id=callback.from_user.id,
+    )
+
+
+@router.callback_query(F.data.startswith("as:"))
+async def assignee_selected(callback: CallbackQuery, bot: Bot) -> None:
+    key = callback.data.split(":", 1)[1]
+    if key == "_cancel":
+        clear_pending_assignee(callback.from_user.id)
+        await safe_callback_answer(callback, "Отменено")
+        try:
+            await callback.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+        return
+
+    pending = pop_pending_assignee(callback.from_user.id)
+    if not pending:
+        await safe_callback_answer(callback, "Выбор устарел — напиши фразу заново.", show_alert=True)
+        return
+
+    if key == "_none":
+        mention_username = None
+        mention_source = None
+        mention_provided = False
+        mention_pick_note = None
+    else:
+        try:
+            idx = int(key)
+            mention_username = pending.candidates[idx]
+        except (ValueError, IndexError):
+            await safe_callback_answer(callback, "Некорректный выбор.", show_alert=True)
+            return
+        mention_source = "text"
+        mention_provided = True
+        mention_pick_note = None
+
+    mention_telegram_id = await resolve_mention_user_id(
+        bot,
+        None,
+        mention_username,
+        chat_id=callback.message.chat.id,
+    )
+    await safe_callback_answer(callback)
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    await deliver_create_confirm(
+        callback.message,
+        bot,
+        user_id=callback.from_user.id,
+        parsed_items=pending.parsed_items,
+        timezone=pending.timezone,
+        delivery_chat_id=pending.delivery_chat_id,
+        mention_telegram_id=mention_telegram_id,
+        mention_username=mention_username,
+        mention_source=mention_source,
+        mention_provided=mention_provided,
+        mention_pick_note=mention_pick_note,
+        source_label=pending.source_label,
+        heard_text=pending.heard_text,
     )
 
 

@@ -26,6 +26,7 @@ async def send_collective_confirm(
     chat_title: str | None,
     body: str,
     reply_markup: InlineKeyboardMarkup,
+    group_preview: str | None = None,
 ) -> bool:
     """Отправляет confirm в личку; в collective — короткую подсказку. False → fallback в чат."""
     header = format_collective_dm_confirm_header(collective_kind, chat_title)
@@ -44,7 +45,11 @@ async def send_collective_confirm(
     try:
         await bot.send_message(
             collective_chat_id,
-            format_collective_check_dm(collective_kind, chat_title),
+            format_collective_check_dm(
+                collective_kind,
+                chat_title,
+                preview=group_preview,
+            ),
         )
     except Exception as exc:
         logger.warning("Cannot send collective check-dm hint to %s: %s", collective_chat_id, exc)

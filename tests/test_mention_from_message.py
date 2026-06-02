@@ -48,7 +48,7 @@ def test_skips_bot_mention_then_takes_user():
     assert clean == "через час задача"
 
 
-def test_multiple_user_entities_first_wins_all_stripped():
+def test_multiple_user_entities_nearest_time_all_stripped():
     text = "@testbot @alice @bobby через час задача"
     entities = [
         SimpleNamespace(type="mention", offset=0, length=8),
@@ -60,7 +60,7 @@ def test_multiple_user_entities_first_wins_all_stripped():
         bot_username="testbot",
         bot_id=1,
     )
-    assert mention_username == "alice"
+    assert mention_username == "bobby"
     assert clean == "через час задача"
     assert "bobby" not in clean.lower()
 
