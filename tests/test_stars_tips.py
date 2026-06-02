@@ -18,6 +18,7 @@ from bot.services.stars_tips import (
     should_send_tip_nudge,
     text_has_letters,
     tip_payload,
+    tip_thank_you_keyboard,
     tips_enabled,
 )
 from bot.services.tip_custom_state import (
@@ -465,6 +466,20 @@ async def test_tip_nudge_dismissed_respects_cooldown(patched_db, monkeypatch):
     await get_or_create_user(patched_db, user_id, "Europe/Moscow")
     await set_user_tip_nudge_dismissed(patched_db, user_id)
     assert await should_send_tip_nudge(patched_db, user_id) is False
+
+
+@pytest.mark.asyncio
+async def test_status_includes_author_line_for_private(patched_db, monkeypatch):
+    user_id = 88024
+    await get_or_create_user(patched_db, user_id, "Europe/Moscow")
+    message = MagicMock()
+    message.from_user.id = user_id
+    message.chat.id = user_id
+    message.chat.type = "private"
+    bot = MagicMock()
+    text = await build_status_text(bot, message)
+    assert "/author" in text
+    assert "emildg8" in text
 
 
 @pytest.mark.asyncio

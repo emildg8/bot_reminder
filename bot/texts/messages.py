@@ -58,6 +58,16 @@ def format_developer_contact_line() -> str:
     return f'💬 <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a>'
 
 
+def format_developer_status_line(*, version: str | None = None) -> str:
+    """Компактная строка для /status в личке."""
+    ver = version or __version__
+    urls = developer_urls(version=ver)
+    return (
+        f'👤 Автор: <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
+        f'/author · <a href="{urls["release_tag"]}">v{ver}</a>'
+    )
+
+
 def format_developer_card(*, version: str | None = None) -> str:
     """Полная карточка — /author и menu:author."""
     ver = version or __version__
@@ -777,6 +787,7 @@ def format_status(
     post_ok: bool | None = None,
     admin_mode_line: str | None = None,
     tips_line: str | None = None,
+    author_line: str | None = None,
 ) -> str:
     tz_label = format_timezone_label(tz)
     state = "⏸ на паузе" if paused else "▶️ активны"
@@ -801,6 +812,8 @@ def format_status(
         lines.append(admin_mode_line)
     if tips_line:
         lines.append(tips_line)
+    if author_line:
+        lines.append(author_line)
     return "\n".join(lines) + extra
 
 

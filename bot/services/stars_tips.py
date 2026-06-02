@@ -182,7 +182,10 @@ def custom_amount_keyboard() -> InlineKeyboardMarkup:
 def tip_thank_you_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="⭐ Поддержать ещё", callback_data="menu:thanks")],
+            [
+                InlineKeyboardButton(text="👤 Автор", callback_data="menu:author"),
+                InlineKeyboardButton(text="⭐ Ещё раз", callback_data="menu:thanks"),
+            ],
         ]
     )
 

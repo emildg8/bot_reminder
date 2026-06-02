@@ -5,6 +5,7 @@ from bot.keyboards.inline import (
     developer_made_by_keyboard,
 )
 from bot.services.chat_ctx import ChatKind
+from bot.services.stars_tips import tip_thank_you_keyboard
 from bot.texts.messages import (
     DEVELOPER_GITHUB_REPO,
     DEVELOPER_TAGLINE,
@@ -13,6 +14,7 @@ from bot.texts.messages import (
     format_about,
     format_developer_card,
     format_developer_made_by_line,
+    format_developer_status_line,
     format_developer_support_note,
     format_developer_teaser,
     format_help,
@@ -35,6 +37,36 @@ def test_format_developer_teaser_release_link():
     assert "9.9.9" in text
     assert developer_urls(version="9.9.9")["release_tag"] in text
     assert "что нового" in text
+
+
+def test_format_developer_status_line():
+    text = format_developer_status_line(version="8.8.8")
+    assert DEVELOPER_TELEGRAM in text
+    assert "/author" in text
+    assert developer_urls(version="8.8.8")["release_tag"] in text
+
+
+def test_format_status_includes_author_line():
+    from bot.services.chat_ctx import ChatKind
+    from bot.texts.messages import format_status
+
+    line = format_developer_status_line()
+    text = format_status(
+        count=1,
+        paused=False,
+        tz="Europe/Moscow",
+        tz_scope="личка",
+        chat_kind=ChatKind.PRIVATE,
+        author_line=line,
+    )
+    assert line in text
+
+
+def test_tip_thank_you_keyboard_has_author():
+    kb = tip_thank_you_keyboard()
+    callbacks = [btn.callback_data for row in kb.inline_keyboard for btn in row if btn.callback_data]
+    assert "menu:author" in callbacks
+    assert "menu:thanks" in callbacks
 
 
 def test_format_developer_made_by_line():

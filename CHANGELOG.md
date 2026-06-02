@@ -4,6 +4,14 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.45.8] — 2026-06-02
+
+### Автор в продукте (фаза 2)
+- `/status` в личке — строка автора и ссылка на релиз
+- После Stars — кнопки **👤 Автор** и **⭐ Ещё раз**
+- `smoke_author.py` в `verify_ops`
+- Гайд [author-presence.md](docs/guides/author-presence.md), тексты для ЮKassa
+
 ## [3.45.7] — 2026-06-02
 
 ### Автор (polish)

@@ -13,7 +13,7 @@ from bot.services.admin_access import is_admin_listed, is_bot_admin
 from bot.services.status_info import format_next_reminder_line
 from bot.services.stars_tips import tips_enabled
 from bot.services.timezone_ctx import get_effective_timezone
-from bot.texts.messages import format_admin_mode_line, format_status
+from bot.texts.messages import format_admin_mode_line, format_developer_status_line, format_status
 from bot.version import __version__
 
 
@@ -51,6 +51,10 @@ async def build_status_text(bot: Bot, message: Message) -> str:
         elif tips_enabled():
             tips_line = "⭐ Поддержать автора: /thanks"
 
+    author_line = None
+    if kind == ChatKind.PRIVATE:
+        author_line = format_developer_status_line(version=__version__)
+
     return format_status(
         count=len(reminders),
         paused=paused,
@@ -63,4 +67,5 @@ async def build_status_text(bot: Bot, message: Message) -> str:
         post_ok=post_ok,
         admin_mode_line=admin_mode_line,
         tips_line=tips_line,
+        author_line=author_line,
     )

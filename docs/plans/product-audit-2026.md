@@ -179,6 +179,6 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ## 7. Итог (июнь 2026)
 
-**Актуально (v3.45.7):** roadmap A–E + F + G + **H/I phase2** + **Stars** + **assignee v3.45** закрыты. CI green, **572** тестов, verify_ops + 3 smoke, оценки **10/10** в [improvements-plan-2026-06.md](improvements-plan-2026-06.md).
+**Актуально (v3.45.8):** roadmap A–E + F + G + **H/I phase2** + **Stars** + **assignee v3.45** + **автор фаза 2** закрыты. CI green, **576** тестов, verify_ops + 4 smoke, оценки **10/10** в [improvements-plan-2026-06.md](improvements-plan-2026-06.md).
 
-**Дальше:** Wispbyte — `/ping` v3.45.2, Telegram smoke в [ops-checklist.md](../guides/ops-checklist.md).
+**Дальше:** Wispbyte — `/ping` v3.45.8, Telegram smoke в [ops-checklist.md](../guides/ops-checklist.md).

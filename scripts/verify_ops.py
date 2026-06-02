@@ -30,6 +30,7 @@ REQUIRED = (
     "scripts/smoke_stars.py",
     "scripts/smoke_group_mentions.py",
     "scripts/smoke_nlp.py",
+    "scripts/smoke_author.py",
     "scripts/check_deploy.py",
     "docker-compose.yml",
 )
@@ -39,6 +40,7 @@ _SMOKE_SCRIPTS = (
     "smoke_nlp.py",
     "smoke_group_mentions.py",
     "smoke_stars.py",
+    "smoke_author.py",
 )
 
 
