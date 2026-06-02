@@ -6,11 +6,11 @@
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
-| NLP / время | 10/10 | smoke_nlp в verify_ops, 567 тестов, приоритеты v3.42.2 |
+| NLP / время | 10/10 | smoke_nlp в verify_ops, 568 тестов, приоритеты v3.42.2 |
 | Группы / collective | 10/10 | assignee кнопками v3.45, smoke_group_mentions |
 | Admin | 10/10 | audit + broadcast draft в БД |
 | Pro / Stars | 10/10 | tips v3.44.4 · smoke_stars в verify_ops |
-| Тесты | 10/10 | **567** тестов, assignee callbacks + handler; gate 65% (~66%) |
+| Тесты | 10/10 | **568** тестов, assignee callbacks + handler; gate 65% (~66%) |
 | CI | 10/10 | verify_ops + smokes + pytest + ruff |
 | Docs | 10/10 | v3.45.x assignee, ops-checklist, verify_ops |
 | Ops | 10/10 | verify_ops = файлы + docs + 3 smoke; Wispbyte — [ops-checklist](../guides/ops-checklist.md) (ручной `/ping`) |

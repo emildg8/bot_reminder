@@ -11,6 +11,7 @@ BOT_NAME = "Напоминалка"
 
 DEVELOPER_TELEGRAM = "emildg8"
 DEVELOPER_GITHUB_REPO = "emildg8/bot_reminder"
+DEVELOPER_TAGLINE = "Python · aiogram · open source · RU NLP"
 
 
 def developer_urls() -> dict[str, str]:
@@ -20,25 +21,47 @@ def developer_urls() -> dict[str, str]:
         "github": base,
         "issues": f"{base}/issues",
         "releases": f"{base}/releases",
+        "profile": f"https://github.com/{DEVELOPER_TELEGRAM}",
     }
 
 
-def format_developer_card() -> str:
-    """Карточка автора — отдельный экран или блок в /about."""
+def format_developer_teaser(*, version: str | None = None) -> str:
+    """Краткий блок для /about — без дублирования полной карточки."""
     urls = developer_urls()
+    ver = version or __version__
+    return (
+        f'👤 <b>Автор:</b> <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
+        f'<a href="{urls["github"]}">GitHub</a>\n'
+        f'Карточка автора — /author · '
+        f'<a href="{urls["releases"]}">релиз v{ver}</a>'
+    )
+
+
+def format_developer_contact_line() -> str:
+    urls = developer_urls()
+    return f'💬 <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a>'
+
+
+def format_developer_card(*, version: str | None = None) -> str:
+    """Полная карточка — /author и menu:author."""
+    urls = developer_urls()
+    ver = version or __version__
     lines = [
-        "👤 <b>Разработчик</b>\n\n",
-        "Pet-project на <b>Python</b> · open source · русский NLP.\n",
-        "Напоминания, голос, группы — один автор, открытый код.\n\n",
-        f'💬 <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> — вопросы, идеи, связь\n',
+        f'👤 <b>@{DEVELOPER_TELEGRAM}</b>\n',
+        f"<i>{DEVELOPER_TAGLINE}</i>\n\n",
+        f"Делаю <b>{BOT_NAME}</b> — напоминания текстом, голосом и в группах.\n",
+        "Бот бесплатный, код открыт — баги и идеи welcome.\n\n",
+        "<b>Связь</b>\n",
+        f'💬 <a href="{urls["telegram"]}">Telegram</a> — вопросы и предложения\n',
+        f'👨‍💻 <a href="{urls["profile"]}">GitHub профиль</a>\n',
         f'⭐ <a href="{urls["github"]}">{DEVELOPER_GITHUB_REPO}</a> — исходники\n',
-        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и предложения\n',
-        f'📦 <a href="{urls["releases"]}">Релизы</a> — что нового в боте',
+        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и фичи\n',
+        f'📦 <a href="{urls["releases"]}">Релизы</a> · сейчас <b>v{ver}</b>',
     ]
     from bot.services.stars_tips import tips_enabled
 
     if tips_enabled():
-        lines.append("\n\n💝 Поддержка: /thanks (Telegram Stars, добровольно)")
+        lines.append("\n\n💝 Поддержать проект: /thanks (Telegram Stars)")
     else:
         lines.append("\n\n🙌 Спасибо, что пользуешься ботом")
     return "".join(lines)
@@ -352,7 +375,7 @@ def format_about(version: str = __version__) -> str:
         "• Отложить с настраиваемыми вариантами\n\n"
         + _about_tips_line()
         + "Команды: /help · /list · /journal · /stats\n\n"
-        + format_developer_card()
+        + format_developer_teaser(version=version)
     )
 
 

@@ -19,7 +19,7 @@ from bot.handlers.menu import (
     menu_status,
     menu_timezone,
 )
-from bot.texts.messages import EXAMPLES_INTRO
+from bot.texts.messages import DEVELOPER_TELEGRAM, EXAMPLES_INTRO
 from bot.services.drafts import clear_search_pending, pop_search_pending
 from bot.services.search_ui import _store_cache, send_search_results
 from bot.version import __version__
@@ -206,7 +206,7 @@ async def test_menu_about_shows_version(patched_db):
 
     body = callback.message.answer.await_args[0][0]
     assert __version__ in body
-    assert "Разработчик" in body
+    assert "Автор" in body
     assert callback.message.answer.await_args.kwargs.get("reply_markup") is not None
 
 
@@ -217,8 +217,7 @@ async def test_menu_author_shows_developer_card(patched_db):
     await menu_author(callback)
 
     body = callback.message.answer.await_args[0][0]
-    assert "Разработчик" in body
-    assert "Pet-project" in body
+    assert f"@{DEVELOPER_TELEGRAM}" in body
     assert callback.message.answer.await_args.kwargs.get("reply_markup") is not None
 
 

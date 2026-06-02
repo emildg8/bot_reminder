@@ -254,27 +254,27 @@ async def menu_help(callback: CallbackQuery, bot) -> None:
 
 @router.callback_query(F.data == "menu:about")
 async def menu_about(callback: CallbackQuery) -> None:
-    from bot.keyboards.inline import about_developer_keyboard
+    from bot.keyboards.inline import about_screen_keyboard
     from bot.texts.messages import format_about
 
     await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
     await callback.message.answer(
         format_about(__version__),
-        reply_markup=about_developer_keyboard(),
+        reply_markup=about_screen_keyboard(),
     )
 
 
 @router.callback_query(F.data == "menu:author")
 async def menu_author(callback: CallbackQuery) -> None:
-    from bot.keyboards.inline import developer_links_keyboard
+    from bot.keyboards.inline import author_screen_keyboard
     from bot.texts.messages import format_developer_card
 
     await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
     await callback.message.answer(
-        format_developer_card(),
-        reply_markup=developer_links_keyboard(),
+        format_developer_card(version=__version__),
+        reply_markup=author_screen_keyboard(),
     )
 
 

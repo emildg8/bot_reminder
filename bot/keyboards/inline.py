@@ -374,9 +374,31 @@ def developer_links_keyboard(*, include_thanks: bool = True) -> InlineKeyboardMa
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def about_screen_keyboard() -> InlineKeyboardMarkup:
+    rows = [list(row) for row in developer_links_keyboard().inline_keyboard]
+    rows.append(
+        [
+            InlineKeyboardButton(text="👤 Автор", callback_data="menu:author"),
+            InlineKeyboardButton(text="◀️ Меню", callback_data="menu:home"),
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def author_screen_keyboard() -> InlineKeyboardMarkup:
+    rows = [list(row) for row in developer_links_keyboard().inline_keyboard]
+    rows.append(
+        [
+            InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
+            InlineKeyboardButton(text="◀️ Меню", callback_data="menu:home"),
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def about_developer_keyboard() -> InlineKeyboardMarkup:
-    """Alias для /about и карточки автора."""
-    return developer_links_keyboard()
+    """Клавиатура для /about."""
+    return about_screen_keyboard()
 
 
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:

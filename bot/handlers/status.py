@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from bot.keyboards.inline import about_developer_keyboard, developer_links_keyboard
+from bot.keyboards.inline import about_screen_keyboard, author_screen_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.chat_status import build_status_text
 from bot.texts.messages import format_about, format_developer_card
@@ -15,15 +15,15 @@ router = Router()
 async def cmd_about(message: Message) -> None:
     await message.answer(
         format_about(__version__),
-        reply_markup=about_developer_keyboard(),
+        reply_markup=about_screen_keyboard(),
     )
 
 
 @router.message(Command("author"))
 async def cmd_author(message: Message) -> None:
     await message.answer(
-        format_developer_card(),
-        reply_markup=developer_links_keyboard(),
+        format_developer_card(version=__version__),
+        reply_markup=author_screen_keyboard(),
     )
 
 
