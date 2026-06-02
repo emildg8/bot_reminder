@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.services.user_prefs import format_snooze_minutes
-from bot.texts.messages import EXAMPLE_PHRASES, TASK_TIME_PRESETS
+from bot.texts.messages import DEVELOPER_GITHUB_REPO, DEVELOPER_TELEGRAM, EXAMPLE_PHRASES, TASK_TIME_PRESETS
 
 TIMEZONE_OPTIONS = [
     ("Europe/Moscow", "Москва"),
@@ -349,6 +349,23 @@ def assignee_choice_keyboard(candidates: list[str]) -> InlineKeyboardMarkup:
         ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def about_developer_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="💬 Telegram",
+                    url=f"https://t.me/{DEVELOPER_TELEGRAM}",
+                ),
+                InlineKeyboardButton(
+                    text="⭐ GitHub",
+                    url=f"https://github.com/{DEVELOPER_GITHUB_REPO}",
+                ),
+            ],
+        ]
+    )
 
 
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:

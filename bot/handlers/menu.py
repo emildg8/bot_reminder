@@ -254,11 +254,15 @@ async def menu_help(callback: CallbackQuery, bot) -> None:
 
 @router.callback_query(F.data == "menu:about")
 async def menu_about(callback: CallbackQuery) -> None:
+    from bot.keyboards.inline import about_developer_keyboard
     from bot.texts.messages import format_about
 
     await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
-    await callback.message.answer(format_about(__version__))
+    await callback.message.answer(
+        format_about(__version__),
+        reply_markup=about_developer_keyboard(),
+    )
 
 
 @router.callback_query(F.data == "menu:examples")

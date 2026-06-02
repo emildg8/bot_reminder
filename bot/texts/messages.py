@@ -9,6 +9,9 @@ from bot.version import __version__
 
 BOT_NAME = "Напоминалка"
 
+DEVELOPER_TELEGRAM = "emildg8"
+DEVELOPER_GITHUB_REPO = "emildg8/bot_reminder"
+
 _TIME_HINT = re.compile(
     r"через\s+(?:\d+|пару|несколько|полчаса|полтора|"
     r"один|два|три|четыре|пять|шесть|семь|восемь|девять|десять|"
@@ -297,6 +300,8 @@ EDIT_HINT = (
 
 
 def format_about(version: str = __version__) -> str:
+    repo_url = f"https://github.com/{DEVELOPER_GITHUB_REPO}"
+    tg_url = f"https://t.me/{DEVELOPER_TELEGRAM}"
     return (
         f"📦 <b>{BOT_NAME}</b> · v{version}\n\n"
         "Telegram-ежедневник: напоминания текстом, голосом или кружочком.\n\n"
@@ -307,7 +312,10 @@ def format_about(version: str = __version__) -> str:
         "• Группы и личные чаты\n"
         "• Отложить с настраиваемыми вариантами\n\n"
         + _about_tips_line()
-        + "Команды: /help · /list · /journal · /stats"
+        + "Команды: /help · /list · /journal · /stats\n\n"
+        "👤 <b>Разработчик</b>\n"
+        f'• <a href="{tg_url}">@{DEVELOPER_TELEGRAM}</a> — идея, код, поддержка\n'
+        f'• <a href="{repo_url}">GitHub · {DEVELOPER_GITHUB_REPO}</a> — открытый код'
     )
 
 
