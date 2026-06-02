@@ -20,7 +20,7 @@
 | [guides/group-assignee.md](guides/group-assignee.md) | Напоминание на участника (@user, reply) |
 | [guides/nlp-time-priority.md](guides/nlp-time-priority.md) | Приоритеты: «сегодня» + «через N минут» |
 | [guides/stars-tips.md](guides/stars-tips.md) | Благодарность автору Stars |
-| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (556), coverage 65%, ruff, verify_ops |
+| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (558), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
 | [guides/postgres-backup.md](guides/postgres-backup.md) | Бэкап PostgreSQL, cron |

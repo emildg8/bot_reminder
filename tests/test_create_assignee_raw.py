@@ -1,7 +1,27 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from bot.handlers.create import _raw_for_assignee_candidates
+from bot.handlers.create import (
+    _message_text_or_caption,
+    _raw_for_assignee_candidates,
+)
+
+
+def test_message_text_or_caption_ignores_magic_mock():
+    message = MagicMock()
+    message.text = MagicMock()
+    message.caption = None
+    assert _message_text_or_caption(message) is None
+
+
+def test_raw_for_assignee_candidates_falls_back_to_phrase():
+    message = SimpleNamespace(text=None, caption=None)
+    raw = _raw_for_assignee_candidates(
+        message,
+        "завтра в 9:00 таблетки",
+        source_label="",
+    )
+    assert raw == "завтра в 9:00 таблетки"
 
 
 def test_raw_for_assignee_candidates_voice_uses_phrase():

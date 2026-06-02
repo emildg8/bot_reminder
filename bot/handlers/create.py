@@ -41,13 +41,27 @@ MAX_VIDEO_NOTE_SECONDS = 60
 MIN_AUDIO_SECONDS = 1
 
 
+def _message_text_or_caption(message: Message) -> str | None:
+    """Реальный текст сообщения (callback.message часто MagicMock без str)."""
+    text = getattr(message, "text", None)
+    if isinstance(text, str) and text.strip():
+        return text.strip()
+    caption = getattr(message, "caption", None)
+    if isinstance(caption, str) and caption.strip():
+        return caption.strip()
+    return None
+
+
 def _raw_for_assignee_candidates(
     message: Message, phrase_text: str, *, source_label: str
 ) -> str:
     """Текст для поиска @user: в голосе — распознанная фраза, иначе сообщение."""
     if source_label in ("voice", "video_note"):
         return phrase_text.strip()
-    return (message.text or message.caption or phrase_text or "").strip()
+    from_msg = _message_text_or_caption(message)
+    if from_msg is not None:
+        return from_msg
+    return phrase_text.strip()
 
 
 async def _get_parse_timezone(chat_id: int, user_id: int) -> str:
