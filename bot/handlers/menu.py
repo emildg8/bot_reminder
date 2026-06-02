@@ -265,6 +265,19 @@ async def menu_about(callback: CallbackQuery) -> None:
     )
 
 
+@router.callback_query(F.data == "menu:author")
+async def menu_author(callback: CallbackQuery) -> None:
+    from bot.keyboards.inline import developer_links_keyboard
+    from bot.texts.messages import format_developer_card
+
+    await safe_callback_answer(callback)
+    _clear_modes(callback.from_user.id)
+    await callback.message.answer(
+        format_developer_card(),
+        reply_markup=developer_links_keyboard(),
+    )
+
+
 @router.callback_query(F.data == "menu:examples")
 async def menu_examples(callback: CallbackQuery, bot) -> None:
     _clear_modes(callback.from_user.id)

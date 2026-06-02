@@ -9,6 +9,7 @@ from bot.handlers.list_callbacks import list_noop, list_page, list_tab, search_n
 from bot.handlers.menu import (
     example_picked,
     menu_about,
+    menu_author,
     menu_examples,
     menu_help,
     menu_home,
@@ -206,6 +207,18 @@ async def test_menu_about_shows_version(patched_db):
     body = callback.message.answer.await_args[0][0]
     assert __version__ in body
     assert "Разработчик" in body
+    assert callback.message.answer.await_args.kwargs.get("reply_markup") is not None
+
+
+@pytest.mark.asyncio
+async def test_menu_author_shows_developer_card(patched_db):
+    callback = make_callback("menu:author", 9116)
+
+    await menu_author(callback)
+
+    body = callback.message.answer.await_args[0][0]
+    assert "Разработчик" in body
+    assert "Pet-project" in body
     assert callback.message.answer.await_args.kwargs.get("reply_markup") is not None
 
 

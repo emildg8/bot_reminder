@@ -26,6 +26,7 @@ PRIVATE_COMMANDS = [
     BotCommand(command="export", description="Экспорт в JSON"),
     BotCommand(command="import", description="Импорт из JSON"),
     BotCommand(command="about", description="О боте"),
+    BotCommand(command="author", description="Разработчик"),
     BotCommand(command="help", description="Справка"),
     BotCommand(command="ping", description="Проверка работы"),
 ]

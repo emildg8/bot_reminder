@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.services.user_prefs import format_snooze_minutes
-from bot.texts.messages import DEVELOPER_GITHUB_REPO, DEVELOPER_TELEGRAM, EXAMPLE_PHRASES, TASK_TIME_PRESETS
+from bot.texts.messages import developer_urls, EXAMPLE_PHRASES, TASK_TIME_PRESETS
 
 TIMEZONE_OPTIONS = [
     ("Europe/Moscow", "Москва"),
@@ -114,6 +114,7 @@ def more_menu_keyboard(telegram_id: int | None = None) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="ℹ️ О боте", callback_data="menu:about"),
         ],
         [
+            InlineKeyboardButton(text="👤 Автор", callback_data="menu:author"),
             InlineKeyboardButton(text="🎯 Тур по боту", callback_data="onb:restart"),
         ],
     ]
@@ -121,7 +122,7 @@ def more_menu_keyboard(telegram_id: int | None = None) -> InlineKeyboardMarkup:
 
     if tips_enabled():
         rows.insert(
-            -1 if rows else 0,
+            -1,
             [
                 InlineKeyboardButton(
                     text="⭐ Поддержать автора",
@@ -351,21 +352,31 @@ def assignee_choice_keyboard(candidates: list[str]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def developer_links_keyboard(*, include_thanks: bool = True) -> InlineKeyboardMarkup:
+    urls = developer_urls()
+    rows: list[list[InlineKeyboardButton]] = [
+        [
+            InlineKeyboardButton(text="💬 Telegram", url=urls["telegram"]),
+            InlineKeyboardButton(text="⭐ GitHub", url=urls["github"]),
+        ],
+        [
+            InlineKeyboardButton(text="🐛 Issue", url=urls["issues"]),
+            InlineKeyboardButton(text="📦 Релизы", url=urls["releases"]),
+        ],
+    ]
+    if include_thanks:
+        from bot.services.stars_tips import tips_enabled
+
+        if tips_enabled():
+            rows.append(
+                [InlineKeyboardButton(text="💝 Поддержать", callback_data="menu:thanks")]
+            )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def about_developer_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="💬 Telegram",
-                    url=f"https://t.me/{DEVELOPER_TELEGRAM}",
-                ),
-                InlineKeyboardButton(
-                    text="⭐ GitHub",
-                    url=f"https://github.com/{DEVELOPER_GITHUB_REPO}",
-                ),
-            ],
-        ]
-    )
+    """Alias для /about и карточки автора."""
+    return developer_links_keyboard()
 
 
 def main_menu_inline_keyboard() -> InlineKeyboardMarkup:

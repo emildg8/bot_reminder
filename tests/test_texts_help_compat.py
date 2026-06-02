@@ -6,8 +6,10 @@ from bot.texts.messages import (
     CREATE_HINT,
     EXAMPLES_INTRO,
     HELP_TEXT,
+    HELP_TEXT_CHANNEL,
     HELP_TEXT_GROUP,
     HELP_TEXT_PRIVATE,
+    DEVELOPER_TELEGRAM,
     format_help,
 )
 
@@ -35,6 +37,17 @@ def test_group_help_assignee_and_delete_yes():
     assert "/edit" in text
 
 
-def test_group_help_via_format_matches_constant():
-    assert format_help(ChatKind.SUPERGROUP) == HELP_TEXT_GROUP
-    assert format_help(ChatKind.PRIVATE) == HELP_TEXT_PRIVATE
+def test_format_help_private_includes_footer():
+    text = format_help(ChatKind.PRIVATE)
+    assert text.startswith(HELP_TEXT_PRIVATE.split("\n")[0])
+    assert DEVELOPER_TELEGRAM in text
+
+
+def test_format_help_group_includes_footer():
+    text = format_help(ChatKind.SUPERGROUP)
+    assert HELP_TEXT_GROUP.split("\n")[0] in text
+    assert DEVELOPER_TELEGRAM in text
+
+
+def test_format_help_channel_unchanged():
+    assert format_help(ChatKind.CHANNEL) == HELP_TEXT_CHANNEL
