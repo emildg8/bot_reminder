@@ -33,6 +33,7 @@ from bot.services.mention_create import extract_create_mention, mention_was_prov
 from bot.services.mention_resolve import resolve_mention_user_id
 from bot.services.nlp.llm_parser import parse_all_reminders
 from bot.services.nlp.speech_cleanup import cleanup_stt_text, is_stt_text_too_short
+from bot.services.mention_parse import strip_leading_bot_mention
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -230,7 +231,8 @@ async def handle_text(message: Message, bot: Bot) -> None:
                 message.from_user.id if message.from_user else "?",
                 (message.text or "")[:120],
             )
-        await _route_user_phrase(message, message.text.strip(), bot)
+        text = strip_leading_bot_mention(message.text.strip(), me.username)
+        await _route_user_phrase(message, text, bot)
     except Exception:
         logger.exception("Failed to handle text in chat %s", message.chat.id)
         await message.answer(

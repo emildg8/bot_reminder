@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate smoke-nlp smoke-stars check-deploy
+.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate smoke-nlp smoke-stars smoke-group-mentions check-deploy
 
 help:
 	@echo "bot_reminder — make targets:"
@@ -46,6 +46,9 @@ smoke-nlp:
 
 smoke-stars:
 	python scripts/smoke_stars.py
+
+smoke-group-mentions:
+	python scripts/smoke_group_mentions.py
 
 check-deploy:
 	python scripts/check_deploy.py

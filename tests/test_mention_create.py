@@ -76,6 +76,19 @@ def test_reply_fallback_without_at():
     assert mention.phrase == "завтра созвон"
 
 
+def test_voice_trailing_mention():
+    mention = extract_create_mention(
+        _msg("завтра созвон"),
+        "через час тест @alice",
+        bot_username="mybot",
+        bot_id=1,
+        from_transcription=True,
+    )
+    assert mention.username == "alice"
+    assert mention.phrase == "через час тест"
+    assert mention.source == "text"
+
+
 def test_voice_reply_assigns_target():
     message = _msg(
         "завтра созвон",

@@ -1,4 +1,4 @@
-# План улучшений · июнь 2026
+﻿# План улучшений · июнь 2026
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
@@ -6,11 +6,11 @@
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
-| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 491 тестов |
+| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 513 тестов |
 | Группы / collective | 10/10 | assignee, inline ✏️🗑 своих |
 | Admin | 10/10 | audit + broadcast draft в БД |
 | Pro / Stars | 10/10 | tips v3.44.4 · [stars-tips-polish.md](stars-tips-polish.md) ✅ |
-| Тесты | 9/10 | 491 тестов, gate 65% |
+| Тесты | 9/10 | 513 тестов, gate 65% |
 | CI | 10/10 | green v3.43.0; release = lint CI |
 | Docs | 9/10 | phase2 + K закрыты, postgres-backup |
 | Ops | 7/10 | CI green; Wispbyte smoke — [ops-checklist](../guides/ops-checklist.md) |

@@ -49,7 +49,8 @@ def format_group_welcome(bot_username: str | None = None, *, privacy_hint: str =
         f"✅ <b>Надёжно</b> — <code>/remind@{uname} через 30 минут созвон</code>\n"
         f"• <code>/remind@{uname} @user завтра в 14:00 задача</code>\n"
         f"• ответ на сообщение + <code>/remind@{uname} …</code>\n\n"
-        f"Или {at} <b>из списка</b> + @user + фраза.\n\n"
+        f"Или {at} <b>из списка</b> + @user + фраза "
+        f"(<code>{at}@user …</code>, <code>{at} + @user …</code>).\n\n"
         "⚠️ @ с клавиатуры бот может не увидеть — выбирай из списка Telegram."
         f"{privacy_hint}\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
@@ -93,7 +94,8 @@ def format_group_commands_hint(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} через 30 минут …</code>\n"
         f"• <code>/remind@{uname} @user …</code> — напоминание участнику\n"
         f"• ответ на сообщение + <code>/remind@{uname} …</code>\n"
-        f"• {at} <b>из списка</b> + @user + фраза\n\n"
+        f"• {at} <b>из списка</b> + @user + фраза "
+        f"(<code>{at}@user</code>, <code>{at} + @user</code>)\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
 
@@ -117,7 +119,8 @@ def format_group_create_hint(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} через час созвон</code> — всегда работает\n"
         f"• <code>/remind@{uname} @user завтра в 14:00 задача</code> — на участника\n"
         f"• ответ на сообщение + <code>/remind@{uname} завтра задача</code>\n"
-        f"• {at} <b>из списка</b> + @user + фраза\n\n"
+        f"• {at} <b>из списка</b> + @user + фраза "
+        f"(<code>{at}@user</code>, <code>{at} + @user</code>)\n\n"
         "⚠️ @ вручную — бот может не увидеть; выбирай @ из списка Telegram.\n"
         "Подтверждение и кнопки — в личке с ботом."
     )

@@ -32,6 +32,13 @@ def test_group_requires_mention():
     msg2 = _message(chat_id=-100, chat_type=ChatType.SUPERGROUP, text="@mybot завтра созвон")
     assert should_handle_collective_message(msg2, bot_username="mybot", bot_id=1)
 
+    msg3 = _message(
+        chat_id=-100,
+        chat_type=ChatType.SUPERGROUP,
+        text="@mybot@alice через минуту тест",
+    )
+    assert should_handle_collective_message(msg3, bot_username="mybot", bot_id=1)
+
 
 def test_channel_only_commands():
     msg = _message(chat_id=-100, chat_type=ChatType.CHANNEL, text="просто пост")

@@ -6,7 +6,12 @@ from dataclasses import dataclass
 
 from aiogram.types import Message
 
-from bot.services.mention_parse import extract_leading_username, extract_mention_from_message
+from bot.services.mention_parse import (
+    extract_leading_username,
+    extract_mention_from_message,
+    extract_username_anywhere,
+    strip_leading_bot_mention,
+)
 
 
 @dataclass(frozen=True)
@@ -50,7 +55,10 @@ def extract_create_mention(
     phrase = phrase_text.strip()
 
     if from_transcription:
-        username, clean = extract_leading_username(phrase, bot_username)
+        stripped = strip_leading_bot_mention(phrase, bot_username)
+        username, clean = extract_leading_username(stripped, bot_username)
+        if not username:
+            username, clean = extract_username_anywhere(stripped, bot_username)
         if username:
             return CreateMention(None, username, clean, "text")
         reply_id, reply_uname = extract_reply_target(message)
