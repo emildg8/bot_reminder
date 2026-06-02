@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from bot.db.repository import get_or_create_user
 from bot.handlers.tips import cmd_subscribe_redirect, cmd_thanks, send_thanks_screen
-from bot.services.stars_tips import format_thanks_screen, pre_checkout_error, tip_keyboard, tip_payload
+from bot.services.stars_tips import format_thanks_screen, tip_keyboard
 
 
 @pytest.mark.asyncio

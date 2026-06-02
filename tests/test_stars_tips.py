@@ -11,11 +11,8 @@ from bot.services.stars_tips import (
     format_amount_out_of_range,
     format_custom_amount_invalid,
     format_thank_you,
-    is_tip_payload,
-    is_valid_tip_amount,
     looks_like_tip_amount,
     parse_tip_amount_input,
-    parse_tip_payload,
     pre_checkout_error,
     should_send_tip_nudge,
     text_has_letters,
@@ -23,7 +20,6 @@ from bot.services.stars_tips import (
     tips_enabled,
 )
 from bot.services.tip_custom_state import (
-    clear_all_tip_custom,
     clear_custom_amount,
     get_pending_confirm,
     is_pending_confirm,
