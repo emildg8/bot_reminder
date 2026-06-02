@@ -14,26 +14,48 @@ DEVELOPER_GITHUB_REPO = "emildg8/bot_reminder"
 DEVELOPER_TAGLINE = "Python · aiogram · open source · RU NLP"
 
 
-def developer_urls() -> dict[str, str]:
+def developer_urls(*, version: str | None = None) -> dict[str, str]:
     base = f"https://github.com/{DEVELOPER_GITHUB_REPO}"
+    ver = version or __version__
     return {
         "telegram": f"https://t.me/{DEVELOPER_TELEGRAM}",
         "github": base,
         "issues": f"{base}/issues",
         "releases": f"{base}/releases",
+        "release_tag": f"{base}/releases/tag/v{ver}",
         "profile": f"https://github.com/{DEVELOPER_TELEGRAM}",
     }
 
 
+def format_developer_made_by_line() -> str:
+    """Одна строка после onboarding — кто автор и куда смотреть."""
+    urls = developer_urls()
+    return (
+        f'💡 Бот от <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
+        f'<a href="{urls["github"]}">open source</a> · /author'
+    )
+
+
+def format_developer_support_note() -> str:
+    """Правила обратной связи — в полной карточке автора."""
+    urls = developer_urls()
+    return (
+        "\n\n<b>Как связаться</b>\n"
+        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и идеи для бота\n'
+        f'💬 <a href="{urls["telegram"]}">Telegram</a> — личные вопросы\n'
+        "⏰ Срочные напоминания — только через бота, не в личку"
+    )
+
+
 def format_developer_teaser(*, version: str | None = None) -> str:
     """Краткий блок для /about — без дублирования полной карточки."""
-    urls = developer_urls()
     ver = version or __version__
+    urls = developer_urls(version=ver)
     return (
         f'👤 <b>Автор:</b> <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
         f'<a href="{urls["github"]}">GitHub</a>\n'
         f'Карточка автора — /author · '
-        f'<a href="{urls["releases"]}">релиз v{ver}</a>'
+        f'<a href="{urls["release_tag"]}">что нового в v{ver}</a>'
     )
 
 
@@ -44,8 +66,8 @@ def format_developer_contact_line() -> str:
 
 def format_developer_card(*, version: str | None = None) -> str:
     """Полная карточка — /author и menu:author."""
-    urls = developer_urls()
     ver = version or __version__
+    urls = developer_urls(version=ver)
     lines = [
         f'👤 <b>@{DEVELOPER_TELEGRAM}</b>\n',
         f"<i>{DEVELOPER_TAGLINE}</i>\n\n",
@@ -57,6 +79,7 @@ def format_developer_card(*, version: str | None = None) -> str:
         f'⭐ <a href="{urls["github"]}">{DEVELOPER_GITHUB_REPO}</a> — исходники\n',
         f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и фичи\n',
         f'📦 <a href="{urls["releases"]}">Релизы</a> · сейчас <b>v{ver}</b>',
+        format_developer_support_note(),
     ]
     from bot.services.stars_tips import tips_enabled
 

@@ -3,6 +3,7 @@ import pytest
 from bot.db.repository import complete_user_onboarding, get_or_create_user
 from bot.handlers.start import onboarding_callback, cmd_start
 from bot.services.onboarding import onboarding_step_text
+from bot.texts.messages import format_developer_made_by_line
 from tests.callback_helpers import make_bot, make_callback, make_message, patch_create_flow
 
 
@@ -42,6 +43,8 @@ async def test_onboarding_skip_marks_done(patched_db):
     refreshed = await get_or_create_user(patched_db, user_id, "Europe/Moscow")
     assert refreshed.onboarding_done is True
     assert callback.message.answer.await_count >= 2
+    bodies = [call[0][0] for call in callback.message.answer.await_args_list]
+    assert any(format_developer_made_by_line() in b for b in bodies)
 
 
 @pytest.mark.asyncio

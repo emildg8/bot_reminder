@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.services.user_prefs import format_snooze_minutes
 from bot.texts.messages import developer_urls, EXAMPLE_PHRASES, TASK_TIME_PRESETS
+from bot.version import __version__
 
 TIMEZONE_OPTIONS = [
     ("Europe/Moscow", "Москва"),
@@ -352,8 +353,11 @@ def assignee_choice_keyboard(candidates: list[str]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def developer_links_keyboard(*, include_thanks: bool = True) -> InlineKeyboardMarkup:
-    urls = developer_urls()
+def developer_links_keyboard(
+    *, include_thanks: bool = True, version: str | None = None
+) -> InlineKeyboardMarkup:
+    ver = version or __version__
+    urls = developer_urls(version=ver)
     rows: list[list[InlineKeyboardButton]] = [
         [
             InlineKeyboardButton(text="💬 Telegram", url=urls["telegram"]),
@@ -363,6 +367,7 @@ def developer_links_keyboard(*, include_thanks: bool = True) -> InlineKeyboardMa
             InlineKeyboardButton(text="🐛 Issue", url=urls["issues"]),
             InlineKeyboardButton(text="📦 Релизы", url=urls["releases"]),
         ],
+        [InlineKeyboardButton(text="🆕 Что нового", url=urls["release_tag"])],
     ]
     if include_thanks:
         from bot.services.stars_tips import tips_enabled

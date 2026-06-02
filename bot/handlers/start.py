@@ -26,7 +26,7 @@ from bot.services.onboarding import (
     onboarding_step_text,
 )
 from bot.services.timezone_labels import format_timezone_label
-from bot.texts.messages import EXAMPLE_PHRASES, WELCOME_BACK, WELCOME_ONBOARDING, format_collective_welcome
+from bot.texts.messages import EXAMPLE_PHRASES, WELCOME_BACK, WELCOME_ONBOARDING, format_collective_welcome, format_developer_made_by_line
 
 router = Router()
 
@@ -59,6 +59,7 @@ async def _finish_onboarding(callback: CallbackQuery) -> None:
         ),
     )
     await callback.message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
+    await callback.message.answer(format_developer_made_by_line(), parse_mode="HTML")
 
 
 @router.message(CommandStart())

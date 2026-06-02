@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.45.5** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.45.6** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -21,7 +21,7 @@
 | [guides/nlp-time-priority.md](guides/nlp-time-priority.md) | Приоритеты: «сегодня» + «через N минут» |
 | [guides/stars-tips.md](guides/stars-tips.md) | Благодарность автору Stars |
 | [guides/yookassa-submission-pack.md](guides/yookassa-submission-pack.md) | Тексты для анкеты ЮKassa (Stars `/thanks`) |
-| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (568), coverage 65%, ruff, verify_ops |
+| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (571), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
 | [guides/postgres-backup.md](guides/postgres-backup.md) | Бэкап PostgreSQL, cron |

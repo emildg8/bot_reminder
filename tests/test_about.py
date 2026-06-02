@@ -11,6 +11,8 @@ from bot.texts.messages import (
     developer_urls,
     format_about,
     format_developer_card,
+    format_developer_made_by_line,
+    format_developer_support_note,
     format_developer_teaser,
     format_help,
     format_help_feedback_footer,
@@ -30,7 +32,27 @@ def test_format_about_contains_version_and_teaser():
 def test_format_developer_teaser_release_link():
     text = format_developer_teaser(version="9.9.9")
     assert "9.9.9" in text
-    assert developer_urls()["releases"] in text
+    assert developer_urls(version="9.9.9")["release_tag"] in text
+    assert "что нового" in text
+
+
+def test_format_developer_made_by_line():
+    text = format_developer_made_by_line()
+    assert DEVELOPER_TELEGRAM in text
+    assert "/author" in text
+    assert developer_urls()["github"] in text
+
+
+def test_format_developer_support_note():
+    text = format_developer_support_note()
+    assert "Как связаться" in text
+    assert developer_urls()["issues"] in text
+    assert "не в личку" in text
+
+
+def test_format_developer_card_includes_support_note():
+    text = format_developer_card(version=__version__)
+    assert format_developer_support_note().strip() in text
 
 
 def test_format_developer_card_links():
@@ -63,8 +85,11 @@ def test_developer_links_keyboard_urls():
         developer_urls()["github"],
         developer_urls()["issues"],
         developer_urls()["releases"],
+        developer_urls()["release_tag"],
     }
     assert expected <= urls
+    labels = [btn.text for row in kb.inline_keyboard for btn in row]
+    assert "🆕 Что нового" in labels
 
 
 def test_about_and_author_keyboards_have_nav():
