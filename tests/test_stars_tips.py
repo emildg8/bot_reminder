@@ -18,7 +18,6 @@ from bot.services.stars_tips import (
     should_send_tip_nudge,
     text_has_letters,
     tip_payload,
-    tip_thank_you_keyboard,
     tips_enabled,
 )
 from bot.services.tip_custom_state import (
