@@ -45,7 +45,7 @@ from bot.texts.messages import (
     EXAMPLE_PHRASES,
     phrase_from_task_preset,
 )
-from bot.services.stars_tips import format_thanks_screen, tip_keyboard, tips_enabled
+from bot.handlers.tips import send_thanks_screen
 from bot.version import __version__
 
 logger = logging.getLogger(__name__)
@@ -176,15 +176,7 @@ async def menu_create(callback: CallbackQuery, bot) -> None:
 async def menu_thanks(callback: CallbackQuery) -> None:
     await safe_callback_answer(callback)
     _clear_modes(callback.from_user.id)
-    if not tips_enabled():
-        await callback.message.answer(
-            "⭐ Благодарность Stars пока недоступна · /about",
-        )
-        return
-    await callback.message.answer(
-        format_thanks_screen(),
-        reply_markup=tip_keyboard(),
-    )
+    await send_thanks_screen(callback.message)
 
 
 @router.callback_query(F.data == "menu:more")

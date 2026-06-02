@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.43.0** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.43.1** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -40,6 +40,7 @@
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям (`v3.40.0.md`, …)
+- [releases/v3.43.1.md](releases/v3.43.1.md) — Stars tips UX polish
 - [releases/v3.43.0.md](releases/v3.43.0.md) — Stars: благодарность автору
 - [releases/v3.42.2.md](releases/v3.42.2.md) — NLP «в 2 дня», strip_day для расписаний
 - [releases/v3.42.1.md](releases/v3.42.1.md) — patch CI

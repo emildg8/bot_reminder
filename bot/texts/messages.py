@@ -430,7 +430,12 @@ def format_help(chat_kind: ChatKind = ChatKind.PRIVATE) -> str:
         return HELP_TEXT_CHANNEL
     if chat_kind in (ChatKind.GROUP, ChatKind.SUPERGROUP):
         return HELP_TEXT_GROUP
-    return HELP_TEXT_PRIVATE
+    text = HELP_TEXT_PRIVATE
+    from bot.services.stars_tips import tips_enabled
+
+    if tips_enabled():
+        text += "\n/thanks — благодарность автору Stars (добровольно)"
+    return text
 
 
 HELP_TEXT = HELP_TEXT_PRIVATE

@@ -6,11 +6,11 @@
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
-| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 456 тестов |
+| NLP / время | 10/10 | v3.42.2: приоритеты, smoke_nlp, 460 тестов |
 | Группы / collective | 10/10 | assignee, inline ✏️🗑 своих |
 | Admin | 10/10 | audit + broadcast draft в БД |
 | Pro / Stars | 10/10 | tips `/thanks`, без лимитов |
-| Тесты | 9/10 | 456 тестов, gate 65% |
+| Тесты | 9/10 | 460 тестов, gate 65% |
 | CI | 10/10 | green v3.43.0; release = lint CI |
 | Docs | 9/10 | phase2 + K закрыты, postgres-backup |
 | Ops | 7/10 | CI green; Wispbyte smoke — [ops-checklist](../guides/ops-checklist.md) |

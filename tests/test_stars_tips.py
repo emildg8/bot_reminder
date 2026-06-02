@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from bot.db.repository import get_or_create_user, record_star_payment
 from bot.handlers.payments import pre_checkout, successful_payment
-from bot.services.stars_tips import tip_payload, tips_enabled
+from bot.services.stars_tips import pre_checkout_error, tip_payload, tips_enabled
 
 
 @pytest.mark.asyncio
@@ -54,10 +54,11 @@ async def test_duplicate_charge_idempotent(patched_db):
 
 @pytest.mark.asyncio
 async def test_pre_checkout_ok(monkeypatch):
-    monkeypatch.setattr("bot.handlers.payments.tips_enabled", lambda: True)
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
     query = MagicMock()
     query.from_user.id = 123
     query.invoice_payload = tip_payload(123, 50)
+    query.total_amount = 50
     query.answer = AsyncMock()
     await pre_checkout(query)
     query.answer.assert_awaited_once_with(ok=True)
@@ -65,10 +66,11 @@ async def test_pre_checkout_ok(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_pre_checkout_wrong_user(monkeypatch):
-    monkeypatch.setattr("bot.handlers.payments.tips_enabled", lambda: True)
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
     query = MagicMock()
     query.from_user.id = 123
     query.invoice_payload = tip_payload(999, 50)
+    query.total_amount = 50
     query.answer = AsyncMock()
     await pre_checkout(query)
     query.answer.assert_awaited_once_with(
@@ -78,6 +80,17 @@ async def test_pre_checkout_wrong_user(monkeypatch):
 
 def test_tips_disabled_by_default():
     assert tips_enabled() is False
+
+
+def test_pre_checkout_error_ok(monkeypatch):
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    assert pre_checkout_error(tip_payload(1, 50), payer_id=1, total_amount=50) is None
+
+
+def test_pre_checkout_error_amount_mismatch(monkeypatch):
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    err = pre_checkout_error(tip_payload(1, 50), payer_id=1, total_amount=100)
+    assert err == "Сумма не совпадает"
 
 
 def test_tip_payload_roundtrip():

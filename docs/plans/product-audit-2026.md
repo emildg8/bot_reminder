@@ -179,6 +179,6 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 ## 7. Итог (июнь 2026)
 
-**Актуально (v3.43.0):** roadmap A–E + F + G + **H/I phase2** закрыты в коде. CI: lint-and-test + Release **green**, **456** тестов, coverage **≥65%**, `verify_ops`, pre-commit.
+**Актуально (v3.43.0):** roadmap A–E + F + G + **H/I phase2** закрыты в коде. CI: lint-and-test + Release **green**, **460** тестов, coverage **≥65%**, `verify_ops`, pre-commit.
 
 **Дальше:** ops — `/ping` v3.43.0, `/thanks` smoke, [stars-tips.md](../guides/stars-tips.md).

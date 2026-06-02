@@ -14,6 +14,7 @@ from bot.services.stars_tips import (
     format_thank_you,
     format_thank_you_duplicate,
     parse_tip_payload,
+    pre_checkout_error,
     tip_invoice_prices,
     tip_payload,
     tips_enabled,
@@ -24,11 +25,19 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 
-async def _notify_admins_tip(bot, user_id: int, amount: int, username: str | None) -> None:
+async def _notify_admins_tip(
+    bot,
+    user_id: int,
+    amount: int,
+    *,
+    username: str | None,
+    first_name: str | None,
+) -> None:
     if not settings.stars_tips_notify_admin:
         return
     uname = f"@{username}" if username else "—"
-    text = f"⭐ <b>+{amount}</b> Stars · <code>{user_id}</code> {uname}"
+    who = first_name or uname
+    text = f"⭐ <b>+{amount}</b> Stars · {who} · <code>{user_id}</code>"
     for admin_id in settings.admin_telegram_ids:
         try:
             await bot.send_message(admin_id, text)
@@ -64,16 +73,13 @@ async def cb_tip_pay(callback: CallbackQuery) -> None:
 
 @router.pre_checkout_query()
 async def pre_checkout(query: PreCheckoutQuery) -> None:
-    if not tips_enabled():
-        await query.answer(ok=False, error_message="Stars временно недоступны")
-        return
-    parsed = parse_tip_payload(query.invoice_payload or "")
-    if parsed is None:
-        await query.answer(ok=False, error_message="Неизвестный платёж")
-        return
-    user_id, _amount = parsed
-    if user_id != query.from_user.id:
-        await query.answer(ok=False, error_message="Платёж привязан к другому пользователю")
+    err = pre_checkout_error(
+        query.invoice_payload or "",
+        payer_id=query.from_user.id,
+        total_amount=query.total_amount,
+    )
+    if err:
+        await query.answer(ok=False, error_message=err)
         return
     await query.answer(ok=True)
 
@@ -109,13 +115,14 @@ async def successful_payment(message: Message) -> None:
         return
 
     await message.answer(
-        format_thank_you(amount),
+        format_thank_you(amount, first_name=message.from_user.first_name),
         reply_markup=menu_keyboard_for_chat(message.chat.id),
     )
     await _notify_admins_tip(
         message.bot,
         user_id,
         amount,
-        message.from_user.username,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
     )
     logger.info("Stars tip %s from user %s", amount, user_id)

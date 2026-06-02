@@ -13,15 +13,29 @@ from bot.services.stars_tips import (
 router = Router()
 
 
-@router.message(Command("thanks", "support", "subscribe"))
-async def cmd_thanks(message: Message) -> None:
+async def send_thanks_screen(
+    message: Message,
+    *,
+    subscribe_redirect: bool = False,
+) -> None:
+    kb = menu_keyboard_for_chat(message.chat.id)
     if not tips_enabled():
         await message.answer(
-            format_tips_disabled(),
-            reply_markup=menu_keyboard_for_chat(message.chat.id),
+            format_tips_disabled(from_subscribe=subscribe_redirect),
+            reply_markup=kb,
         )
         return
     await message.answer(
-        format_thanks_screen(),
+        format_thanks_screen(subscribe_redirect=subscribe_redirect),
         reply_markup=tip_keyboard(),
     )
+
+
+@router.message(Command("thanks", "support"))
+async def cmd_thanks(message: Message) -> None:
+    await send_thanks_screen(message)
+
+
+@router.message(Command("subscribe"))
+async def cmd_subscribe_redirect(message: Message) -> None:
+    await send_thanks_screen(message, subscribe_redirect=True)

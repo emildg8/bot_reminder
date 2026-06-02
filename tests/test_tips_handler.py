@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from bot.handlers.tips import cmd_thanks
-from bot.services.stars_tips import format_thanks_screen, tip_keyboard
+from bot.handlers.tips import cmd_subscribe_redirect, cmd_thanks, send_thanks_screen
+from bot.services.stars_tips import format_thanks_screen, pre_checkout_error, tip_keyboard, tip_payload
 
 
 @pytest.mark.asyncio
@@ -19,6 +19,17 @@ async def test_cmd_thanks_when_enabled(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_cmd_subscribe_shows_redirect_note(monkeypatch):
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    message = MagicMock()
+    message.chat.id = 1
+    message.answer = AsyncMock()
+    await cmd_subscribe_redirect(message)
+    text = message.answer.await_args[0][0]
+    assert "подписк" in text.lower()
+
+
+@pytest.mark.asyncio
 async def test_cmd_thanks_when_disabled(monkeypatch):
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", False)
     message = MagicMock()
@@ -26,6 +37,16 @@ async def test_cmd_thanks_when_disabled(monkeypatch):
     message.answer = AsyncMock()
     await cmd_thanks(message)
     assert "недоступна" in message.answer.await_args[0][0].lower()
+
+
+@pytest.mark.asyncio
+async def test_subscribe_disabled_mentions_no_subscription(monkeypatch):
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", False)
+    message = MagicMock()
+    message.chat.id = 1
+    message.answer = AsyncMock()
+    await send_thanks_screen(message, subscribe_redirect=True)
+    assert "subscribe" in message.answer.await_args[0][0].lower()
 
 
 def test_thanks_screen_mentions_free():
