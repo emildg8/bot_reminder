@@ -2,6 +2,7 @@ from bot.keyboards.inline import (
     about_screen_keyboard,
     author_screen_keyboard,
     developer_links_keyboard,
+    developer_made_by_keyboard,
 )
 from bot.services.chat_ctx import ChatKind
 from bot.texts.messages import (
@@ -39,20 +40,31 @@ def test_format_developer_teaser_release_link():
 def test_format_developer_made_by_line():
     text = format_developer_made_by_line()
     assert DEVELOPER_TELEGRAM in text
-    assert "/author" in text
     assert developer_urls()["github"] in text
+    assert "открытый код" in text
 
 
 def test_format_developer_support_note():
     text = format_developer_support_note()
-    assert "Как связаться" in text
-    assert developer_urls()["issues"] in text
-    assert "не в личку" in text
+    assert "не пиши" in text
+    assert "личку" in text
 
 
 def test_format_developer_card_includes_support_note():
     text = format_developer_card(version=__version__)
     assert format_developer_support_note().strip() in text
+    assert "Обратная связь" in text
+    assert developer_urls(version=__version__)["release_tag"] in text
+
+
+def test_developer_made_by_keyboard():
+    kb = developer_made_by_keyboard(version="1.2.3")
+    callbacks = [btn.callback_data for row in kb.inline_keyboard for btn in row if btn.callback_data]
+    urls = [btn.url for row in kb.inline_keyboard for btn in row if btn.url]
+    assert "menu:author" in callbacks
+    assert developer_urls(version="1.2.3")["release_tag"] in urls
+    labels = [btn.text for row in kb.inline_keyboard for btn in row]
+    assert any("1.2.3" in t for t in labels)
 
 
 def test_format_developer_card_links():
@@ -70,6 +82,8 @@ def test_format_help_feedback_footer():
     footer = format_help_feedback_footer()
     assert DEVELOPER_TELEGRAM in footer
     assert "Issues" in footer
+    assert "/author" in footer
+    assert developer_urls()["release_tag"] in footer
 
 
 def test_format_help_includes_author_footer():

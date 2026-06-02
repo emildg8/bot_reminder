@@ -1,6 +1,6 @@
 [project]
 name = "bot-reminder"
-version = "3.45.6"
+version = "3.45.7"
 description = "Telegram-бот напоминаний: текст, голос, NLP, группы и каналы"
 readme = "README.md"
 license = { text = "MIT" }

@@ -344,6 +344,7 @@ def format_thank_you(
         lines.append("Первый раз — очень приятно!")
     lines.append("")
     lines.append("Бот остаётся бесплатным для всех · /help")
+    lines.append("Вопросы и идеи — /author")
     from bot.texts.messages import format_developer_contact_line
 
     lines.append(format_developer_contact_line())

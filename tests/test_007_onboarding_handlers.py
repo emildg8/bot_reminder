@@ -45,6 +45,8 @@ async def test_onboarding_skip_marks_done(patched_db):
     assert callback.message.answer.await_count >= 2
     bodies = [call[0][0] for call in callback.message.answer.await_args_list]
     assert any(format_developer_made_by_line() in b for b in bodies)
+    last_call = callback.message.answer.await_args_list[-1]
+    assert last_call.kwargs.get("reply_markup") is not None
 
 
 @pytest.mark.asyncio

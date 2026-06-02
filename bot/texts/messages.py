@@ -32,19 +32,13 @@ def format_developer_made_by_line() -> str:
     urls = developer_urls()
     return (
         f'💡 Бот от <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
-        f'<a href="{urls["github"]}">open source</a> · /author'
+        f'<a href="{urls["github"]}">открытый код</a> на GitHub'
     )
 
 
 def format_developer_support_note() -> str:
-    """Правила обратной связи — в полной карточке автора."""
-    urls = developer_urls()
-    return (
-        "\n\n<b>Как связаться</b>\n"
-        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и идеи для бота\n'
-        f'💬 <a href="{urls["telegram"]}">Telegram</a> — личные вопросы\n'
-        "⏰ Срочные напоминания — только через бота, не в личку"
-    )
+    """Правило срочности — в карточке автора."""
+    return "\n\n⏰ Срочные напоминания создавай здесь — не пиши автору в личку"
 
 
 def format_developer_teaser(*, version: str | None = None) -> str:
@@ -73,12 +67,13 @@ def format_developer_card(*, version: str | None = None) -> str:
         f"<i>{DEVELOPER_TAGLINE}</i>\n\n",
         f"Делаю <b>{BOT_NAME}</b> — напоминания текстом, голосом и в группах.\n",
         "Бот бесплатный, код открыт — баги и идеи welcome.\n\n",
-        "<b>Связь</b>\n",
-        f'💬 <a href="{urls["telegram"]}">Telegram</a> — вопросы и предложения\n',
-        f'👨‍💻 <a href="{urls["profile"]}">GitHub профиль</a>\n',
-        f'⭐ <a href="{urls["github"]}">{DEVELOPER_GITHUB_REPO}</a> — исходники\n',
-        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и фичи\n',
-        f'📦 <a href="{urls["releases"]}">Релизы</a> · сейчас <b>v{ver}</b>',
+        "<b>Обратная связь</b>\n",
+        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и идеи · '
+        f'💬 <a href="{urls["telegram"]}">Telegram</a> — вопросы\n',
+        f'👨‍💻 <a href="{urls["profile"]}">Профиль</a> · '
+        f'⭐ <a href="{urls["github"]}">{DEVELOPER_GITHUB_REPO}</a> · '
+        f'<a href="{urls["release_tag"]}">v{ver}</a> · '
+        f'<a href="{urls["releases"]}">релизы</a>',
         format_developer_support_note(),
     ]
     from bot.services.stars_tips import tips_enabled
@@ -93,10 +88,11 @@ def format_developer_card(*, version: str | None = None) -> str:
 def format_help_feedback_footer() -> str:
     urls = developer_urls()
     return (
-        f"\n\n💬 <b>Автор:</b> "
+        f"\n\n👤 <b>Автор:</b> "
         f'<a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
         f'<a href="{urls["issues"]}">Issues</a> · '
-        f'<a href="{urls["github"]}">GitHub</a>'
+        f'<a href="{urls["release_tag"]}">что нового</a> · '
+        f"/author"
     )
 
 _TIME_HINT = re.compile(

@@ -365,9 +365,9 @@ def developer_links_keyboard(
         ],
         [
             InlineKeyboardButton(text="🐛 Issue", url=urls["issues"]),
-            InlineKeyboardButton(text="📦 Релизы", url=urls["releases"]),
+            InlineKeyboardButton(text="🆕 Что нового", url=urls["release_tag"]),
         ],
-        [InlineKeyboardButton(text="🆕 Что нового", url=urls["release_tag"])],
+        [InlineKeyboardButton(text="📦 Релизы", url=urls["releases"])],
     ]
     if include_thanks:
         from bot.services.stars_tips import tips_enabled
@@ -377,6 +377,19 @@ def developer_links_keyboard(
                 [InlineKeyboardButton(text="💝 Поддержать", callback_data="menu:thanks")]
             )
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def developer_made_by_keyboard(*, version: str | None = None) -> InlineKeyboardMarkup:
+    ver = version or __version__
+    urls = developer_urls(version=ver)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="👤 Автор", callback_data="menu:author"),
+                InlineKeyboardButton(text=f"🆕 v{ver}", url=urls["release_tag"]),
+            ],
+        ]
+    )
 
 
 def about_screen_keyboard() -> InlineKeyboardMarkup:

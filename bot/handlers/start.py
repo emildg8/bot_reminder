@@ -12,7 +12,7 @@ from bot.db.repository import (
     update_user_timezone,
 )
 from bot.handlers.create import _process_text_and_reply
-from bot.keyboards.inline import main_menu_inline_keyboard, timezone_keyboard, timezone_offset_keyboard
+from bot.keyboards.inline import main_menu_inline_keyboard, developer_made_by_keyboard, timezone_keyboard, timezone_offset_keyboard
 from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.admin_access import is_admin_listed, is_bot_admin
 from bot.services.bot_privacy import format_group_privacy_user_hint
@@ -59,7 +59,10 @@ async def _finish_onboarding(callback: CallbackQuery) -> None:
         ),
     )
     await callback.message.answer("⚡️ Быстрые действия:", reply_markup=main_menu_inline_keyboard())
-    await callback.message.answer(format_developer_made_by_line(), parse_mode="HTML")
+    await callback.message.answer(
+        format_developer_made_by_line(),
+        reply_markup=developer_made_by_keyboard(),
+    )
 
 
 @router.message(CommandStart())
