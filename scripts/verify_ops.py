@@ -3,12 +3,17 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+_SMOKE_ENV = {
+    **os.environ,
+    "BOT_TOKEN": os.environ.get("BOT_TOKEN") or "0:ci-test-token",
+}
 REQUIRED = (
     "README.md",
     "CHANGELOG.md",
@@ -47,6 +52,7 @@ def _run_smoke_scripts() -> list[str]:
             capture_output=True,
             text=True,
             timeout=60,
+            env=_SMOKE_ENV,
         )
         if proc.returncode != 0:
             tail = (proc.stdout or "") + (proc.stderr or "")
