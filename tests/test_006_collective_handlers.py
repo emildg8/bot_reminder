@@ -51,7 +51,7 @@ async def test_gmenu_legacy_dismisses_other(patched_db):
 async def test_cmd_remind_group_stores_draft(patched_db, monkeypatch):
     patch_scheduler(monkeypatch)
     patch_create_flow(monkeypatch)
-    collective_mock = AsyncMock(return_value=True)
+    collective_mock = AsyncMock(return_value=(True, True))
     monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", collective_mock)
     user_id = 9502
     message = _group_message(user_id, "/remind@bot через 30 минут созвон")
@@ -78,7 +78,7 @@ async def test_handle_text_group_at_bot_plus_user(patched_db, monkeypatch):
         "bot.services.create_confirm.format_batch_parsed_summary_html",
         lambda *a, **k: "summary",
     )
-    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", AsyncMock(return_value=True))
+    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", AsyncMock(return_value=(True, True)))
     monkeypatch.setattr("bot.handlers.create.resolve_mention_user_id", AsyncMock(return_value=4242))
     monkeypatch.setattr("bot.handlers.create.offer_ambiguous_time_choice", AsyncMock(return_value=False))
     monkeypatch.setattr("bot.services.create_confirm.bot_can_post_reminders", AsyncMock(return_value=True))
@@ -94,10 +94,62 @@ async def test_handle_text_group_at_bot_plus_user(patched_db, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_handle_text_group_bot_display_name_entity(patched_db, monkeypatch):
+    patch_scheduler(monkeypatch)
+    patch_create_flow(monkeypatch)
+    stored: dict = {}
+
+    monkeypatch.setattr(
+        "bot.services.create_confirm.store_draft",
+        lambda *a, **kw: stored.update(kw) or "draft-display-name",
+    )
+    monkeypatch.setattr(
+        "bot.handlers.create.parse_all_reminders",
+        AsyncMock(
+            return_value=[
+                ParsedReminder(text="тест", kind="once", delay_seconds=60, run_at=None)
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        "bot.services.create_confirm.format_batch_parsed_summary_html",
+        lambda *a, **k: "summary",
+    )
+    collective_mock = AsyncMock(return_value=(True, True))
+    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", collective_mock)
+    monkeypatch.setattr("bot.handlers.create.resolve_mention_user_id", AsyncMock(return_value=42))
+    monkeypatch.setattr("bot.handlers.create.offer_ambiguous_time_choice", AsyncMock(return_value=False))
+    monkeypatch.setattr("bot.services.create_confirm.bot_can_post_reminders", AsyncMock(return_value=True))
+
+    user_id = 9508
+    text = "@bot Emil Через 1 минуту тест"
+    message = _group_message(user_id, text)
+    message.message_id = 555
+    message.entities = [
+        SimpleNamespace(type="mention", offset=0, length=4),
+        SimpleNamespace(
+            type="text_mention",
+            offset=5,
+            length=4,
+            user=SimpleNamespace(id=42, username="emildg8", is_bot=False),
+        ),
+    ]
+    message.caption_entities = []
+    message.reply = AsyncMock()
+
+    await handle_text(message, make_bot(username="bot", bot_id=1))
+
+    assert stored.get("mention_telegram_id") == 42
+    assert stored.get("mention_username") == "emildg8"
+    collective_mock.assert_awaited()
+    assert collective_mock.await_args.kwargs.get("reply_to_message_id") == 555
+
+
+@pytest.mark.asyncio
 async def test_handle_edited_text_group_at_bot(patched_db, monkeypatch):
     patch_scheduler(monkeypatch)
     patch_create_flow(monkeypatch)
-    collective_mock = AsyncMock(return_value=True)
+    collective_mock = AsyncMock(return_value=(True, True))
     monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", collective_mock)
     monkeypatch.setattr("bot.handlers.create.parse_all_reminders", AsyncMock(return_value=[MagicMock()]))
     monkeypatch.setattr(
@@ -133,7 +185,7 @@ async def test_cmd_remind_group_resolves_user_mention(patched_db, monkeypatch):
         "bot.services.create_confirm.format_batch_parsed_summary_html",
         lambda *a, **k: "summary",
     )
-    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", AsyncMock(return_value=True))
+    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", AsyncMock(return_value=(True, True)))
     resolve = AsyncMock(return_value=4242)
     monkeypatch.setattr("bot.handlers.create.resolve_mention_user_id", resolve)
     monkeypatch.setattr("bot.handlers.create.offer_ambiguous_time_choice", AsyncMock(return_value=False))
@@ -208,7 +260,7 @@ async def test_cmd_remind_reply_assigns_target(patched_db, monkeypatch):
         "bot.services.create_confirm.format_batch_parsed_summary_html",
         lambda *a, **k: "summary",
     )
-    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", AsyncMock(return_value=True))
+    monkeypatch.setattr("bot.services.create_confirm.send_collective_confirm", AsyncMock(return_value=(True, True)))
     monkeypatch.setattr("bot.handlers.create.resolve_mention_user_id", AsyncMock(return_value=7777))
     monkeypatch.setattr("bot.handlers.create.offer_ambiguous_time_choice", AsyncMock(return_value=False))
     monkeypatch.setattr("bot.services.create_confirm.bot_can_post_reminders", AsyncMock(return_value=True))

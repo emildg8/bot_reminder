@@ -15,6 +15,12 @@ from bot.texts.messages import (
 )
 
 logger = logging.getLogger(__name__)
+_group_hint_failures = 0
+
+
+def group_hint_failure_count() -> int:
+    """Сколько раз DM ушёл, а hint в группу — нет (с момента старта процесса)."""
+    return _group_hint_failures
 
 
 async def send_collective_confirm(
@@ -27,8 +33,13 @@ async def send_collective_confirm(
     body: str,
     reply_markup: InlineKeyboardMarkup,
     group_preview: str | None = None,
-) -> bool:
-    """Отправляет confirm в личку; в collective — короткую подсказку. False → fallback в чат."""
+    reply_to_message_id: int | None = None,
+) -> tuple[bool, bool]:
+    """Отправляет confirm в личку; в collective — короткую подсказку.
+
+    Returns:
+        (dm_sent, group_hint_sent) — False для DM → fallback confirm в чат.
+    """
     header = format_collective_dm_confirm_header(collective_kind, chat_title)
     dm_body = header + body
     try:
@@ -40,20 +51,45 @@ async def send_collective_confirm(
             collective_chat_id,
             exc,
         )
-        return False
+        return False, False
 
+    hint = format_collective_check_dm(
+        collective_kind,
+        chat_title,
+        preview=group_preview,
+    )
+    hint_error: Exception | None = None
     try:
         await bot.send_message(
             collective_chat_id,
-            format_collective_check_dm(
-                collective_kind,
-                chat_title,
-                preview=group_preview,
-            ),
+            hint,
+            reply_to_message_id=reply_to_message_id,
         )
+        return True, True
     except Exception as exc:
+        hint_error = exc
         logger.warning("Cannot send collective check-dm hint to %s: %s", collective_chat_id, exc)
-    return True
+
+    plain = hint.replace("<b>", "").replace("</b>", "")
+    try:
+        await bot.send_message(
+            collective_chat_id,
+            plain,
+            reply_to_message_id=reply_to_message_id,
+        )
+        return True, True
+    except Exception as exc2:
+        global _group_hint_failures
+        _group_hint_failures += 1
+        logger.warning(
+            "Collective hint failed (DM ok) chat=%s user=%s count=%s: %s; %s",
+            collective_chat_id,
+            user_id,
+            _group_hint_failures,
+            hint_error,
+            exc2,
+        )
+        return True, False
 
 
 async def send_collective_duplicate_confirm(
@@ -65,7 +101,8 @@ async def send_collective_duplicate_confirm(
     chat_title: str | None,
     body: str,
     reply_markup: InlineKeyboardMarkup,
-) -> bool:
+    reply_to_message_id: int | None = None,
+) -> tuple[bool, bool]:
     return await send_collective_confirm(
         bot,
         user_id=user_id,
@@ -74,6 +111,7 @@ async def send_collective_duplicate_confirm(
         chat_title=chat_title,
         body=body,
         reply_markup=reply_markup,
+        reply_to_message_id=reply_to_message_id,
     )
 
 

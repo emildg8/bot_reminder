@@ -95,6 +95,16 @@ async def _process_text_and_reply(
         bot_id=me.id,
         from_transcription=source_label in ("voice", "video_note"),
     )
+    if is_group_chat(message.chat.id) and (mention.source or mention.username):
+        logger.info(
+            "Group assignee chat=%s user=%s source=%s id=%s name=%s phrase=%s",
+            message.chat.id,
+            user_id,
+            mention.source,
+            mention.user_id,
+            mention.username,
+            mention.phrase[:80],
+        )
     mention_telegram_id = await resolve_mention_user_id(
         bot, mention.user_id, mention.username, chat_id=message.chat.id
     )
@@ -203,7 +213,7 @@ async def cmd_remind(message: Message, command: CommandObject, bot: Bot) -> None
             f"<code>/remind@{uname} завтра в 14:00 созвон</code>\n"
             f"<code>/remind@{uname} @user завтра в 14:00 задача</code>\n"
             "↩️ Ответ на сообщение + <code>/remind …</code> — напоминание этому человеку\n\n"
-            "👤 @user — только <b>из списка</b> Telegram (тап по имени)."
+            "👤 @user или <b>имя из списка</b> (@ → тап по участнику) — не просто набор имени."
         )
         return
     await _process_text_and_reply(message, phrase, bot)

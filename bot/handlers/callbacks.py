@@ -217,7 +217,7 @@ async def _create_from_draft(
                 )
                 dup_kb = duplicate_confirm_keyboard(new_draft_id, duplicate.id)
                 if entry.collective_chat_id and collective_kind:
-                    sent = await send_collective_duplicate_confirm(
+                    sent_dm, _group_hint = await send_collective_duplicate_confirm(
                         bot,
                         user_id=callback.from_user.id,
                         collective_chat_id=entry.collective_chat_id,
@@ -226,7 +226,7 @@ async def _create_from_draft(
                         body=dup_body,
                         reply_markup=dup_kb,
                     )
-                    if sent:
+                    if sent_dm:
                         await callback.message.edit_text("⚠️ Дубликат — подтверди в сообщении выше.")
                     else:
                         await callback.message.edit_text(dup_body, reply_markup=dup_kb)

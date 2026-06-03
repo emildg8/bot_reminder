@@ -7,6 +7,7 @@ from bot.services.mention_parse import (
     extract_username_candidates,
     strip_text_before_bot_mention,
     strip_leading_bot_mention,
+    _extract_leading_plain_name,
 )
 
 
@@ -356,3 +357,112 @@ def test_assignee_pick_for_count():
 
     assert assignee_pick_for_count(1) == "first"
     assert assignee_pick_for_count(2) == "nearest_time"
+
+
+def test_extract_leading_plain_name_before_time():
+    name, clean = _extract_leading_plain_name("Emil Через 1 минуту тест")
+    assert name == "Emil"
+    assert clean == "Через 1 минуту тест"
+
+
+def test_extract_leading_plain_name_skips_at_user():
+    name, clean = _extract_leading_plain_name("@alice через час задача")
+    assert name is None
+    assert clean == "@alice через час задача"
+
+
+def test_extract_mention_from_message_bot_and_display_name():
+    """@бот + имя из списка Telegram (text_mention без @ в тексте)."""
+    text = "@break_remind_bot Emil Через 1 минуту тест"
+    entities = [
+        SimpleNamespace(type="mention", offset=0, length=17),
+        SimpleNamespace(
+            type="text_mention",
+            offset=18,
+            length=4,
+            user=SimpleNamespace(id=42, username="emildg8", is_bot=False),
+        ),
+    ]
+    message = SimpleNamespace(
+        text=text,
+        caption=None,
+        entities=entities,
+        caption_entities=[],
+    )
+    mention_id, mention_username, clean = extract_mention_from_message(
+        message,
+        bot_username="break_remind_bot",
+        bot_id=1,
+    )
+    assert mention_id == 42
+    assert mention_username == "emildg8"
+    assert clean == "Через 1 минуту тест"
+
+
+def test_extract_mention_from_message_plain_name_without_entity():
+    """Имя набрано вручную — распознаём как assignee, но без user_id."""
+    message = SimpleNamespace(
+        text="@break_remind_bot Emil Через 1 минуту тест",
+        caption=None,
+        entities=[],
+        caption_entities=[],
+    )
+    mention_id, mention_username, clean = extract_mention_from_message(
+        message,
+        bot_username="break_remind_bot",
+        bot_id=1,
+    )
+    assert mention_id is None
+    assert mention_username == "Emil"
+    assert clean == "Через 1 минуту тест"
+
+
+def test_extract_mention_from_caption_entities():
+    message = SimpleNamespace(
+        text=None,
+        caption="@break_remind_bot @alice через 1 минуту тест",
+        entities=[],
+        caption_entities=[
+            SimpleNamespace(type="mention", offset=0, length=17),
+            SimpleNamespace(type="mention", offset=18, length=6),
+        ],
+    )
+    mention_id, mention_username, clean = extract_mention_from_message(
+        message,
+        bot_username="break_remind_bot",
+        bot_id=1,
+    )
+    assert mention_username == "alice"
+    assert clean == "через 1 минуту тест"
+
+
+def test_utf16_emoji_before_bot_mention():
+    """Emoji перед @бот — entity offset в UTF-16."""
+    from bot.services.mention_parse import utf16_offset_to_index
+
+    text = "👋@break_remind_bot Emil через 1 минуту"
+    assert utf16_offset_to_index(text, 0) == 0
+    assert utf16_offset_to_index(text, 2) == 1
+    entities = [
+        SimpleNamespace(type="mention", offset=2, length=17),
+        SimpleNamespace(
+            type="text_mention",
+            offset=20,
+            length=4,
+            user=SimpleNamespace(id=7, username=None, is_bot=False),
+        ),
+    ]
+    message = SimpleNamespace(
+        text=text,
+        caption=None,
+        entities=entities,
+        caption_entities=[],
+    )
+    mention_id, mention_username, clean = extract_mention_from_message(
+        message,
+        bot_username="break_remind_bot",
+        bot_id=1,
+    )
+    assert mention_id == 7
+    assert mention_username == "Emil"
+    assert "минуту" in clean

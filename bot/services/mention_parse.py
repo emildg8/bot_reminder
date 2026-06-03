@@ -1,7 +1,7 @@
 import re
 from typing import Literal
 
-from aiogram.types import Message
+from aiogram.types import Message, MessageEntity
 
 _MENTION_SEP_CHARS = r"[\s+,:;\-–—|/\\.\(\)\[\]{}«»]"
 USERNAME_PREFIX = re.compile(
@@ -34,6 +34,52 @@ FOR_USER_PREFIX = re.compile(
     re.IGNORECASE,
 )
 MentionPick = Literal["first", "last", "nearest_time", "auto"]
+_PLAIN_NAME = re.compile(
+    r"^([A-Za-zА-Яа-яЁё][\w''\-]*(?:\s+[A-Za-zА-Яа-яЁё][\w''\-]*){0,2})$"
+)
+
+
+def _utf16_units(char: str) -> int:
+    return 2 if ord(char) > 0xFFFF else 1
+
+
+def utf16_offset_to_index(text: str, utf16_offset: int) -> int:
+    """Telegram entity offset (UTF-16) → индекс символа Python."""
+    if utf16_offset <= 0:
+        return 0
+    units = 0
+    for index, char in enumerate(text):
+        if units >= utf16_offset:
+            return index
+        units += _utf16_units(char)
+    return len(text)
+
+
+def _entity_span_py(raw: str, entity: MessageEntity) -> tuple[int, int]:
+    start = utf16_offset_to_index(raw, entity.offset)
+    end = utf16_offset_to_index(raw, entity.offset + entity.length)
+    return start, end
+
+
+def _phrase_window(raw: str) -> tuple[str, int]:
+    """Текст фразы и его начало (Python index) в raw."""
+    prefix_py = command_prefix_length(raw)
+    tail = raw[prefix_py:]
+    phrase_start_py = prefix_py + (len(tail) - len(tail.lstrip()))
+    return tail.lstrip(), phrase_start_py
+
+
+def _message_text_and_entities(message: Message) -> tuple[str, list[MessageEntity]]:
+    """Текст сообщения и entities (text или caption)."""
+    raw = message.text or message.caption or ""
+    if not isinstance(raw, str):
+        raw = ""
+    raw = raw.strip()
+    if message.text:
+        entities = list(message.entities or [])
+    else:
+        entities = list(message.caption_entities or [])
+    return raw, entities
 
 
 def strip_telegram_command(text: str) -> str:
@@ -133,6 +179,33 @@ def _normalize_phrase_whitespace(text: str) -> str:
 def _time_anchor_index(text: str) -> int | None:
     match = _TIME_ANCHOR_RE.search(text or "")
     return match.start() if match else None
+
+
+def _extract_leading_plain_name(text: str) -> tuple[str | None, str]:
+    """
+    Имя без @ из списка Telegram (text_mention) или набранное вручную после @бот.
+    Берём только фрагмент до якоря времени («через», «завтра», «в 10:00» …).
+    """
+    raw = (text or "").strip()
+    if not raw:
+        return None, raw
+    first_token = raw.split(maxsplit=1)[0]
+    if first_token.startswith("@"):
+        return None, raw
+    anchor = _time_anchor_index(raw)
+    head = raw if anchor is None else raw[:anchor]
+    head = head.strip()
+    if not head or "@" in head:
+        return None, raw
+    match = _PLAIN_NAME.match(head)
+    if not match:
+        return None, raw
+    name = match.group(1).strip()
+    if len(name) < 2 or _TIME_ANCHOR_RE.fullmatch(name):
+        return None, raw
+    rest = raw[len(head) :]
+    rest = LEADING_MENTION_SEPARATORS.sub("", rest).strip()
+    return name, rest or raw
 
 
 def assignee_pick_for_count(count: int) -> MentionPick:
@@ -320,15 +393,11 @@ def extract_mention_from_message(
     bot_id: int | None = None,
 ) -> tuple[int | None, str | None, str]:
     """Возвращает (telegram_user_id, username, очищенный текст). Упоминание бота пропускается."""
-    raw = message.text or message.caption or ""
-    if not isinstance(raw, str):
-        raw = ""
-    raw = raw.strip()
+    raw, entities = _message_text_and_entities(message)
     if not raw:
         return None, None, raw
 
-    prefix_len = command_prefix_length(raw)
-    text = raw[prefix_len:].strip()
+    text, phrase_start_py = _phrase_window(raw)
 
     clean = text
     mention_id: int | None = None
@@ -336,12 +405,14 @@ def extract_mention_from_message(
     removed_spans: list[tuple[int, int]] = []
     user_hits: list[tuple[int, int, str, int | None]] = []
 
-    if message.entities:
-        for entity in sorted(message.entities, key=lambda e: e.offset):
-            if entity.offset + entity.length <= prefix_len:
+    if entities:
+        for entity in sorted(entities, key=lambda e: e.offset):
+            py_start, py_end = _entity_span_py(raw, entity)
+            if py_end <= phrase_start_py:
                 continue
 
-            rel_start = max(0, entity.offset - prefix_len)
+            rel_start = max(0, py_start - phrase_start_py)
+            py_length = py_end - py_start
 
             if entity.type == "text_mention" and entity.user:
                 if entity.user.is_bot or _is_bot_mention(
@@ -350,20 +421,21 @@ def extract_mention_from_message(
                     user_id=entity.user.id,
                     bot_id=bot_id,
                 ):
-                    removed_spans.append((rel_start, entity.length))
+                    removed_spans.append((rel_start, py_length))
                     continue
-                username = entity.user.username or ""
-                user_hits.append((rel_start, entity.length, username, entity.user.id))
-                removed_spans.append((rel_start, entity.length))
+                visible = raw[py_start:py_end].lstrip("@")
+                username = entity.user.username or visible or ""
+                user_hits.append((rel_start, py_length, username, entity.user.id))
+                removed_spans.append((rel_start, py_length))
                 continue
 
             if entity.type == "mention":
-                username = raw[entity.offset + 1 : entity.offset + entity.length]
+                username = raw[py_start + 1 : py_end]
                 if _is_bot_mention(username, bot_username):
-                    removed_spans.append((rel_start, entity.length))
+                    removed_spans.append((rel_start, py_length))
                     continue
-                user_hits.append((rel_start, entity.length, username, None))
-                removed_spans.append((rel_start, entity.length))
+                user_hits.append((rel_start, py_length, username, None))
+                removed_spans.append((rel_start, py_length))
                 continue
 
         if user_hits:
@@ -378,6 +450,11 @@ def extract_mention_from_message(
         username, clean = extract_username_anywhere(clean, bot_username, pick="auto")
         if username:
             mention_username = username
+        else:
+            plain_name, plain_clean = _extract_leading_plain_name(clean)
+            if plain_name:
+                mention_username = plain_name
+                clean = plain_clean
 
     clean = strip_all_bot_mentions(clean or text, bot_username)
     clean = _normalize_phrase_whitespace(clean)

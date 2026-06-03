@@ -4,7 +4,7 @@ import pytest
 from aiogram.types import InlineKeyboardMarkup
 
 from bot.services.chat_ctx import ChatKind
-from bot.services.collective_confirm import send_collective_confirm
+from bot.services.collective_confirm import group_hint_failure_count, send_collective_confirm
 from bot.texts.messages import (
     format_collective_check_dm,
     format_collective_created_notice,
@@ -51,7 +51,7 @@ def test_created_notice():
 async def test_send_collective_confirm():
     bot = AsyncMock()
     kb = InlineKeyboardMarkup(inline_keyboard=[])
-    ok = await send_collective_confirm(
+    dm_ok, hint_ok = await send_collective_confirm(
         bot,
         user_id=123,
         collective_chat_id=-100,
@@ -60,16 +60,74 @@ async def test_send_collective_confirm():
         body="Confirm body",
         reply_markup=kb,
     )
-    assert ok is True
+    assert dm_ok is True
+    assert hint_ok is True
     assert bot.send_message.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_send_collective_confirm_with_reply():
+    bot = AsyncMock()
+    kb = InlineKeyboardMarkup(inline_keyboard=[])
+    await send_collective_confirm(
+        bot,
+        user_id=123,
+        collective_chat_id=-100,
+        collective_kind=ChatKind.SUPERGROUP,
+        chat_title="Team",
+        body="Confirm body",
+        reply_markup=kb,
+        reply_to_message_id=999,
+    )
+    group_call = bot.send_message.await_args_list[1]
+    assert group_call.kwargs.get("reply_to_message_id") == 999
+
+
+@pytest.mark.asyncio
+async def test_send_collective_confirm_hint_retry():
+    bot = AsyncMock()
+    bot.send_message.side_effect = [None, Exception("html"), None]
+    kb = InlineKeyboardMarkup(inline_keyboard=[])
+    dm_ok, hint_ok = await send_collective_confirm(
+        bot,
+        user_id=123,
+        collective_chat_id=-100,
+        collective_kind=ChatKind.SUPERGROUP,
+        chat_title="Team",
+        body="Confirm body",
+        reply_markup=kb,
+    )
+    assert dm_ok is True
+    assert hint_ok is True
+    assert bot.send_message.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_send_collective_confirm_hint_fail_increments_metric():
+    bot = AsyncMock()
+    bot.send_message.side_effect = [None, Exception("html"), Exception("plain")]
+    kb = InlineKeyboardMarkup(inline_keyboard=[])
+    before = group_hint_failure_count()
+    dm_ok, hint_ok = await send_collective_confirm(
+        bot,
+        user_id=123,
+        collective_chat_id=-100,
+        collective_kind=ChatKind.SUPERGROUP,
+        chat_title="Team",
+        body="Confirm body",
+        reply_markup=kb,
+    )
+    assert dm_ok is True
+    assert hint_ok is False
+    assert group_hint_failure_count() == before + 1
 
 
 @pytest.mark.asyncio
 async def test_send_collective_confirm_dm_failed():
     bot = AsyncMock()
-    bot.send_message.side_effect = [Exception("blocked"), None]
+    bot.send_message.side_effect = [Exception("blocked")]
     kb = InlineKeyboardMarkup(inline_keyboard=[])
-    ok = await send_collective_confirm(
+    dm_ok, hint_ok = await send_collective_confirm(
         bot,
         user_id=123,
         collective_chat_id=-100,
@@ -78,5 +136,6 @@ async def test_send_collective_confirm_dm_failed():
         body="Confirm body",
         reply_markup=kb,
     )
-    assert ok is False
+    assert dm_ok is False
+    assert hint_ok is False
     assert bot.send_message.await_count == 1

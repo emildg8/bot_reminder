@@ -4,6 +4,16 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.46.0] — 2026-06-03
+
+### Группы / assignee (display name)
+- `@бот` + **имя из списка** Telegram (`text_mention`, без `@` в тексте) — корректный assignee и чистая задача
+- Fallback для имени перед «через / завтра / в …», если entity нет (предупреждение в confirm)
+- UTF-16 offsets для entities (emoji в тексте)
+- `caption_entities` для голоса с подписью
+- Reply в группе на исходное сообщение + retry hint при ошибке send
+- Лог assignee в группах; обновлены welcome и `/remind` help
+
 ## [3.45.8] — 2026-06-02
 
 ### Автор в продукте (фаза 2)

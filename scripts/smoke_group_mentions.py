@@ -24,6 +24,7 @@ from bot.services.mention_parse import (  # noqa: E402
     extract_username_candidates,
     format_assignee_pick_note,
     strip_leading_bot_mention,
+    _extract_leading_plain_name,
 )
 from bot.services.nlp.schemas import ParsedReminder  # noqa: E402
 
@@ -130,6 +131,30 @@ def main() -> int:
         [ParsedReminder(text="созвон", kind="once", delay_seconds=3600, run_at=None)]
     )
     _ok(preview == "📝 созвон", f"assignee task preview {preview!r}", errors)
+
+    name, clean_plain = _extract_leading_plain_name("Emil Через 1 минуту тест")
+    _ok(name == "Emil" and clean_plain == "Через 1 минуту тест", f"plain name {name!r}", errors)
+
+    msg_display = SimpleNamespace(
+        text="@break_remind_bot Emil Через 1 минуту тест",
+        caption=None,
+        entities=[
+            SimpleNamespace(type="mention", offset=0, length=17),
+            SimpleNamespace(
+                type="text_mention",
+                offset=18,
+                length=4,
+                user=SimpleNamespace(id=42, username="emildg8", is_bot=False),
+            ),
+        ],
+        caption_entities=[],
+    )
+    mid, mun, cplain = extract_mention_from_message(
+        msg_display,
+        bot_username=bot,
+        bot_id=1,
+    )
+    _ok(mid == 42 and mun == "emildg8" and cplain == "Через 1 минуту тест", f"display name {mid} {mun!r}", errors)
 
     if errors:
         for e in errors:

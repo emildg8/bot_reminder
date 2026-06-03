@@ -82,6 +82,27 @@ def test_text_mention_without_username():
         bot_id=1,
     )
     assert mention_id == 99
-    assert mention_username is None
+    assert mention_username == "ivan"
     assert "созвон" in clean
     assert "ivan" not in clean.lower()
+
+
+def test_text_mention_display_name_after_bot():
+    text = "@break_remind_bot Emil Через 1 минуту тест"
+    entities = [
+        SimpleNamespace(type="mention", offset=0, length=17),
+        SimpleNamespace(
+            type="text_mention",
+            offset=18,
+            length=4,
+            user=_user(42, None),
+        ),
+    ]
+    mention_id, mention_username, clean = extract_mention_from_message(
+        _msg(text, entities),
+        bot_username="break_remind_bot",
+        bot_id=1,
+    )
+    assert mention_id == 42
+    assert mention_username == "Emil"
+    assert clean == "Через 1 минуту тест"

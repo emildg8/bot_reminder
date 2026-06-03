@@ -21,6 +21,7 @@ from bot.services.reminder_display import format_batch_parsed_summary_html, form
 from bot.services.chat_ctx import ChatKind, chat_kind_from_chat
 from bot.texts.messages import (
     format_confirm_card,
+    format_collective_check_dm,
     format_mention_assignee_line,
     format_parse_fail,
     looks_like_task_only,
@@ -213,7 +214,7 @@ async def _parse_and_confirm_edit(
             mention_source=mention.source,
             mention_resolved=mention_resolved,
         )
-        sent_dm = await send_collective_confirm(
+        sent_dm, group_hint = await send_collective_confirm(
             bot,
             user_id=user_id,
             collective_chat_id=message.chat.id,
@@ -222,12 +223,17 @@ async def _parse_and_confirm_edit(
             body=body,
             reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),
             group_preview=group_preview,
+            reply_to_message_id=message.message_id,
         )
         if not sent_dm:
             me = await bot.get_me()
             await message.answer(
                 body + collective_dm_failed_suffix(me.username),
                 reply_markup=confirm_reminder_keyboard(draft_id, edit_id=reminder_id),
+            )
+        elif not group_hint:
+            await message.reply(
+                format_collective_check_dm(chat_kind, message.chat.title, preview=group_preview)
             )
         return
 

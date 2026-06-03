@@ -13,7 +13,11 @@ from bot.services.collective_preview import build_group_confirm_preview
 from bot.services.drafts import store_draft
 from bot.services.nlp.schemas import ParsedReminder
 from bot.services.reminder_display import format_batch_parsed_summary_html
-from bot.texts.messages import format_confirm_card, format_mention_assignee_line
+from bot.texts.messages import (
+    format_confirm_card,
+    format_collective_check_dm,
+    format_mention_assignee_line,
+)
 
 
 async def deliver_create_confirm(
@@ -81,7 +85,7 @@ async def deliver_create_confirm(
             mention_source=mention_source,
             mention_resolved=mention_resolved,
         )
-        sent_dm = await send_collective_confirm(
+        sent_dm, group_hint = await send_collective_confirm(
             bot,
             user_id=user_id,
             collective_chat_id=message.chat.id,
@@ -90,11 +94,16 @@ async def deliver_create_confirm(
             body=body,
             reply_markup=confirm_reminder_keyboard(draft_id),
             group_preview=group_preview,
+            reply_to_message_id=message.message_id,
         )
         if not sent_dm:
             await message.answer(
                 body + collective_dm_failed_suffix(me.username),
                 reply_markup=confirm_reminder_keyboard(draft_id),
+            )
+        elif not group_hint:
+            await message.reply(
+                format_collective_check_dm(chat_kind, message.chat.title, preview=group_preview)
             )
         return
 

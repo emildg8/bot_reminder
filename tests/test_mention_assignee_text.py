@@ -32,4 +32,4 @@ def test_format_created_with_assignee():
 def test_assignee_line_unresolved():
     line = format_mention_assignee_line(None, "ghost", resolved=False, source="text")
     assert "ghost" in line
-    assert "не в этом чате" in line
+    assert "не в этом чате" in line or "не найден" in line

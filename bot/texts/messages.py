@@ -8,6 +8,25 @@ from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
 BOT_NAME = "Напоминалка"
+_TELEGRAM_USERNAME = re.compile(r"^[a-z][a-z0-9_]{3,31}$", re.IGNORECASE)
+
+
+def _assignee_display_name(
+    mention_username: str | None,
+    *,
+    mention_user_id: int | None = None,
+) -> str:
+    """@username для логина; иначе имя из списка Telegram (Emil, Иван …)."""
+    name = (mention_username or "").strip()
+    if not name:
+        return "участник"
+    if _TELEGRAM_USERNAME.match(name):
+        label = f"@{escape(name)}"
+    else:
+        label = escape(name)
+    if mention_user_id is not None:
+        return f'<a href="tg://user?id={mention_user_id}">{label}</a>'
+    return label
 
 DEVELOPER_TELEGRAM = "emildg8"
 DEVELOPER_GITHUB_REPO = "emildg8/bot_reminder"
@@ -145,10 +164,12 @@ def format_group_welcome(bot_username: str | None = None, *, privacy_hint: str =
         f"✅ <b>Надёжно</b> — <code>/remind@{uname} через 30 минут созвон</code>\n"
         f"• <code>/remind@{uname} @user завтра в 14:00 задача</code>\n"
         f"• ответ на сообщение + <code>/remind@{uname} …</code>\n\n"
-        f"Или {at} <b>из списка</b> + @user + фраза "
-        f"(<code>{at}@user …</code>, <code>{at} + @user …</code>).\n"
-        "Несколько @user — бот сам выберет ближайшего к времени и покажет в confirm.\n\n"
-        "⚠️ @ с клавиатуры бот может не увидеть — выбирай из списка Telegram."
+        f"Или {at} <b>из списка</b> + участник + фраза "
+        f"(<code>{at}@user …</code>, <code>{at} + @user …</code>, "
+        f"<code>{at} Имя через час …</code> — тап по имени в @).\n"
+        "Несколько @user — бот сам выберет ближайшего к времени и покажет в confirm.\n"
+        "В группе ответит <b>reply</b> — «👌 … подтверди в личке».\n\n"
+        "⚠️ Имя с клавиатуры без выбора из @ — бот не узнает участника."
         f"{privacy_hint}\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
@@ -191,8 +212,8 @@ def format_group_commands_hint(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} через 30 минут …</code>\n"
         f"• <code>/remind@{uname} @user …</code> — напоминание участнику\n"
         f"• ответ на сообщение + <code>/remind@{uname} …</code>\n"
-        f"• {at} <b>из списка</b> + @user + фраза "
-        f"(<code>{at}@user</code>, <code>{at} + @user</code>)\n"
+        f"• {at} <b>из списка</b> + @user или <b>имя</b> (тап в @) + фраза "
+        f"(<code>{at}@user</code>, <code>{at} + @user</code>, <code>{at} Имя …</code>)\n"
         "Несколько @user — выбор ближайшего к времени; в группе — превью до confirm.\n\n"
         "📋 /list · ❓ /help · 🕐 /timezone · 📊 /status"
     )
@@ -370,6 +391,7 @@ def format_parse_fail(
         body += (
             f"\n\n💡 В группе:\n"
             f"• <code>{at} @user через час …</code> или <code>{at} + @user …</code>\n"
+            f"• <code>{at} Имя через час …</code> — имя <b>из списка</b> (@ → тап по участнику)\n"
             f"• <code>/remind@{uname} @user завтра в 14:00 …</code>\n"
             "Время: <code>в 18:20</code> и <code>в 18.20</code> — оба формата."
         )
@@ -451,7 +473,12 @@ def format_assignee_preview_plain(
     if not mention_username:
         return ""
     icon = "↩️" if source == "reply" else "👤"
-    return f"{icon} @{mention_username}"
+    name = (mention_username or "").strip()
+    if _TELEGRAM_USERNAME.match(name):
+        label = f"@{name}"
+    else:
+        label = name
+    return f"{icon} {label}"
 
 
 def format_collective_dm_failed_fallback(bot_username: str | None) -> str:
@@ -654,12 +681,13 @@ def format_assignee_compact(
     if not mention_user_id and not mention_username:
         return ""
     icon = "↩️" if source == "reply" else "👤"
-    if mention_user_id and mention_username:
-        who = f'<a href="tg://user?id={mention_user_id}">@{escape(mention_username)}</a>'
-    elif mention_user_id:
-        who = f'<a href="tg://user?id={mention_user_id}">участник</a>'
+    if mention_user_id or mention_username:
+        who = _assignee_display_name(
+            mention_username,
+            mention_user_id=mention_user_id,
+        )
     else:
-        who = f"@{escape(mention_username or '')}"
+        return ""
     return f"{icon} {who}"
 
 
@@ -676,18 +704,14 @@ def format_mention_assignee_line(
         return ""
 
     if mention_username and not resolved:
+        label = _assignee_display_name(mention_username)
         return (
-            f"⚠️ @{escape(mention_username)} не в этом чате или не найден — "
-            "напомню создателю.\n\n"
+            f"⚠️ {label} не в этом чате или не найден — "
+            "выбери участника из списка (@), а не просто имя.\n\n"
         )
 
-    if mention_user_id and mention_username:
-        who = f'<a href="tg://user?id={mention_user_id}">@{escape(mention_username)}</a>'
-    elif mention_user_id:
-        who = f'<a href="tg://user?id={mention_user_id}">участник</a>'
-    elif mention_username:
-        who = f"@{escape(mention_username)}"
-    else:
+    who = _assignee_display_name(mention_username, mention_user_id=mention_user_id)
+    if not who:
         return ""
 
     if source == "reply":
