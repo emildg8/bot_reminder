@@ -103,7 +103,7 @@ async def test_custom_amount_shows_confirm(patched_db, monkeypatch):
     message.bot = MagicMock()
     message.answer = AsyncMock()
 
-    await handle_custom_tip_amount(message)
+    await handle_custom_tip_amount(message, message.bot)
     message.answer.assert_awaited_once()
     assert "75" in message.answer.await_args[0][0]
     assert is_pending_confirm(user_id)
@@ -133,6 +133,11 @@ async def test_custom_amount_confirm_sends_invoice(patched_db, monkeypatch):
 @pytest.mark.asyncio
 async def test_custom_amount_phrase_passthrough(patched_db, monkeypatch):
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    collective = AsyncMock()
+    monkeypatch.setattr(
+        "bot.handlers.create._handle_collective_phrase_message",
+        collective,
+    )
     user_id = 77005
     start_custom_amount(user_id)
 
@@ -143,7 +148,8 @@ async def test_custom_amount_phrase_passthrough(patched_db, monkeypatch):
     message.bot = MagicMock()
     message.answer = AsyncMock()
 
-    await handle_custom_tip_amount(message)
+    await handle_custom_tip_amount(message, message.bot)
+    collective.assert_awaited_once_with(message, message.bot)
     message.answer.assert_not_awaited()
     assert not is_waiting_custom_amount(user_id)
 
@@ -241,7 +247,7 @@ async def test_custom_amount_non_numeric_stays_waiting(patched_db, monkeypatch):
     message.bot = MagicMock()
     message.answer = AsyncMock()
 
-    await handle_custom_tip_amount(message)
+    await handle_custom_tip_amount(message, message.bot)
     message.answer.assert_awaited_once()
     assert is_waiting_custom_amount(user_id)
     assert "число" in message.answer.await_args[0][0].lower()
@@ -250,6 +256,11 @@ async def test_custom_amount_non_numeric_stays_waiting(patched_db, monkeypatch):
 @pytest.mark.asyncio
 async def test_custom_amount_single_reminder_word_passthrough(patched_db, monkeypatch):
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    collective = AsyncMock()
+    monkeypatch.setattr(
+        "bot.handlers.create._handle_collective_phrase_message",
+        collective,
+    )
     user_id = 77013
     start_custom_amount(user_id)
 
@@ -260,7 +271,8 @@ async def test_custom_amount_single_reminder_word_passthrough(patched_db, monkey
     message.bot = MagicMock()
     message.answer = AsyncMock()
 
-    await handle_custom_tip_amount(message)
+    await handle_custom_tip_amount(message, message.bot)
+    collective.assert_awaited_once_with(message, message.bot)
     message.answer.assert_not_awaited()
     assert not is_waiting_custom_amount(user_id)
 
@@ -278,7 +290,7 @@ async def test_custom_amount_out_of_range(patched_db, monkeypatch):
     message.bot = MagicMock()
     message.answer = AsyncMock()
 
-    await handle_custom_tip_amount(message)
+    await handle_custom_tip_amount(message, message.bot)
     message.answer.assert_awaited_once()
     assert "диапазон" in message.answer.await_args[0][0].lower()
 
@@ -519,3 +531,51 @@ def test_format_custom_amount_invalid_hint():
     text = format_custom_amount_invalid("???")
     assert "число" in text.lower()
     assert "напоминан" in text.lower()
+
+
+@pytest.mark.asyncio
+async def test_tip_custom_text_filter_skips_group_reminder(monkeypatch):
+    from bot.handlers.tips import tip_custom_text_filter
+
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    message = MagicMock()
+    message.from_user.id = 88030
+    message.text = "@break_remind_bot Emil через 1 минуту тест"
+    assert await tip_custom_text_filter(message) is False
+
+
+@pytest.mark.asyncio
+async def test_tip_custom_text_filter_active_in_custom_flow(monkeypatch):
+    from bot.handlers.tips import tip_custom_text_filter
+
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    user_id = 88031
+    start_custom_amount(user_id)
+    message = MagicMock()
+    message.from_user.id = user_id
+    message.text = "50"
+    assert await tip_custom_text_filter(message) is True
+
+
+@pytest.mark.asyncio
+async def test_tip_reminder_phrase_delegates_to_create(monkeypatch):
+    from bot.handlers.tips import handle_custom_tip_amount
+
+    monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
+    collective = AsyncMock()
+    monkeypatch.setattr(
+        "bot.handlers.create._handle_collective_phrase_message",
+        collective,
+    )
+    user_id = 88032
+    start_custom_amount(user_id)
+    message = MagicMock()
+    message.from_user.id = user_id
+    message.chat.id = -100999
+    message.text = "завтра в 10 созвон"
+    message.bot = MagicMock()
+
+    await handle_custom_tip_amount(message, message.bot)
+
+    collective.assert_awaited_once_with(message, message.bot)
+    assert not is_waiting_custom_amount(user_id)

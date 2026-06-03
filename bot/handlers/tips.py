@@ -1,4 +1,4 @@
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
@@ -39,6 +39,17 @@ from bot.services.tip_custom_state import (
 )
 
 router = Router()
+
+
+async def tip_custom_text_filter(message: Message) -> bool:
+    """Только Stars custom amount — иначе create.py должен обработать фразу."""
+    if not tips_enabled():
+        return False
+    user = message.from_user
+    if user is None:
+        return False
+    uid = user.id
+    return is_waiting_custom_amount(uid) or is_pending_confirm(uid)
 
 
 async def _prior_tips(user_id: int) -> tuple[int, int] | None:
@@ -143,25 +154,27 @@ async def cb_tip_nudge_dismiss(callback: CallbackQuery) -> None:
         await callback.message.edit_reply_markup(reply_markup=None)
 
 
-@router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
-async def handle_custom_tip_amount(message: Message) -> None:
-    if not tips_enabled():
-        return
+@router.message(
+    F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS),
+    tip_custom_text_filter,
+)
+async def handle_custom_tip_amount(message: Message, bot: Bot) -> None:
+    from bot.handlers.create import _handle_collective_phrase_message
+
     user_id = message.from_user.id
     text = message.text or ""
 
     if is_pending_confirm(user_id):
         if looks_like_reminder_phrase(text):
             clear_all_tip_custom(user_id)
+            await _handle_collective_phrase_message(message, bot)
             return
         await message.answer(format_custom_amount_pending_hint())
         return
 
-    if not is_waiting_custom_amount(user_id):
-        return
-
     if looks_like_reminder_phrase(text):
         clear_custom_amount(user_id)
+        await _handle_collective_phrase_message(message, bot)
         return
     if not looks_like_tip_amount(text):
         await message.answer(format_custom_amount_invalid(text))

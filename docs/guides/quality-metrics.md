@@ -2,7 +2,7 @@
 
 Кратко, что проверяется перед каждым merge в `main`.
 
-## 589 тестов (pytest)
+## 592 теста (pytest)
 
 Автоматические сценарии: парсинг фраз, БД, callbacks, группы, удаление и т.д.
 
@@ -56,7 +56,7 @@ ruff check bot tests
 
 ```bash
 python scripts/verify_ops.py
-# → verify_ops OK · v3.46.1
+# → verify_ops OK · v3.46.2
 ```
 
 ## Локально как в CI
@@ -67,7 +67,7 @@ python scripts/verify_ops.py
 pytest -v --cov=bot --cov-fail-under=65
 ```
 
-## Карта тестов (589)
+## Карта тестов (592)
 
 | Категория | Примеры файлов | ~кол-во |
 |-----------|----------------|---------|
