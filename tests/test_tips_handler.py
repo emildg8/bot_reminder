@@ -16,7 +16,7 @@ async def test_cmd_thanks_when_enabled(patched_db, monkeypatch):
     await cmd_thanks(message)
     message.answer.assert_awaited_once()
     text = message.answer.await_args[0][0]
-    assert "Благодарность" in text
+    assert "Спасибо автору" in text
     assert message.answer.await_args.kwargs["reply_markup"] == tip_keyboard()
 
 

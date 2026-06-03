@@ -364,7 +364,7 @@ def developer_links_keyboard(
             InlineKeyboardButton(text="⭐ GitHub", url=urls["github"]),
         ],
         [
-            InlineKeyboardButton(text="🐛 Issue", url=urls["issues"]),
+            InlineKeyboardButton(text="🐛 Идеи и баги", url=urls["issues"]),
             InlineKeyboardButton(text="🆕 Что нового", url=urls["release_tag"]),
         ],
         [InlineKeyboardButton(text="📦 Релизы", url=urls["releases"])],

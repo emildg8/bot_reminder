@@ -39,4 +39,4 @@ Telegram: onboarding → кнопки · `/status` → строка автора
 
 Только **Telegram Stars** (`/thanks`) — см. [stars-tips.md](stars-tips.md). Добровольная поддержка, не разблокирует функции.
 
-Кратко для внешних описаний: бот open-source ([GitHub](https://github.com/emildg8/bot_reminder)), автор @emildg8, карточка в боте — `/author`.
+Тексты карточки — в `bot/texts/messages.py` (`format_developer_card`). Кнопка «🐛 Идеи и баги» ведёт в Issues.

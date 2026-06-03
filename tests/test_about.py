@@ -73,7 +73,7 @@ def test_format_developer_made_by_line():
     text = format_developer_made_by_line()
     assert DEVELOPER_TELEGRAM in text
     assert developer_urls()["github"] in text
-    assert "открытый код" in text
+    assert "код на GitHub" in text
 
 
 def test_format_developer_support_note():
@@ -85,7 +85,7 @@ def test_format_developer_support_note():
 def test_format_developer_card_includes_support_note():
     text = format_developer_card(version=__version__)
     assert format_developer_support_note().strip() in text
-    assert "Обратная связь" in text
+    assert "Куда написать" in text
     assert developer_urls(version=__version__)["release_tag"] in text
 
 
@@ -113,7 +113,8 @@ def test_format_developer_card_links():
 def test_format_help_feedback_footer():
     footer = format_help_feedback_footer()
     assert DEVELOPER_TELEGRAM in footer
-    assert "Issues" in footer
+    assert "баги" in footer
+    assert developer_urls()["issues"] in footer
     assert "/author" in footer
     assert developer_urls()["release_tag"] in footer
 

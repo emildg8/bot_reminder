@@ -35,7 +35,7 @@ def _assignee_display_name(
 
 DEVELOPER_TELEGRAM = "emildg8"
 DEVELOPER_GITHUB_REPO = "emildg8/bot_reminder"
-DEVELOPER_TAGLINE = "Python · aiogram · open source · RU NLP"
+DEVELOPER_TAGLINE = "Напоминания на Python · open source"
 
 
 def developer_urls(*, version: str | None = None) -> dict[str, str]:
@@ -55,14 +55,17 @@ def format_developer_made_by_line() -> str:
     """Одна строка после onboarding — кто автор и куда смотреть."""
     urls = developer_urls()
     return (
-        f'💡 Бот от <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
-        f'<a href="{urls["github"]}">открытый код</a> на GitHub'
+        f'💡 Сделал <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
+        f'<a href="{urls["github"]}">код на GitHub</a> — открытый'
     )
 
 
 def format_developer_support_note() -> str:
     """Правило срочности — в карточке автора."""
-    return "\n\n⏰ Срочные напоминания создавай здесь — не пиши автору в личку"
+    return (
+        "\n\n⏰ Напоминания — только через бота. "
+        "В личку автору не пиши: так быстрее, и ответят всем в Issues."
+    )
 
 
 def format_developer_teaser(*, version: str | None = None) -> str:
@@ -72,7 +75,7 @@ def format_developer_teaser(*, version: str | None = None) -> str:
     return (
         f'👤 <b>Автор:</b> <a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
         f'<a href="{urls["github"]}">GitHub</a>\n'
-        f'Карточка автора — /author · '
+        f'Подробнее — /author · '
         f'<a href="{urls["release_tag"]}">что нового в v{ver}</a>'
     )
 
@@ -99,21 +102,23 @@ def format_developer_card(*, version: str | None = None) -> str:
     lines = [
         f'👤 <b>@{DEVELOPER_TELEGRAM}</b>\n',
         f"<i>{DEVELOPER_TAGLINE}</i>\n\n",
-        f"Делаю <b>{BOT_NAME}</b> — напоминания текстом, голосом и в группах.\n",
-        "Бот бесплатный, код открыт — баги и идеи welcome.\n\n",
-        "<b>Обратная связь</b>\n",
-        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и идеи · '
-        f'💬 <a href="{urls["telegram"]}">Telegram</a> — вопросы\n',
-        f'👨‍💻 <a href="{urls["profile"]}">Профиль</a> · '
+        f"Я делаю <b>{BOT_NAME}</b> — чтобы не забывать важное: "
+        f"текстом, голосом, в группах и каналах.\n",
+        "Бот бесплатный, код открыт — если что-то сломалось или есть идея, "
+        "напиши, буду рад.\n\n",
+        "<b>Куда написать</b>\n",
+        f'🐛 <a href="{urls["issues"]}">Issues</a> — баги и предложения · '
+        f'💬 <a href="{urls["telegram"]}">Telegram</a> — по делу\n',
+        f'👨‍💻 <a href="{urls["profile"]}">GitHub-профиль</a> · '
         f'⭐ <a href="{urls["github"]}">{DEVELOPER_GITHUB_REPO}</a> · '
         f'<a href="{urls["release_tag"]}">v{ver}</a> · '
-        f'<a href="{urls["releases"]}">релизы</a>',
+        f'<a href="{urls["releases"]}">все релизы</a>',
         format_developer_support_note(),
     ]
     from bot.services.stars_tips import tips_enabled
 
     if tips_enabled():
-        lines.append("\n\n💝 Поддержать проект: /thanks (Telegram Stars)")
+        lines.append("\n\n💝 Нравится бот? Поддержать можно через /thanks — Telegram Stars")
     else:
         lines.append("\n\n🙌 Спасибо, что пользуешься ботом")
     return "".join(lines)
@@ -124,7 +129,7 @@ def format_help_feedback_footer() -> str:
     return (
         f"\n\n👤 <b>Автор:</b> "
         f'<a href="{urls["telegram"]}">@{DEVELOPER_TELEGRAM}</a> · '
-        f'<a href="{urls["issues"]}">Issues</a> · '
+        f'<a href="{urls["issues"]}">баги и идеи</a> · '
         f'<a href="{urls["release_tag"]}">что нового</a> · '
         f"/author"
     )
@@ -436,13 +441,13 @@ EDIT_HINT = (
 def format_about(version: str = __version__) -> str:
     return (
         f"📦 <b>{BOT_NAME}</b> · v{version}\n\n"
-        "Telegram-ежедневник: напоминания текстом, голосом или кружочком.\n\n"
-        "<b>Возможности</b>\n"
-        "• Разовые, интервальные и ежедневные напоминания\n"
-        "• Дневник и история за день\n"
-        "• Статистика за месяц\n"
-        "• Группы и личные чаты\n"
-        "• Отложить с настраиваемыми вариантами\n\n"
+        "Помогает не забывать: напиши, скажи голосом или отправь кружочек — "
+        "бот поймёт время и напомнит.\n\n"
+        "<b>Что умеет</b>\n"
+        "• Разовые, по расписанию и «каждые N минут»\n"
+        "• Дневник и статистика\n"
+        "• Личка, группы и каналы\n"
+        "• Отложить напоминание кнопками\n\n"
         + _about_tips_line()
         + "Команды: /help · /list · /journal · /stats\n\n"
         + format_developer_teaser(version=version)
@@ -453,7 +458,7 @@ def _about_tips_line() -> str:
     from bot.services.stars_tips import tips_enabled
 
     if tips_enabled():
-        return "Нравится бот? Добровольная благодарность: /thanks\n\n"
+        return "Нравится бот? Можно сказать «спасибо» — /thanks (Telegram Stars)\n\n"
     return ""
 
 GROUP_CREATED_SUFFIX = ""

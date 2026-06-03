@@ -62,7 +62,7 @@ async def setup_bot_commands(bot: Bot) -> None:
 
     if tips_enabled():
         commands.append(
-            BotCommand(command="thanks", description="Благодарность Stars автору")
+            BotCommand(command="thanks", description="Сказать спасибо автору (Stars)")
         )
     await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
     await bot.set_my_commands(COLLECTIVE_COMMANDS, scope=BotCommandScopeAllGroupChats())
