@@ -8,7 +8,12 @@ from bot.services.timezone_labels import format_timezone_label
 from bot.version import __version__
 
 BOT_NAME = "Напоминалка"
-_TELEGRAM_USERNAME = re.compile(r"^[a-z][a-z0-9_]{3,31}$", re.IGNORECASE)
+_TELEGRAM_USERNAME = re.compile(r"^[a-z][a-z0-9_]{3,31}$")
+
+
+def _looks_like_telegram_username(name: str) -> bool:
+    """@username — только lowercase (Telegram); Emil/Иван — display name."""
+    return bool(name) and name == name.lower() and _TELEGRAM_USERNAME.match(name) is not None
 
 
 def _assignee_display_name(
@@ -20,7 +25,7 @@ def _assignee_display_name(
     name = (mention_username or "").strip()
     if not name:
         return "участник"
-    if _TELEGRAM_USERNAME.match(name):
+    if _looks_like_telegram_username(name):
         label = f"@{escape(name)}"
     else:
         label = escape(name)
@@ -475,7 +480,7 @@ def format_assignee_preview_plain(
         return ""
     icon = "↩️" if source == "reply" else "👤"
     name = (mention_username or "").strip()
-    if _TELEGRAM_USERNAME.match(name):
+    if _looks_like_telegram_username(name):
         label = f"@{name}"
     else:
         label = name
