@@ -37,13 +37,23 @@
 | [plans/improvements-plan-phase2.md](plans/improvements-plan-phase2.md) | План после v3.40 (волны G–J) |
 | [plans/groups-channels.md](plans/groups-channels.md) | Архитектура collective |
 | [plans/groups-phase5-ux.md](plans/groups-phase5-ux.md) | UX групп (фаза 5) |
-| [plans/stars-tips-polish.md](plans/stars-tips-polish.md) | **Stars tips → prod** (P0–P3, волна M) |
+| [plans/group-assignee-v2.md](plans/group-assignee-v2.md) | ✅ @бот + display name в группах (v3.46) |
+| [plans/stars-tips-polish.md](plans/stars-tips-polish.md) | Stars tips → prod (P0–P3, волна M) |
+
+## Handoff
+
+| Документ | Статус |
+|----------|--------|
+| [handoff/agent-context-2026-06-03.md](handoff/agent-context-2026-06-03.md) | **Актуальный** — v3.46.1 |
+| [handoff/agent-context-2026-06-02.md](handoff/agent-context-2026-06-02.md) | Архив — автор в продукте v3.45.8 |
 
 ## Релизы
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям
-- [releases/v3.45.2.md](releases/v3.45.2.md) — **текущий:** assignee кнопками + quality gate
+- [releases/v3.46.1.md](releases/v3.46.1.md) — **текущий:** display name preview polish
+- [releases/v3.46.0.md](releases/v3.46.0.md) — группы: @бот + имя из списка
+- [releases/v3.45.2.md](releases/v3.45.2.md) — assignee кнопками + quality gate
 - [releases/v3.45.0.md](releases/v3.45.0.md) — группы: выбор «Кому?» кнопками
 - [releases/v3.44.8.md](releases/v3.44.8.md) — группы: auto-pick, edited_message, превью
 - [releases/v3.44.7.md](releases/v3.44.7.md) — группы: варианты assignee + clean punctuation
@@ -52,7 +62,7 @@
 - [releases/v3.43.0.md](releases/v3.43.0.md) — Stars: благодарность автору
 - [releases/v3.42.2.md](releases/v3.42.2.md) — NLP «в 2 дня», strip_day для расписаний
 - [releases/v3.42.0.md](releases/v3.42.0.md) — Stars, audit DB, broadcast draft
-- [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee (F3.0) закрыт
+- [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee закрыт (v3.46.1)
 
 Старые patch-релизы v3.44.x / v3.43.x — в [releases/](releases/) и [CHANGELOG.md](../CHANGELOG.md).
 

@@ -223,7 +223,7 @@ docs/           # guides, releases, plans
 | [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md) | Группы, каналы, privacy |
 | [docs/guides/group-assignee.md](docs/guides/group-assignee.md) | Напоминание на участника |
 | [docs/guides/stars-tips.md](docs/guides/stars-tips.md) | Stars `/thanks` |
-| [docs/releases/](docs/releases/) | Release notes (`v3.45.2.md` — текущий) |
+| [docs/releases/](docs/releases/) | Release notes (`v3.46.1.md` — текущий) |
 
 ---
 

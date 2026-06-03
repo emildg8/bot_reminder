@@ -232,7 +232,7 @@ _process_text_and_reply (create.py)
 - [x] edited_message (v3.44.8)
 - [x] smoke_group_mentions + 21+ тестов assignee
 
-### Фаза 1 — Парсинг display name ✅ (локально)
+### Фаза 1 — Парсинг display name ✅
 
 | ID | Задача | Файлы | Effort | Статус |
 |----|--------|-------|--------|--------|
@@ -244,7 +244,7 @@ _process_text_and_reply (create.py)
 | 1.6 | Тесты: entity + plain name | `test_mention_parse.py`, `test_mention_from_message.py` | S | ✅ |
 | 1.7 | smoke_group_mentions: display name case | `smoke_group_mentions.py` | S | ✅ |
 
-### Фаза 2 — Видимость в группе ✅ (локально)
+### Фаза 2 — Видимость в группе ✅
 
 | ID | Задача | Файлы | Effort | Статус |
 |----|--------|-------|--------|--------|
@@ -252,7 +252,7 @@ _process_text_and_reply (create.py)
 | 2.2 | Тест: send_collective_confirm передаёт reply | `test_collective_confirm.py` | S | ✅ |
 | 2.3 | Handler test: `@bot Emil через 1 мин` → collective_mock | `test_006_collective_handlers.py` | S | ✅ |
 
-### Фаза 3 — Надёжность 🔶 backlog
+### Фаза 3 — Надёжность ✅
 
 | ID | Задача | Файлы | Effort | P | Описание |
 |----|--------|-------|--------|---|----------|
@@ -263,7 +263,7 @@ _process_text_and_reply (create.py)
 | 3.5 | Ack при total fail (DM + group) | `create_confirm.py` | S | P1 | ✅ |
 | 3.6 | Unit: caption-only voice path | `test_mention_parse.py` | S | P2 | ✅ |
 
-### Фаза 4 — UX polish 🔶 backlog
+### Фаза 4 — UX polish ✅ · P3 backlog
 
 | ID | Задача | Effort | P | Описание |
 |----|--------|--------|---|----------|
@@ -279,7 +279,7 @@ _process_text_and_reply (create.py)
 |----|--------|------|--------|
 | 5.1 | Обновить group-assignee.md (F5, reply, caption) | `docs/guides/group-assignee.md` | ✅ |
 | 5.2 | Обновить groups-and-channels troubleshooting | `docs/guides/groups-and-channels.md` | ✅ |
-| 5.3 | Release note v3.46.0 | `docs/releases/v3.46.0.md` | ✅ |
+| 5.3 | Release notes v3.46.0 / v3.46.1 | `docs/releases/v3.46.*.md` | ✅ |
 | 5.4 | CHANGELOG секция | `CHANGELOG.md` | ✅ |
 | 5.5 | Чеклист ops после деплоя | `docs/guides/ops-checklist.md` | ✅ |
 
@@ -287,7 +287,7 @@ _process_text_and_reply (create.py)
 
 | ID | Действие |
 |----|----------|
-| 6.1 | Bump `bot/version.py` + `pyproject.toml` → v3.46.0 | ✅ |
+| 6.1 | Bump → v3.46.0, patch v3.46.1 | ✅ |
 | 6.2 | `ruff check bot tests scripts` | ✅ |
 | 6.3 | `python scripts/verify_ops.py` | ✅ |
 | 6.4 | pytest assignee + collective suite | ✅ |
@@ -448,17 +448,17 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ## 11. Rollout
 
-### 11.1 Pre-deploy
+### 11.1 Pre-deploy — ✅
 
-- [ ] Все тесты §9.2 green локально
-- [ ] diff review: `mention_parse.py`, `collective_confirm.py`, `messages.py`
-- [ ] CHANGELOG + release note готовы
+- [x] Все тесты §9.2 green локально
+- [x] diff review: `mention_parse.py`, `collective_confirm.py`, `messages.py`
+- [x] CHANGELOG + release notes v3.46.0/v3.46.1
 
-### 11.2 Deploy
+### 11.2 Deploy — ✅ (код)
 
-- [ ] Push → CI green
+- [x] Push → CI green
 - [ ] Wispbyte restart / auto-update
-- [ ] `/ping` → v3.46.0
+- [ ] `/ping` → **v3.46.1**
 
 ### 11.3 Post-deploy (15 мин)
 
