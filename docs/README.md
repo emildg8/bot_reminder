@@ -51,7 +51,8 @@
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям
-- [releases/v3.46.4.md](releases/v3.46.4.md) — **текущий:** assignee pick + user smoke
+- [releases/v3.46.4.md](releases/v3.46.4.md) — **текущий**
+- [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — **ФИНАЛ:** assignee в группах (prod #35)
 - [releases/v3.46.2.md](releases/v3.46.2.md) — @бот не перехватывался tips
 - [releases/v3.46.0.md](releases/v3.46.0.md) — группы: @бот + имя из списка
 - [releases/v3.45.2.md](releases/v3.45.2.md) — assignee кнопками + quality gate

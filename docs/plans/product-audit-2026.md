@@ -181,4 +181,4 @@ handlers (тонкие) → services (логика) → repository (DB)
 
 **Актуально (v3.46.4):** roadmap A–E + F + G + **H/I phase2** + **Stars** + **assignee v3.45–3.46** + **автор фаза 2** закрыты. CI green, **597** тестов, verify_ops + 5 smoke, оценки **10/10** в [improvements-plan-2026-06.md](improvements-plan-2026-06.md).
 
-**Дальше:** Wispbyte — `/ping` v3.46.3, smoke `@бот` в [ops-checklist.md](../guides/ops-checklist.md).
+**Assignee в группах:** ✅ **ФИНАЛ** v3.46.4 · prod smoke 2026-06-03 · [feature-group-assignee.md](../releases/feature-group-assignee.md).

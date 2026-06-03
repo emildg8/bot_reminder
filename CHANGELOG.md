@@ -4,11 +4,15 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
-## [3.46.4] — 2026-06-03
+## [3.46.4] — 2026-06-03 · **финал assignee в группах**
 
 ### Улучшения
 - Группы: при нерешённом имени и `@user` в фразе — inline «Кому напомнить?» (один @)
 - `scripts/smoke_user_group_assignee.py` в `verify_ops` · `make smoke-user-group`
+
+### Закрыто
+- Prod smoke: `@бот Emil Через 1 минуту тест` → `⏰ Emil, тест` (#35)
+- Линия v3.39–v3.46.4 — [feature-group-assignee.md](docs/releases/feature-group-assignee.md)
 
 ## [3.46.3] — 2026-06-03
 

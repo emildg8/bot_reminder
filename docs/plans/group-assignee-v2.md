@@ -1,6 +1,6 @@
 # План v2: `@бот` + участник в группах
 
-**Статус:** ✅ **ЗАКРЫТО** · v3.46.3  
+**Статус:** ✅ **ФИНАЛ** · v3.46.4 · prod smoke 2026-06-03 · **доработок нет**  
 **Контекст:** жалоба «формат `@бот @пользователь` не работает» (скрин: `@break_remind_bot Emil Через 1 минуту тест`)  
 **Связано:** [group-assignee.md](../guides/group-assignee.md) · [groups-and-channels.md](../guides/groups-and-channels.md) · [feature-group-assignee.md](../releases/feature-group-assignee.md)
 
@@ -263,7 +263,7 @@ _process_text_and_reply (create.py)
 | 3.5 | Ack при total fail (DM + group) | `create_confirm.py` | S | P1 | ✅ |
 | 3.6 | Unit: caption-only voice path | `test_mention_parse.py` | S | P2 | ✅ |
 
-### Фаза 4 — UX polish ✅ · P3 backlog
+### Фаза 4 — UX polish ✅
 
 | ID | Задача | Effort | P | Описание |
 |----|--------|--------|---|----------|
@@ -271,7 +271,7 @@ _process_text_and_reply (create.py)
 | 4.2 | Welcome в группе: пример `@бот` + **тап по имени** | S | P2 | ✅ |
 | 4.3 | `/remind` help: строка про display name | S | P2 | ✅ |
 | 4.4 | format_collective_check_dm: имя без @ | S | P2 | ✅ preview |
-| 4.5 | Не создавать draft при unresolved plain name? | M | P3 | product decision |
+| 4.5 | Не создавать draft при unresolved plain name? | M | — | ✅ A: warning, не block |
 
 ### Фаза 5 — Документация и ops ✅
 
@@ -283,7 +283,7 @@ _process_text_and_reply (create.py)
 | 5.4 | CHANGELOG секция | `CHANGELOG.md` | ✅ |
 | 5.5 | Чеклист ops после деплоя | `docs/guides/ops-checklist.md` | ✅ |
 
-### Фаза 6 — Релиз ✅ (деплой/smoke — ручной)
+### Фаза 6 — Релиз ✅
 
 | ID | Действие |
 |----|----------|
@@ -291,9 +291,9 @@ _process_text_and_reply (create.py)
 | 6.2 | `ruff check bot tests scripts` | ✅ |
 | 6.3 | `python scripts/verify_ops.py` | ✅ |
 | 6.4 | pytest assignee + collective suite | ✅ |
-| 6.5 | Deploy Wispbyte | 📋 ручной (ops-checklist) |
-| 6.6 | Telegram smoke (раздел 8) | 📋 ручной |
-| 6.7 | GitHub Release + tag | ✅ v3.46.2+ (push v3.46.3 tag) |
+| 6.5 | Deploy Wispbyte | ✅ v3.46.4 |
+| 6.6 | Telegram smoke | ✅ #35 Emil, 2026-06-03 |
+| 6.7 | GitHub Release + tag | ✅ v3.46.4 |
 
 ---
 
@@ -454,17 +454,16 @@ WARNING Cannot send collective check-dm hint to -100…: …
 - [x] diff review: `mention_parse.py`, `collective_confirm.py`, `messages.py`
 - [x] CHANGELOG + release notes v3.46.0/v3.46.1
 
-### 11.2 Deploy — ✅ (код)
+### 11.2 Deploy — ✅
 
 - [x] Push → CI green
-- [ ] Wispbyte restart / auto-update
-- [ ] `/ping` → **v3.46.3** (+ Group Privacy в группе)
+- [x] Wispbyte v3.46.4
+- [x] Prod: `@бот Emil Через 1 минуту тест` → `⏰ Emil, тест`
 
-### 11.3 Post-deploy (15 мин)
+### 11.3 Post-deploy — ✅ 2026-06-03
 
-- [ ] S1, S2, S6 в боевой группе
-- [ ] Проверить `data/logs/bot.log` на assignee lines
-- [ ] `/sysinfo` в группе (если admin)
+- [x] S2 display name в «Болталке»
+- [x] Reply + confirm + fire
 
 ### 11.4 Rollback
 
@@ -500,7 +499,7 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ---
 
-## 14. Definition of Done — ✅ закрыто (v3.46.1)
+## 14. Definition of Done — ✅ ФИНАЛ (v3.46.4)
 
 ### Код — ✅
 
@@ -509,23 +508,22 @@ WARNING Cannot send collective check-dm hint to -100…: …
 - [x] Фаза 3 — UTF-16 entities, `caption_entities`
 - [x] v3.46.2 — tips routing fix (`@бот` тишина)
 - [x] v3.46.3 — срабатывание display name, `/ping` privacy
+- [x] v3.46.4 — assignee pick; `smoke_user_group_assignee`
 
 ### Качество — ✅
 
-- [x] pytest green (**595** тестов)
-- [x] `verify_ops` OK
+- [x] pytest **597** тестов
+- [x] `verify_ops` OK (5 smoke)
 - [x] ruff clean
-- [x] `smoke_group_mentions.py` OK
 
 ### Документация — ✅
 
-- [x] `group-assignee.md`, release notes v3.46.0/v3.46.1, CHANGELOG
-- [x] `feature-group-assignee.md`, handoff, ops-checklist § Assignee v3.46
+- [x] `group-assignee.md`, `feature-group-assignee.md` (ФИНАЛ)
+- [x] release notes v3.46.0–v3.46.4, handoff, ops-checklist
 
-### Prod (ручной чеклист ops)
+### Prod — ✅
 
-- [ ] `/ping` v3.46.3 на Wispbyte
-- [ ] S2 display name в «Болталке»
+- [x] `@break_remind_bot Emil Через 1 минуту тест` → #35 → `⏰ Emil, тест`
 
 ---
 
@@ -535,7 +533,7 @@ WARNING Cannot send collective check-dm hint to -100…: …
 |--------|-------------|
 | W1 | Фаза 1–2 merge, тесты 2.2–2.3, docs 5.1–5.2 |
 | W2 | Фаза 3, релиз v3.46.0–v3.46.1, smoke prod |
-| W3+ | Фаза 4 backlog (P3 inline pick) |
+| — | Линия закрыта; backlog не ведётся |
 
 ---
 
@@ -550,4 +548,4 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ---
 
-*Последнее обновление: 2026-06-03 · линия закрыта v3.46.3*
+*Финал: 2026-06-03 · v3.46.4 · prod smoke OK · доработок по assignee не планируется*

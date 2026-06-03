@@ -8,8 +8,8 @@
 |---------|--------|-------------|
 | NLP / время | 10/10 | smoke_nlp в verify_ops, 597 тестов, приоритеты v3.42.2 |
 | Assignee v3.45 | Кнопки «Кому?», превью, отмена | ✅ v3.45.2 |
-| Assignee v3.46 | Display name, reply, routing tips→create | ✅ v3.46.3 |
-| Группы / collective | 10/10 | assignee v3.46, smoke_group_mentions |
+| Assignee v3.46 | Display name, reply, routing, prod #35 | ✅ **ФИНАЛ** v3.46.4 |
+| Группы / collective | 10/10 | assignee **ФИНАЛ** v3.46.4, smoke_user_group |
 | Admin | 10/10 | audit + broadcast draft в БД |
 | Pro / Stars | 10/10 | tips v3.44.4 · smoke_stars в verify_ops |
 | Тесты | 10/10 | **597** тестов, assignee + routing; gate 65% (~66%) |
@@ -58,8 +58,9 @@
 | F3.0.3 | `docs/guides/group-assignee.md` | ✅ v3.39.0 |
 | F3.0.4 | `/delete N yes`, list hint 👤 | ✅ v3.39.1 |
 | F3.0.5 | Тесты + release workflow | ✅ v3.39.1 |
+| F3.0.6 | v3.46 display name + routing + prod smoke | ✅ **ФИНАЛ** v3.46.4 |
 
-### Definition of Done — assignee (F3.0) ✅
+### Definition of Done — assignee (F3.0 → v3.46) ✅ ФИНАЛ
 
 - [x] Создание: @, reply, голос+reply
 - [x] Редактирование с новым @

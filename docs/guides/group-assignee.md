@@ -1,6 +1,7 @@
 # Напоминание на участника группы
 
-**Статус:** ✅ v3.46.3 · код: `mention_create.py`, `mention_parse.py`, `assignee_prompt.py`, `create_confirm.py`, `collective_confirm.py`
+**Статус:** ✅ **ФИНАЛ v3.46.4** (prod 2026-06-03) · доработок не планируется  
+Код: `mention_create.py`, `mention_parse.py`, `assignee_prompt.py`, `create_confirm.py`, `collective_confirm.py`
 
 Назначьте, **кому** в группе придёт упоминание при срабатывании.
 
@@ -63,19 +64,25 @@
 - В **канале** — назначение на участника не используется (публикация в канал).
 - @, набранный вручную с клавиатуры, Telegram часто **не передаёт** боту — используйте список или `/remind`.
 
-## Чеклист smoke (после деплоя)
+## Чеклист smoke
 
-- [ ] `make smoke-group-mentions` или `python scripts/smoke_group_mentions.py`
-- [ ] `make smoke-user-group` — полный UX @бот + Emil (офлайн)
-- [ ] `/ping` → ≥ v3.46.3 (в группе — строка Group Privacy)
-- [ ] `@бот` + **тап по участнику** + `через 1 мин тест` → reply в группе с **именем**
+### Офлайн (CI / `verify_ops`)
+
+- [x] `make smoke-group-mentions`
+- [x] `make smoke-user-group`
+
+### Prod ✅ 2026-06-03
+
+- [x] `@break_remind_bot Emil Через 1 минуту тест` → reply `👌 👤 Emil · …` (#35)
+- [x] Срабатывание `⏰ Emil, тест` (не «участник»)
+
+### Регрессия (при изменениях collective/mention)
+
+- [ ] `/ping` → ≥ v3.46.4 (Group Privacy в группе)
+- [ ] `/remind@бот @user через 5 минут тест` → **👤 Кому** в личке
 - [ ] `@бот @a @b созвон` → кнопки «Кому?»; `@бот @a @b через час` → автовыбор
-- [ ] `/remind@бот @user через 5 минут тест` → confirm с **Кому**
-- [ ] `@бот@user через 5 минут` / `@бот + @user через 5 минут` → то же
-- [ ] `текст до @бот @user через 5 минут` → выбирается `@user` после `@бот`
-- [ ] Ответ на сообщение + `/remind@бот через 5 минут тест2` → **↩️ Кому**
-- [ ] После confirm — в группе срабатывание с тегом
-- [ ] `/list` — у строки есть 👤
+- [ ] Ответ на сообщение + `/remind@бот …` → **↩️ Кому**
+- [ ] `/list` — 👤 у напоминания с assignee
 
 ## Тесты (автоматические)
 
@@ -102,6 +109,6 @@
 ## Связанные документы
 
 - [groups-and-channels.md](groups-and-channels.md) — collective-режим
-- [group-assignee-v2.md](../plans/group-assignee-v2.md) — расширенный план доработок @бот + участник
-- [feature-group-assignee.md](../releases/feature-group-assignee.md) — feature complete v3.46.1
-- [quality-metrics.md](quality-metrics.md) — карта всех 589 тестов
+- [group-assignee-v2.md](../plans/group-assignee-v2.md) — техплан (архив)
+- [feature-group-assignee.md](../releases/feature-group-assignee.md) — **финальный статус фичи**
+- [quality-metrics.md](quality-metrics.md) — карта тестов (597)
