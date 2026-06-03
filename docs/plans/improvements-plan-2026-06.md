@@ -1,5 +1,7 @@
 ﻿# План улучшений · июнь 2026
 
+> ✅ **Product v1.0 завершён** (2026-06-03, v3.46.4). Документ — архив roadmap. Новая работа: [PROJECT-COMPLETE.md](../PROJECT-COMPLETE.md).
+
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
 ## Оценка текущего состояния (v3.46.4)
@@ -69,23 +71,23 @@
 - [x] Гайд + ops smoke + 15+ тестов
 - [x] CI green, релизы v3.39.0 / v3.39.1
 
-## Фаза F3 — Продукт (backlog)
+## Фаза F3 — Продукт — ✅ закрыто
 
-| # | Задача | Effort |
+| # | Задача | Статус |
 |---|--------|--------|
-| F3.2 | Inline ✏️🗑 в группе только для своих | M | ✅ v3.41 |
-| F3.3 | Telegram Stars / Pro | L | ✅ v3.42 |
-| F3.4 | pg_dump для PostgreSQL | M | ✅ v3.42 |
-| F3.5 | Guided onboarding v2 (повторный тур) | S | ✅ v3.41 |
+| F3.2 | Inline ✏️🗑 в группе | ✅ v3.41 |
+| F3.3 | Telegram Stars / Pro | ✅ v3.42 |
+| F3.4 | pg_dump PostgreSQL | ✅ v3.42 |
+| F3.5 | Guided onboarding v2 | ✅ v3.41 |
 
-## Фаза F4 — Ops (ручное)
+## Фаза F4 — Ops — ✅ (эксплуатация)
 
-| # | Задача |
-|---|--------|
-| F4.1 | GitHub Secrets: BOT_TOKEN, ADMIN, Wisp |
-| F4.2 | Wispbyte: `bash start.sh`, GROQ_API_KEY |
-| F4.3 | BotFather Group Privacy off |
-| F4.4 | Smoke: `/ping`, assignee, `/list`, `/delete` — [ops-checklist](../guides/ops-checklist.md) |
+| # | Задача | Статус |
+|---|--------|--------|
+| F4.1 | GitHub Secrets | ✅ CI/deploy |
+| F4.2 | Wispbyte `start.sh` | 📋 при смене сервера |
+| F4.3 | Group Privacy off | ✅ prod |
+| F4.4 | Smoke assignee | ✅ #35 · [ops-checklist](../guides/ops-checklist.md) |
 
 ---
 

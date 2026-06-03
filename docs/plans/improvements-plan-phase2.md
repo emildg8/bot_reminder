@@ -1,6 +1,6 @@
 # План улучшений · phase 2 (после v3.40)
 
-**Актуально:** v3.45.2 · **558** тестов · CI + Release green · волны G–L закрыты (см. [improvements-plan-2026-06.md](improvements-plan-2026-06.md))
+> **Архив.** Product v1.0 = v3.46.4 — [PROJECT-COMPLETE.md](../PROJECT-COMPLETE.md). Актуальный план: [improvements-plan-2026-06.md](improvements-plan-2026-06.md).
 
 Приоритет: impact × effort. Одна волна = один minor/patch релиз.
 

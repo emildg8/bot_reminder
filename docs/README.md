@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.46.4** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление **v3.46.4** · ✅ **[Проект завершён (v1.0)](PROJECT-COMPLETE.md)** · [v1.0-final-status](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -31,7 +31,8 @@
 
 | Документ | Тема |
 |----------|------|
-| [v1.0-final-status.md](v1.0-final-status.md) | **Финальный статус v1.0** — проверки, ops |
+| [PROJECT-COMPLETE.md](PROJECT-COMPLETE.md) | **Проект завершён** — scope, prod, gate, handoff |
+| [v1.0-final-status.md](v1.0-final-status.md) | Краткий статус v1.0 |
 | [plans/product-audit-2026.md](plans/product-audit-2026.md) | Оценка продукта, roadmap A–E + F3.0 |
 | [plans/improvements-roadmap.md](plans/improvements-roadmap.md) | Roadmap улучшений v3.16+ |
 | [plans/improvements-plan-phase2.md](plans/improvements-plan-phase2.md) | План после v3.40 (волны G–J) |

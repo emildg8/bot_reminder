@@ -4,7 +4,11 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
-## [3.46.4] — 2026-06-03 · **финал assignee в группах**
+## [3.46.4] — 2026-06-03 · **Product v1.0 · финал assignee**
+
+### Проект
+- **Product v1.0 завершён** — [docs/PROJECT-COMPLETE.md](docs/PROJECT-COMPLETE.md)
+- Prod: `@бот Emil Через 1 минуту тест` → `⏰ Emil, тест` (#35)
 
 ### Улучшения
 - Группы: при нерешённом имени и `@user` в фразе — inline «Кому напомнить?» (один @)
