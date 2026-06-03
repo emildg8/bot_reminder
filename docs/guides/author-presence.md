@@ -35,6 +35,8 @@ pytest tests/test_about.py -q
 
 Telegram: onboarding → кнопки · `/status` → строка автора · `/thanks` → оплата → кнопки автора.
 
-## ЮKassa / Stars
+## Оплата
 
-Тексты для анкеты: [yookassa-submission-pack.md](yookassa-submission-pack.md)
+Только **Telegram Stars** (`/thanks`) — см. [stars-tips.md](stars-tips.md). Добровольная поддержка, не разблокирует функции.
+
+Кратко для внешних описаний: бот open-source ([GitHub](https://github.com/emildg8/bot_reminder)), автор @emildg8, карточка в боте — `/author`.

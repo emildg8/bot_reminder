@@ -18,6 +18,10 @@
 - Prod smoke: `@бот Emil Через 1 минуту тест` → `⏰ Emil, тест` (#35)
 - Линия v3.39–v3.46.4 — [feature-group-assignee.md](docs/releases/feature-group-assignee.md)
 
+### Документация
+- Удалены ЮKassa (`yookassa-submission-pack.md`) и устаревший handoff 2026-06-02
+- Оплата в продукте: только Telegram Stars — [stars-tips.md](docs/guides/stars-tips.md)
+
 ## [3.46.3] — 2026-06-03
 
 ### Исправления
@@ -58,7 +62,7 @@
 - `/status` в личке — строка автора и ссылка на релиз
 - После Stars — кнопки **👤 Автор** и **⭐ Ещё раз**
 - `smoke_author.py` в `verify_ops`
-- Гайд [author-presence.md](docs/guides/author-presence.md), тексты для ЮKassa
+- Гайд [author-presence.md](docs/guides/author-presence.md)
 
 ## [3.45.7] — 2026-06-02
 

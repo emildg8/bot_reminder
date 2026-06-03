@@ -13,7 +13,7 @@
 | Напоминания (текст, голос, NLP) | ✅ | [README](../README.md) |
 | Группы / каналы (collective) | ✅ | [groups-and-channels.md](guides/groups-and-channels.md) |
 | Assignee в группах | ✅ **ФИНАЛ** | [feature-group-assignee.md](releases/feature-group-assignee.md) |
-| Stars `/thanks` | ✅ | [stars-tips.md](guides/stars-tips.md) |
+| Оплата: **Telegram Stars** (`/thanks`) | ✅ | [stars-tips.md](guides/stars-tips.md) — без ЮKassa и др. шлюзов |
 | Автор в продукте | ✅ | [author-presence.md](guides/author-presence.md) |
 | Admin / audit / broadcast | ✅ | [admin-mode.md](guides/admin-mode.md) |
 | CI + 597 тестов + 5 smoke | ✅ | [quality-metrics.md](guides/quality-metrics.md) |
@@ -45,11 +45,11 @@ python scripts/verify_ops.py
 
 | Тема | Примечание |
 |------|------------|
-| ЮKassa виджет на сайте | Оплата в боте — **Telegram Stars**; анкета — [yookassa-submission-pack.md](guides/yookassa-submission-pack.md) (вне кода) |
 | Несколько assignee на напоминание | out of scope |
 | e2e Stars testnet | опционально |
 | Рост coverage >66% | не блокер |
 | Inline-меню создания в группе | by design |
+| ЮKassa / карты / внешние платёжные виджеты | не планируется |
 
 ---
 

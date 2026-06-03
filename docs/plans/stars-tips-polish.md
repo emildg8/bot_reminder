@@ -1,5 +1,7 @@
 # План: Stars tips — polish перед продом
 
+> ✅ Архив. Актуально: [stars-tips.md](../guides/stars-tips.md) · оплата только Telegram Stars.
+
 **Базовая версия:** v3.44.4 ✅ · **Дата:** 2026-06-04  
 **Статус:** prod-ready (волны M + polish v3.44.x)
 **Контекст:** [stars-tips.md](../guides/stars-tips.md) · аудит «со стороны» (чат 2026-06)

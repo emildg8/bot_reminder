@@ -22,10 +22,10 @@ Assignee v3.46 — **ФИНАЛ**, доработок нет: [feature-group-ass
 - `mention_parse`, `tips`/`create` routing, `collective_confirm` — закрытая линия v3.46
 - Версионирование 3.x — не переименовывать в 1.0.0 в `version.py` (v1.0 = продуктовый milestone)
 
-## Вне кода (по желанию владельца)
+## Эксплуатация
 
-- [yookassa-submission-pack.md](../guides/yookassa-submission-pack.md) — тексты анкеты (Stars уже в боте)
-- [ops-checklist.md](../guides/ops-checklist.md) — при следующем деплое
+- [stars-tips.md](../guides/stars-tips.md) — Stars `/thanks` (единственная оплата)
+- [ops-checklist.md](../guides/ops-checklist.md) — при деплое
 
 ## Регрессия (если меняете бот)
 

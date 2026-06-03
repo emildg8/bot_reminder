@@ -21,7 +21,6 @@
 | [guides/nlp-time-priority.md](guides/nlp-time-priority.md) | Приоритеты: «сегодня» + «через N минут» |
 | [guides/stars-tips.md](guides/stars-tips.md) | Благодарность автору Stars |
 | [guides/author-presence.md](guides/author-presence.md) | Автор в продукте: /author, точки входа |
-| [guides/yookassa-submission-pack.md](guides/yookassa-submission-pack.md) | Тексты для анкеты ЮKassa (Stars `/thanks`) |
 | [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (597), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
@@ -39,14 +38,13 @@
 | [plans/groups-channels.md](plans/groups-channels.md) | Архитектура collective |
 | [plans/groups-phase5-ux.md](plans/groups-phase5-ux.md) | UX групп (фаза 5) |
 | [plans/group-assignee-v2.md](plans/group-assignee-v2.md) | ✅ **ФИНАЛ** assignee v3.46.4 (архив плана) |
-| [plans/stars-tips-polish.md](plans/stars-tips-polish.md) | Stars tips → prod (P0–P3, волна M) |
+| [plans/stars-tips-polish.md](plans/stars-tips-polish.md) | Архив плана Stars tips |
 
 ## Handoff
 
 | Документ | Статус |
 |----------|--------|
-| [handoff/agent-context-2026-06-03.md](handoff/agent-context-2026-06-03.md) | **Актуальный** — v3.46.4 |
-| [handoff/agent-context-2026-06-02.md](handoff/agent-context-2026-06-02.md) | Архив — автор в продукте v3.45.8 |
+| [handoff/agent-context-2026-06-03.md](handoff/agent-context-2026-06-03.md) | Handoff · v1.0 / v3.46.4 |
 
 ## Релизы
 
