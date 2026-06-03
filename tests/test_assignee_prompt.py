@@ -21,6 +21,30 @@ def test_should_offer_assignee_choice_requires_multiple_without_time():
     )
 
 
+def test_should_offer_assignee_choice_unresolved_plain_with_at_in_phrase():
+    assert should_offer_assignee_choice(
+        ["alice"],
+        "созвон",
+        mention_unresolved=True,
+    )
+    assert not should_offer_assignee_choice(
+        ["alice"],
+        "созвон",
+        mention_unresolved=False,
+    )
+
+
+def test_format_assignee_choice_prompt_unresolved_plain():
+    from bot.texts.messages import format_assignee_choice_prompt
+
+    text = format_assignee_choice_prompt(
+        ["alice"],
+        unresolved_plain_name="Emil",
+    )
+    assert "Emil" in text
+    assert "@alice" in text
+
+
 def test_assignee_keyboard_has_none_option():
     kb = assignee_choice_keyboard(["alice", "bobby"])
     data = [btn.callback_data for row in kb.inline_keyboard for btn in row]

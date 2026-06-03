@@ -1,6 +1,6 @@
 # Документация bot_reminder
 
-Оглавление проекта **v3.46.3** · [v1.0 финальный статус](v1.0-final-status.md)
+Оглавление проекта **v3.46.4** · [v1.0 финальный статус](v1.0-final-status.md)
 
 ## Начало работы
 
@@ -22,7 +22,7 @@
 | [guides/stars-tips.md](guides/stars-tips.md) | Благодарность автору Stars |
 | [guides/author-presence.md](guides/author-presence.md) | Автор в продукте: /author, точки входа |
 | [guides/yookassa-submission-pack.md](guides/yookassa-submission-pack.md) | Тексты для анкеты ЮKassa (Stars `/thanks`) |
-| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (595), coverage 65%, ruff, verify_ops |
+| [guides/quality-metrics.md](guides/quality-metrics.md) | Тесты (597), coverage 65%, ruff, verify_ops |
 | [guides/doc-maintenance.md](guides/doc-maintenance.md) | Чеклист: версия, тесты, gate, help |
 | [guides/admin-mode.md](guides/admin-mode.md) | Режим администратора / пользователя |
 | [guides/postgres-backup.md](guides/postgres-backup.md) | Бэкап PostgreSQL, cron |
@@ -44,14 +44,14 @@
 
 | Документ | Статус |
 |----------|--------|
-| [handoff/agent-context-2026-06-03.md](handoff/agent-context-2026-06-03.md) | **Актуальный** — v3.46.3 |
+| [handoff/agent-context-2026-06-03.md](handoff/agent-context-2026-06-03.md) | **Актуальный** — v3.46.4 |
 | [handoff/agent-context-2026-06-02.md](handoff/agent-context-2026-06-02.md) | Архив — автор в продукте v3.45.8 |
 
 ## Релизы
 
 - [../CHANGELOG.md](../CHANGELOG.md) — полная история
 - [releases/](releases/) — заметки по версиям
-- [releases/v3.46.3.md](releases/v3.46.3.md) — **текущий:** routing fix + display name при срабатывании
+- [releases/v3.46.4.md](releases/v3.46.4.md) — **текущий:** assignee pick + user smoke
 - [releases/v3.46.2.md](releases/v3.46.2.md) — @бот не перехватывался tips
 - [releases/v3.46.0.md](releases/v3.46.0.md) — группы: @бот + имя из списка
 - [releases/v3.45.2.md](releases/v3.45.2.md) — assignee кнопками + quality gate

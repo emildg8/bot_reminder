@@ -7,9 +7,9 @@
 | Параметр | Значение |
 |----------|----------|
 | Бот | `@break_remind_bot` |
-| Версия | **v3.46.3** |
-| Тесты | **595** |
-| CI / Release | [v3.46.3](https://github.com/emildg8/bot_reminder/releases/tag/v3.46.3) (после push tag) |
+| Версия | **v3.46.4** |
+| Тесты | **597+** (см. `make test-count`) |
+| CI / Release | tag `v3.46.4` после push |
 
 ## Assignee в группах — ЗАКРЫТО (код)
 
@@ -19,6 +19,7 @@
 | v3.46.1 | preview `Emil` без `@` |
 | v3.46.2 | **fix:** tips перехватывал `@бот` → тишина |
 | v3.46.3 | срабатывание с именем; `/ping` + Group Privacy |
+| v3.46.4 | assignee pick при unresolved + @ в фразе; `smoke_user_group_assignee` |
 
 **Корневая причина тишины:** `tips.py` handler с тем же фильтром, что `create.py`, регистрировался раньше и делал `return` без ответа.
 
@@ -36,5 +37,6 @@
 
 ```bash
 python scripts/verify_ops.py
+python scripts/smoke_user_group_assignee.py   # UX @бот + Emil без Telegram API
 pytest tests/test_stars_tips.py tests/test_006_collective_handlers.py -q
 ```

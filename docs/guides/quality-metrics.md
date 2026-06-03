@@ -2,7 +2,7 @@
 
 Кратко, что проверяется перед каждым merge в `main`.
 
-## 595 тестов (pytest)
+## 597 тестов (pytest)
 
 Автоматические сценарии: парсинг фраз, БД, callbacks, группы, удаление и т.д.
 
@@ -51,12 +51,12 @@ ruff check bot tests
 - `start.sh` запускает `python -m bot.main`;
 - версия в `bot/version.py` = `pyproject.toml` и в `README.md` / `docs/README.md`;
 - **число тестов** в docs = `pytest --collect-only` (`scripts/doc_metrics.py`);
-- **smoke** (офлайн): `smoke_nlp.py`, `smoke_group_mentions.py`, `smoke_stars.py`, `smoke_author.py`;
+- **smoke** (офлайн): `smoke_nlp.py`, `smoke_group_mentions.py`, `smoke_user_group_assignee.py`, `smoke_stars.py`, `smoke_author.py`;
 - в `.env.example` дефолты для Wispbyte (например `LOCAL_WHISPER_ENABLED=false`).
 
 ```bash
 python scripts/verify_ops.py
-# → verify_ops OK · v3.46.3
+# → verify_ops OK · v3.46.4
 ```
 
 ## Локально как в CI
@@ -67,7 +67,7 @@ python scripts/verify_ops.py
 pytest -v --cov=bot --cov-fail-under=65
 ```
 
-## Карта тестов (595)
+## Карта тестов (597)
 
 | Категория | Примеры файлов | ~кол-во |
 |-----------|----------------|---------|

@@ -16,9 +16,18 @@ from bot.services.pending_assignee import PendingAssigneeCreate, store_pending_a
 from bot.texts.messages import format_assignee_choice_prompt
 
 
-def should_offer_assignee_choice(candidates: list[str], phrase: str) -> bool:
-    """Несколько @user и нет якоря времени — автовыбор ненадёжен."""
-    return len(candidates) >= 2 and _time_anchor_index(phrase) is None
+def should_offer_assignee_choice(
+    candidates: list[str],
+    phrase: str,
+    *,
+    mention_unresolved: bool = False,
+) -> bool:
+    """Несколько @user без времени — или unresolved имя при @ в фразе (P3)."""
+    if _time_anchor_index(phrase) is not None:
+        return False
+    if len(candidates) >= 2:
+        return True
+    return mention_unresolved and len(candidates) >= 1
 
 
 async def offer_assignee_choice(
@@ -32,8 +41,12 @@ async def offer_assignee_choice(
     delivery_chat_id: int,
     source_label: str,
     heard_text: str,
+    mention_unresolved: bool = False,
+    unresolved_plain_name: str | None = None,
 ) -> bool:
-    if not should_offer_assignee_choice(candidates, phrase):
+    if not should_offer_assignee_choice(
+        candidates, phrase, mention_unresolved=mention_unresolved
+    ):
         return False
 
     chat_kind = chat_kind_from_chat(message.chat)
@@ -54,7 +67,11 @@ async def offer_assignee_choice(
     )
     task_preview = build_assignee_choice_task_preview(parsed_items)
     await message.answer(
-        format_assignee_choice_prompt(candidates, task_preview=task_preview),
+        format_assignee_choice_prompt(
+            candidates,
+            task_preview=task_preview,
+            unresolved_plain_name=unresolved_plain_name,
+        ),
         reply_markup=assignee_choice_keyboard(candidates),
     )
     return True

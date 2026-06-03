@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate smoke-nlp smoke-stars smoke-group-mentions check-deploy
+.PHONY: help install install-dev test lint run docker-up docker-down deploy backup restore avatar verify migrate smoke-nlp smoke-stars smoke-group-mentions smoke-user-group check-deploy
 
 help:
 	@echo "bot_reminder — make targets:"
@@ -8,6 +8,7 @@ help:
 	@echo "  verify       ops artifacts check"
 	@echo "  smoke-nlp    key NLP phrases (post-deploy)"
 	@echo "  smoke-stars  Stars tips parse + passthrough"
+	@echo "  smoke-user-group  @бот + assignee UX (offline)"
 	@echo "  check-deploy version + GitHub main (+ Telegram if BOT_TOKEN)"
 	@echo "  test-count   pytest --collect-only"
 	@echo "  migrate      alembic upgrade head"
@@ -49,6 +50,9 @@ smoke-stars:
 
 smoke-group-mentions:
 	python scripts/smoke_group_mentions.py
+
+smoke-user-group:
+	python scripts/smoke_user_group_assignee.py
 
 check-deploy:
 	python scripts/check_deploy.py

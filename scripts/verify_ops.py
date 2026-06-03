@@ -29,6 +29,7 @@ REQUIRED = (
     "bot/db/migrate.py",
     "scripts/smoke_stars.py",
     "scripts/smoke_group_mentions.py",
+    "scripts/smoke_user_group_assignee.py",
     "scripts/smoke_nlp.py",
     "scripts/smoke_author.py",
     "scripts/check_deploy.py",
@@ -39,6 +40,7 @@ REQUIRED = (
 _SMOKE_SCRIPTS = (
     "smoke_nlp.py",
     "smoke_group_mentions.py",
+    "smoke_user_group_assignee.py",
     "smoke_stars.py",
     "smoke_author.py",
 )

@@ -4,6 +4,12 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.46.4] — 2026-06-03
+
+### Улучшения
+- Группы: при нерешённом имени и `@user` в фразе — inline «Кому напомнить?» (один @)
+- `scripts/smoke_user_group_assignee.py` в `verify_ops` · `make smoke-user-group`
+
 ## [3.46.3] — 2026-06-03
 
 ### Исправления

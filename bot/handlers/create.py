@@ -24,6 +24,7 @@ from bot.services.mention_parse import extract_username_candidates, strip_leadin
 from bot.services.pending_assignee import clear_pending_assignee
 from bot.services.search_ui import send_search_results
 from bot.texts.messages import (
+    _looks_like_telegram_username,
     format_parse_fail,
     format_pending_ambiguous_hint,
     looks_like_task_only,
@@ -144,6 +145,18 @@ async def _process_text_and_reply(
 
     raw = _raw_for_assignee_candidates(message, text, source_label=source_label)
     candidates, _ = extract_username_candidates(raw, me.username)
+    mention_unresolved = (
+        mention_was_provided(mention)
+        and mention_telegram_id is None
+        and bool(mention.username)
+    )
+    unresolved_plain = None
+    if (
+        mention_unresolved
+        and mention.username
+        and not _looks_like_telegram_username(mention.username)
+    ):
+        unresolved_plain = mention.username
     if await offer_assignee_choice(
         message,
         user_id=user_id,
@@ -154,6 +167,8 @@ async def _process_text_and_reply(
         delivery_chat_id=delivery_chat_id,
         source_label=source_label,
         heard_text=text,
+        mention_unresolved=mention_unresolved,
+        unresolved_plain_name=unresolved_plain,
     ):
         return
 

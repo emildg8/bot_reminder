@@ -267,7 +267,7 @@ _process_text_and_reply (create.py)
 
 | ID | Задача | Effort | P | Описание |
 |----|--------|--------|---|----------|
-| 4.1 | Inline «Выберите участника» при P1 | M | P3 | Кнопки из recent @ в фразе |
+| 4.1 | Inline «Выберите участника» при unresolved + @ в фразе | M | P3 | ✅ v3.46.4 |
 | 4.2 | Welcome в группе: пример `@бот` + **тап по имени** | S | P2 | ✅ |
 | 4.3 | `/remind` help: строка про display name | S | P2 | ✅ |
 | 4.4 | format_collective_check_dm: имя без @ | S | P2 | ✅ preview |

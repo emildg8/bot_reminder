@@ -333,15 +333,29 @@ def format_assignee_choice_prompt(
     candidates: list[str],
     *,
     task_preview: str | None = None,
+    unresolved_plain_name: str | None = None,
 ) -> str:
     tags = ", ".join(f"@{u}" for u in candidates[:4])
     if len(candidates) > 4:
         tags += "…"
-    body = (
-        "👤 <b>Кому напомнить?</b>\n\n"
-        f"В фразе несколько участников ({tags}), а <b>время не указано</b> — "
-        "выбери одного, «Только мне» или отмени."
-    )
+    if unresolved_plain_name and len(candidates) == 1:
+        body = (
+            "👤 <b>Кому напомнить?</b>\n\n"
+            f"«{unresolved_plain_name}» не найден в чате — "
+            f"выбери @{candidates[0]} из фразы, «Только мне» или отмени."
+        )
+    elif len(candidates) >= 2:
+        body = (
+            "👤 <b>Кому напомнить?</b>\n\n"
+            f"В фразе несколько участников ({tags}), а <b>время не указано</b> — "
+            "выбери одного, «Только мне» или отмени."
+        )
+    else:
+        body = (
+            "👤 <b>Кому напомнить?</b>\n\n"
+            f"В фразе участники ({tags}), а <b>время не указано</b> — "
+            "выбери одного, «Только мне» или отмени."
+        )
     if task_preview:
         body = f"{task_preview}\n\n{body}"
     return body
