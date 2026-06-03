@@ -1,8 +1,8 @@
 # План v2: `@бот` + участник в группах
 
-**Статус:** ✅ v3.46.0 · **релиз готов к деплою**  
-**Контекст:** жалоба «формат `@бот @пользователь` не работает» (скрин: `@break_remind_bot Emil Через 1 минуту тест`, ответа в группе нет)  
-**Связано:** [group-assignee.md](../guides/group-assignee.md) · [groups-and-channels.md](../guides/groups-and-channels.md) · v3.44.8–v3.45.8
+**Статус:** ✅ **ЗАКРЫТО** · v3.46.1 · [Release](https://github.com/emildg8/bot_reminder/releases/tag/v3.46.1)  
+**Контекст:** жалоба «формат `@бот @пользователь` не работает» (скрин: `@break_remind_bot Emil Через 1 минуту тест`)  
+**Связано:** [group-assignee.md](../guides/group-assignee.md) · [groups-and-channels.md](../guides/groups-and-channels.md) · [feature-group-assignee.md](../releases/feature-group-assignee.md)
 
 ---
 
@@ -293,7 +293,7 @@ _process_text_and_reply (create.py)
 | 6.4 | pytest assignee + collective suite | ✅ |
 | 6.5 | Deploy Wispbyte | 📋 ручной (ops-checklist) |
 | 6.6 | Telegram smoke (раздел 8) | 📋 ручной |
-| 6.7 | GitHub Release + tag | ✅ v3.46.0 |
+| 6.7 | GitHub Release + tag | ✅ [v3.46.1](https://github.com/emildg8/bot_reminder/releases/tag/v3.46.1) |
 
 ---
 
@@ -500,32 +500,31 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ---
 
-## 14. Definition of Done (релиз v3.46.0)
+## 14. Definition of Done — ✅ закрыто (v3.46.1)
 
-### Код
+### Код — ✅
 
-- [x] Фаза 1 — парсинг display name
-- [x] Фаза 2.1 — reply в группе
-- [x] Фаза 2.2–2.3 — тесты handlers
-- [x] Фаза 3.1 — UTF-16 entities
+- [x] Фаза 1 — парсинг display name (`text_mention`, plain name)
+- [x] Фаза 2 — reply в группе, retry hint, метрика
+- [x] Фаза 3 — UTF-16 entities, `caption_entities`
+- [x] v3.46.1 — preview display name, `_looks_like_telegram_username()`
 
-### Качество
+### Качество — ✅
 
-- [x] pytest §9.2 green
+- [x] pytest green (**589** тестов)
 - [x] `verify_ops` OK
 - [x] ruff clean
-- [x] smoke_group_mentions OK
+- [x] `smoke_group_mentions.py` OK
 
-### Документация
+### Документация — ✅
 
-- [x] group-assignee.md обновлён
-- [x] release note + CHANGELOG
-- [x] ops-checklist smoke S1–S8
+- [x] `group-assignee.md`, release notes v3.46.0/v3.46.1, CHANGELOG
+- [x] `feature-group-assignee.md`, handoff, ops-checklist § Assignee v3.46
 
-### Prod (ручной)
+### Prod (ручной чеклист ops)
 
 - [ ] `/ping` v3.46.1 на Wispbyte
-- [ ] S2 (display name) passed в «Болталке»
+- [ ] S2 display name в «Болталке»
 
 ---
 
@@ -534,8 +533,8 @@ WARNING Cannot send collective check-dm hint to -100…: …
 | Неделя | Deliverable |
 |--------|-------------|
 | W1 | Фаза 1–2 merge, тесты 2.2–2.3, docs 5.1–5.2 |
-| W2 | Фаза 3.1–3.2, релиз v3.46.0, smoke prod |
-| W3+ | Фаза 4 backlog по приоритету жалоб |
+| W2 | Фаза 3, релиз v3.46.0–v3.46.1, smoke prod |
+| W3+ | Фаза 4 backlog (P3 inline pick) |
 
 ---
 
@@ -550,4 +549,4 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ---
 
-*Последнее обновление плана: 2026-06-03 · автор: agent session (display name fix)*
+*Последнее обновление: 2026-06-03 · линия закрыта v3.46.1*

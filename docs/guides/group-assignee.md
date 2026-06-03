@@ -102,5 +102,5 @@
 
 - [groups-and-channels.md](groups-and-channels.md) — collective-режим
 - [group-assignee-v2.md](../plans/group-assignee-v2.md) — расширенный план доработок @бот + участник
-- [improvements-plan F3.0](../plans/improvements-plan-2026-06.md) — roadmap
+- [feature-group-assignee.md](../releases/feature-group-assignee.md) — feature complete v3.46.1
 - [quality-metrics.md](quality-metrics.md) — карта всех 589 тестов

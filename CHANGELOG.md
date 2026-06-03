@@ -8,6 +8,7 @@
 
 ### Группы / assignee (polish)
 - Preview в группе: display name (`Emil`) без лишнего `@`, unresolved `Emil?`
+- `_looks_like_telegram_username()` — @ только для lowercase логинов Telegram
 - Подсказки «Как создать» / меню группы — тап по имени в @
 - Duplicate confirm — reply в группе
 
