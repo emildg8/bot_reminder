@@ -206,7 +206,7 @@ async def test_menu_about_shows_version(patched_db):
 
     body = callback.message.answer.await_args[0][0]
     assert __version__ in body
-    assert "Автор" in body
+    assert "/author" in body
     assert callback.message.answer.await_args.kwargs.get("reply_markup") is not None
 
 
