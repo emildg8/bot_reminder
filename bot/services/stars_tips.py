@@ -152,7 +152,7 @@ def tip_keyboard() -> InlineKeyboardMarkup:
     if row:
         rows.append(row)
     rows.append(
-        [InlineKeyboardButton(text="✨ Другая сумма", callback_data="tip:custom")]
+        [InlineKeyboardButton(text="✨ Своя сумма", callback_data="tip:custom")]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -234,13 +234,16 @@ async def should_send_tip_nudge(session: AsyncSession, user_id: int) -> bool:
 
 def format_tip_nudge() -> str:
     return (
-        "💡 Бот бесплатный. Если помог — можно "
-        "отблагодарить автора Stars, это необязательно."
+        "💡 Бот бесплатный. Если выручил — можно сказать «спасибо» "
+        "через Stars. Совсем необязательно."
     )
 
 
 def format_prior_tips_line(count: int, total: int) -> str:
-    return f"Ты уже поддержал: <b>{total}</b> ⭐ ({count} {_tip_times_word(count)})\n\n"
+    return (
+        f"Уже отправлял <b>{total}</b> ⭐ — "
+        f"{count} {_tip_times_word(count)}. Спасибо ещё раз.\n\n"
+    )
 
 
 def format_thanks_screen(
@@ -252,7 +255,7 @@ def format_thanks_screen(
     lead = ""
     if subscribe_redirect:
         lead = (
-            "ℹ️ Подписки Pro больше нет — бот бесплатный. "
+            "ℹ️ Подписки больше нет — всё бесплатно.\n"
             "Stars только как «спасибо» автору.\n\n"
         )
     history = ""
@@ -262,51 +265,54 @@ def format_thanks_screen(
             history = format_prior_tips_line(count, total)
     return (
         f"{lead}"
-        "⭐ <b>Спасибо автору</b>\n\n"
-        "Бот бесплатный.\n"
-        "Stars — это «спасибо», если напоминания правда выручают. "
-        "Ничего не покупается и не открывается.\n\n"
+        "💝 <b>Спасибо автору</b>\n\n"
+        "<b>Напоминалка бесплатная</b> — для всех, без подписки и скрытых платежей.\n\n"
+        "Stars — добровольная благодарность, если бот правда помогает.\n"
+        "<i>Ничего не покупается и не открывается.</i>\n\n"
         f"{history}"
-        f"<b>Сумма</b> — кнопкой ниже или своя, "
-        f"от <b>{lo}</b> до <b>{hi}</b> ⭐"
+        f"Выбери сумму кнопкой или свою — от <b>{lo}</b> до <b>{hi}</b> ⭐"
     )
 
 
 def format_custom_amount_prompt() -> str:
     lo, hi = tip_amount_bounds()
     return (
-        f"✨ <b>Своя сумма</b>\n\n"
-        f"Напиши число от <b>{lo}</b> до <b>{hi}</b> ⭐ "
-        f"(можно «75» или «75 ⭐»).\n"
-        "Фраза напоминания («завтра созвон») — выйдет из режима суммы.\n"
-        "/cancel — отмена."
+        "✨ <b>Своя сумма</b>\n\n"
+        f"Напиши число — от <b>{lo}</b> до <b>{hi}</b> ⭐.\n"
+        "Подойдут «75» или «75 ⭐».\n\n"
+        "<i>Если напишешь напоминание («завтра созвон») — "
+        "вернусь к обычному режиму.</i>\n\n"
+        "/cancel — отмена"
     )
 
 
 def format_custom_amount_confirm(amount: int) -> str:
     return (
-        f"💫 Отправить <b>{amount}</b> ⭐?\n\n"
-        "<i>Добровольное «спасибо» — функции бота не меняются.</i>"
+        f"💫 Отправить <b>{amount}</b> ⭐ автору?\n\n"
+        "<i>Это «спасибо» — бот останется таким же для всех.</i>"
     )
 
 
 def format_custom_amount_pending_hint() -> str:
-    return "Подтверди кнопкой ↑ или отмени: /cancel"
+    return "Нажми «Отправить» выше или /cancel"
 
 
 def format_custom_amount_invalid(text: str) -> str:
     lo, hi = tip_amount_bounds()
     shown = (text or "").strip()[:40]
     return (
-        f"Не понял: «{shown}».\n"
-        f"Нужно целое число от {lo} до {hi} ⭐.\n"
-        "Или напиши фразу напоминания — тогда режим суммы сбросится."
+        f"Не разобрал «{shown}».\n\n"
+        f"Нужно число от {lo} до {hi} ⭐.\n"
+        "Или фраза напоминания — тогда выйду из режима суммы."
     )
 
 
 def format_amount_out_of_range(amount: int) -> str:
     lo, hi = tip_amount_bounds()
-    return f"Сумма <b>{amount}</b> вне диапазона — от {lo} до {hi} ⭐."
+    return (
+        f"<b>{amount}</b> ⭐ не подходит — "
+        f"можно от {lo} до {hi}."
+    )
 
 
 def format_start_bot_for_tips() -> str:
@@ -318,7 +324,7 @@ def format_start_bot_for_tips() -> str:
 
 def format_invoice_sent(amount: int, *, sent_to_dm: bool = False) -> str:
     if sent_to_dm:
-        return f"💫 Счёт на <b>{amount}</b> ⭐ отправлен в личку."
+        return f"💫 Счёт на <b>{amount}</b> ⭐ — в личке с ботом."
     return f"💫 Счёт на <b>{amount}</b> ⭐ — оплати в окне Telegram."
 
 
@@ -342,13 +348,13 @@ def format_thank_you(
     thanks = f"Спасибо, {first_name}!" if first_name else "Спасибо!"
     lines = [
         f"💝 {thanks}",
-        f"Получил <b>{amount}</b> ⭐ — правда приятно.",
+        f"Получил <b>{amount}</b> ⭐ — очень приятно.",
     ]
     if total_tips is not None and total_tips > amount:
-        lines.append(f"Всего от тебя: <b>{total_tips}</b> ⭐.")
+        lines.append(f"Всего от тебя уже <b>{total_tips}</b> ⭐.")
     elif total_tips is not None and total_tips == amount:
-        lines.append("Первый раз — особенно ценно.")
-    lines.extend(["", "Бот бесплатный для всех · /help", "Идеи и вопросы — /author"])
+        lines.append("Первый раз — отдельное спасибо.")
+    lines.extend(["", "Бот бесплатный · /help", "Есть идея — /author"])
     return "\n".join(lines)
 
 
@@ -363,8 +369,8 @@ def tip_invoice_prices(amount: int) -> list[LabeledPrice]:
 async def send_tip_invoice(bot, *, chat_id: int, user_id: int, amount: int) -> None:
     await bot.send_invoice(
         chat_id=chat_id,
-        title="Благодарность автору",
-        description=f"Добровольная поддержка · {amount} ⭐",
+        title="Спасибо автору",
+        description=f"Добровольно · {amount} ⭐",
         payload=tip_payload(user_id, amount),
         provider_token="",
         currency="XTR",

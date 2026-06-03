@@ -172,7 +172,7 @@ async def test_custom_amount_group_sends_dm(patched_db, monkeypatch):
 
     await cb_tip_confirm(callback)
     assert callback.bot.send_invoice.await_args.kwargs["chat_id"] == user_id
-    assert "личку" in callback.bot.send_message.await_args[0][1].lower()
+    assert "личке" in callback.bot.send_message.await_args[0][1].lower()
 
 
 @pytest.mark.asyncio
@@ -292,7 +292,7 @@ async def test_custom_amount_out_of_range(patched_db, monkeypatch):
 
     await handle_custom_tip_amount(message, message.bot)
     message.answer.assert_awaited_once()
-    assert "диапазон" in message.answer.await_args[0][0].lower()
+    assert "подходит" in message.answer.await_args[0][0].lower()
 
 
 @pytest.mark.asyncio

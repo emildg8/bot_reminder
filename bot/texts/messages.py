@@ -459,7 +459,7 @@ def _about_tips_line() -> str:
     from bot.services.stars_tips import tips_enabled
 
     if tips_enabled():
-        return "💝 Понравилось? Сказать «спасибо» — /thanks (Stars)\n\n"
+        return "💝 Понравилось? Сказать спасибо — /thanks\n\n"
     return ""
 
 GROUP_CREATED_SUFFIX = ""

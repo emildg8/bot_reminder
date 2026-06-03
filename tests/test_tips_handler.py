@@ -76,7 +76,7 @@ def test_thanks_screen_mentions_free():
 
 def test_thanks_screen_shows_custom_amount_hint():
     text = format_thanks_screen()
-    assert "своя" in text.lower()
+    assert "свою" in text.lower()
 
 
 def test_thanks_screen_shows_prior_tips():
