@@ -293,7 +293,7 @@ _process_text_and_reply (create.py)
 | 6.4 | pytest assignee + collective suite | ✅ |
 | 6.5 | Deploy Wispbyte | 📋 ручной (ops-checklist) |
 | 6.6 | Telegram smoke (раздел 8) | 📋 ручной |
-| 6.7 | GitHub Release + tag | ⬜ push v3.46.0 |
+| 6.7 | GitHub Release + tag | ✅ v3.46.0 |
 
 ---
 
