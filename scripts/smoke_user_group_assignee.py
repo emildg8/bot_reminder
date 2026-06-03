@@ -21,17 +21,17 @@ if ROOT not in sys.path:
 
 os.environ.setdefault("BOT_TOKEN", "0:smoke-test-token")
 
-from aiogram.enums import ChatType
+from aiogram.enums import ChatType  # noqa: E402
 
-import bot.db.repository as repository
-from bot.db.models import Base
-from bot.db.repository import get_or_create_user
-from bot.handlers.create import cmd_remind, _handle_collective_phrase_message
-from bot.handlers.health import cmd_ping
-from bot.services.nlp.llm_parser import parse_all_reminders
-from bot.services.telegram_format import format_reminder_message
-from bot.version import __version__
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+import bot.db.repository as repository  # noqa: E402
+from bot.db.models import Base  # noqa: E402
+from bot.db.repository import get_or_create_user  # noqa: E402
+from bot.handlers.create import cmd_remind, _handle_collective_phrase_message  # noqa: E402
+from bot.handlers.health import cmd_ping  # noqa: E402
+from bot.services.nlp.llm_parser import parse_all_reminders  # noqa: E402
+from bot.services.telegram_format import format_reminder_message  # noqa: E402
+from bot.version import __version__  # noqa: E402
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
 
 BOT_USERNAME = "break_remind_bot"
 BOT_ID = 900001
@@ -139,7 +139,7 @@ async def _setup_db():
             __import__(mod)
         except ImportError:
             continue
-        setattr(sys.modules[mod], "async_session", shared)
+        sys.modules[mod].async_session = shared
 
     async with shared() as s:
         await get_or_create_user(s, USER_ID, "Europe/Moscow")

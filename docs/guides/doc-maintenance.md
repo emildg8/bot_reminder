@@ -24,7 +24,7 @@ python scripts/verify_ops.py   # сверит docs с collect (CI)
 
 `verify_ops` сравнивает `pytest --collect-only` с шаблонами в [doc_metrics.py](../../scripts/doc_metrics.py). При расхождении обновите файлы ниже (одно и то же число):
 
-Обновить число тестов (сейчас **576**, см. `make test-count`) в:
+Обновить число тестов (сейчас **597**, см. `make test-count`) в:
 
 | Файл |
 |------|
@@ -45,10 +45,17 @@ python scripts/verify_ops.py   # сверит docs с collect (CI)
 - `docs/plans/improvements-plan-2026-06.md` — строка F2.x
 - **Не** переписывать исторические `docs/releases/v3.3*.md` (это хронология)
 
-## Фича закрыта (как F3.0 assignee)
+## Smoke в `verify_ops`
+
+Пять скриптов в `scripts/verify_ops.py` → `_SMOKE_SCRIPTS`:  
+`smoke_nlp`, `smoke_group_mentions`, `smoke_user_group_assignee`, `smoke_stars`, `smoke_author`.
+
+При новом smoke: добавить файл в `REQUIRED`, `_SMOKE_SCRIPTS`, `Makefile` (опционально), `docs/guides/quality-metrics.md`.
+
+## Фича закрыта (пример: assignee v3.46.4 ФИНАЛ)
 
 1. `docs/guides/<feature>.md` — гайд + smoke
-2. `docs/releases/feature-*.md` — статус «закрыто»
+2. `docs/releases/feature-*.md` — статус «ФИНАЛ»
 3. `docs/plans/improvements-plan-2026-06.md` — фаза ✅ + DoD
 4. `docs/v1.0-final-status.md` — строка в roadmap
 5. `docs/guides/ops-checklist.md` — smoke-пункты

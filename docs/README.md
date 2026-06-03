@@ -37,7 +37,7 @@
 | [plans/improvements-plan-phase2.md](plans/improvements-plan-phase2.md) | План после v3.40 (волны G–J) |
 | [plans/groups-channels.md](plans/groups-channels.md) | Архитектура collective |
 | [plans/groups-phase5-ux.md](plans/groups-phase5-ux.md) | UX групп (фаза 5) |
-| [plans/group-assignee-v2.md](plans/group-assignee-v2.md) | ✅ @бот + display name в группах (v3.46) |
+| [plans/group-assignee-v2.md](plans/group-assignee-v2.md) | ✅ **ФИНАЛ** assignee v3.46.4 (архив плана) |
 | [plans/stars-tips-polish.md](plans/stars-tips-polish.md) | Stars tips → prod (P0–P3, волна M) |
 
 ## Handoff
@@ -64,8 +64,6 @@
 - [releases/v3.43.0.md](releases/v3.43.0.md) — Stars: благодарность автору
 - [releases/v3.42.2.md](releases/v3.42.2.md) — NLP «в 2 дня», strip_day для расписаний
 - [releases/v3.42.0.md](releases/v3.42.0.md) — Stars, audit DB, broadcast draft
-- [releases/feature-group-assignee.md](releases/feature-group-assignee.md) — ✅ assignee закрыт (v3.46.1)
-
 Старые patch-релизы v3.44.x / v3.43.x — в [releases/](releases/) и [CHANGELOG.md](../CHANGELOG.md).
 
 ## CI / GitHub

@@ -126,6 +126,6 @@ cd /home/container && git pull origin main && bash start.sh
 
 - [x] В группе нет reply-клавиатуры и нет сетки из 8+ примеров
 - [x] Все submenu возвращаются кнопкой «◀️ Меню» без новых сообщений
-- [ ] `/remind@бот` + @ из списка + confirm в личку работают стабильно
+- [x] `/remind@бот` + @ из списка + confirm в личку — ✅ assignee v3.46.4 prod (#35)
 - [ ] Wispbyte на `bash start.sh`, версия в логах актуальная
 - [ ] Нет ложного `pip install bot`

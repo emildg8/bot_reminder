@@ -2,7 +2,7 @@
 
 Приоритет: impact × effort. Выполнение — волнами без лишних мелких релизов.
 
-## Оценка текущего состояния (v3.45.2)
+## Оценка текущего состояния (v3.46.4)
 
 | Область | Оценка | Комментарий |
 |---------|--------|-------------|
@@ -15,7 +15,7 @@
 | Тесты | 10/10 | **597** тестов, assignee + routing; gate 65% (~66%) |
 | CI | 10/10 | verify_ops + smokes + pytest + ruff |
 | Docs | 10/10 | v3.46 assignee, ops-checklist, verify_ops |
-| Ops | 10/10 | verify_ops = файлы + docs + 3 smoke; Wispbyte — [ops-checklist](../guides/ops-checklist.md) (ручной `/ping`) |
+| Ops | 10/10 | verify_ops = файлы + docs + **5 smoke**; [ops-checklist](../guides/ops-checklist.md) |
 
 **Phase 2:** [improvements-plan-phase2.md](improvements-plan-phase2.md)
 

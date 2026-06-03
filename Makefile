@@ -8,6 +8,7 @@ help:
 	@echo "  verify       ops artifacts check"
 	@echo "  smoke-nlp    key NLP phrases (post-deploy)"
 	@echo "  smoke-stars  Stars tips parse + passthrough"
+	@echo "  smoke-group-mentions  assignee parse (offline)"
 	@echo "  smoke-user-group  @бот + assignee UX (offline)"
 	@echo "  check-deploy version + GitHub main (+ Telegram if BOT_TOKEN)"
 	@echo "  test-count   pytest --collect-only"
