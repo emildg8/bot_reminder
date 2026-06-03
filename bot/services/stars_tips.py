@@ -263,10 +263,12 @@ def format_thanks_screen(
     return (
         f"{lead}"
         "⭐ <b>Спасибо автору</b>\n\n"
-        "Бот бесплатный — Stars это просто «спасибо», если "
-        "напоминания реально помогают. Ничего не разблокируется.\n\n"
+        "Бот бесплатный.\n"
+        "Stars — это «спасибо», если напоминания правда выручают. "
+        "Ничего не покупается и не открывается.\n\n"
         f"{history}"
-        f"Выбери сумму кнопкой или напиши свою — от <b>{lo}</b> до <b>{hi}</b> ⭐"
+        f"<b>Сумма</b> — кнопкой ниже или своя, "
+        f"от <b>{lo}</b> до <b>{hi}</b> ⭐"
     )
 
 
@@ -283,8 +285,8 @@ def format_custom_amount_prompt() -> str:
 
 def format_custom_amount_confirm(amount: int) -> str:
     return (
-        f"Отправить <b>{amount}</b> ⭐ автору?\n\n"
-        "Это добровольная благодарность — функции бота не меняются."
+        f"💫 Отправить <b>{amount}</b> ⭐?\n\n"
+        "<i>Добровольное «спасибо» — функции бота не меняются.</i>"
     )
 
 
@@ -325,8 +327,8 @@ def format_tips_disabled(*, from_subscribe: bool = False) -> str:
     if from_subscribe:
         extra = "\n\n<i>/subscribe</i> больше не про подписку — лимитов нет."
     return (
-        "⭐ Благодарность Stars пока недоступна.\n\n"
-        "Все функции бота остаются бесплатными · /about"
+        "⭐ Stars пока выключены.\n\n"
+        "Все функции бота бесплатны · /about"
         f"{extra}"
     )
 
@@ -339,18 +341,14 @@ def format_thank_you(
 ) -> str:
     thanks = f"Спасибо, {first_name}!" if first_name else "Спасибо!"
     lines = [
-        f"{thanks} ⭐ Ты отправил <b>{amount}</b> Stars — это правда приятно.",
+        f"💝 {thanks}",
+        f"Получил <b>{amount}</b> ⭐ — правда приятно.",
     ]
     if total_tips is not None and total_tips > amount:
-        lines.append(f"Всего поддержал: <b>{total_tips}</b> ⭐.")
+        lines.append(f"Всего от тебя: <b>{total_tips}</b> ⭐.")
     elif total_tips is not None and total_tips == amount:
-        lines.append("Первый раз — очень приятно!")
-    lines.append("")
-    lines.append("Бот остаётся бесплатным для всех · /help")
-    lines.append("Вопросы и идеи — /author")
-    from bot.texts.messages import format_developer_contact_line
-
-    lines.append(format_developer_contact_line())
+        lines.append("Первый раз — особенно ценно.")
+    lines.extend(["", "Бот бесплатный для всех · /help", "Идеи и вопросы — /author"])
     return "\n".join(lines)
 
 

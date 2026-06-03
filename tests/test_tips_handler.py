@@ -57,7 +57,7 @@ async def test_cmd_thanks_when_disabled(monkeypatch):
     message.chat.id = 1
     message.answer = AsyncMock()
     await cmd_thanks(message)
-    assert "недоступна" in message.answer.await_args[0][0].lower()
+    assert "выключен" in message.answer.await_args[0][0].lower()
 
 
 @pytest.mark.asyncio
@@ -76,7 +76,7 @@ def test_thanks_screen_mentions_free():
 
 def test_thanks_screen_shows_custom_amount_hint():
     text = format_thanks_screen()
-    assert "свою" in text.lower()
+    assert "своя" in text.lower()
 
 
 def test_thanks_screen_shows_prior_tips():

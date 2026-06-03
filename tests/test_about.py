@@ -26,7 +26,7 @@ from bot.version import __version__
 def test_format_about_contains_version_and_teaser():
     text = format_about(__version__)
     assert __version__ in text
-    assert "Дневник" in text
+    assert "дневник" in text.lower()
     assert "/author" in text
     assert DEVELOPER_TELEGRAM in text
     assert "Pet-project" not in text
@@ -36,7 +36,7 @@ def test_format_developer_teaser_release_link():
     text = format_developer_teaser(version="9.9.9")
     assert "9.9.9" in text
     assert developer_urls(version="9.9.9")["release_tag"] in text
-    assert "что нового" in text
+    assert "новое" in text
 
 
 def test_format_developer_status_line():
@@ -73,7 +73,7 @@ def test_format_developer_made_by_line():
     text = format_developer_made_by_line()
     assert DEVELOPER_TELEGRAM in text
     assert developer_urls()["github"] in text
-    assert "код на GitHub" in text
+    assert "открытый код" in text
 
 
 def test_format_developer_support_note():
@@ -85,7 +85,7 @@ def test_format_developer_support_note():
 def test_format_developer_card_includes_support_note():
     text = format_developer_card(version=__version__)
     assert format_developer_support_note().strip() in text
-    assert "Куда написать" in text
+    assert "Связь" in text
     assert developer_urls(version=__version__)["release_tag"] in text
 
 
@@ -113,7 +113,7 @@ def test_format_developer_card_links():
 def test_format_help_feedback_footer():
     footer = format_help_feedback_footer()
     assert DEVELOPER_TELEGRAM in footer
-    assert "баги" in footer
+    assert "идеи" in footer
     assert developer_urls()["issues"] in footer
     assert "/author" in footer
     assert developer_urls()["release_tag"] in footer
@@ -136,7 +136,7 @@ def test_developer_links_keyboard_urls():
     }
     assert expected <= urls
     labels = [btn.text for row in kb.inline_keyboard for btn in row]
-    assert "🆕 Что нового" in labels
+    assert any("🆕" in t for t in labels)
 
 
 def test_about_and_author_keyboards_have_nav():

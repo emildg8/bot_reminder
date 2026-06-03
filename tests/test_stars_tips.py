@@ -353,8 +353,8 @@ def test_pre_checkout_error_ok(monkeypatch):
 def test_format_thank_you_total():
     text = format_thank_you(100, first_name="Ира", total_tips=250)
     assert "250" in text
-    assert "emildg8" in text
     assert "/author" in text
+    assert "Ира" in text
 
 
 @pytest.mark.asyncio

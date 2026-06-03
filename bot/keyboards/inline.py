@@ -360,12 +360,12 @@ def developer_links_keyboard(
     urls = developer_urls(version=ver)
     rows: list[list[InlineKeyboardButton]] = [
         [
-            InlineKeyboardButton(text="💬 Telegram", url=urls["telegram"]),
+            InlineKeyboardButton(text="💬 Написать", url=urls["telegram"]),
             InlineKeyboardButton(text="⭐ GitHub", url=urls["github"]),
         ],
         [
-            InlineKeyboardButton(text="🐛 Идеи и баги", url=urls["issues"]),
-            InlineKeyboardButton(text="🆕 Что нового", url=urls["release_tag"]),
+            InlineKeyboardButton(text="🐛 Идеи", url=urls["issues"]),
+            InlineKeyboardButton(text=f"🆕 v{ver}", url=urls["release_tag"]),
         ],
         [InlineKeyboardButton(text="📦 Релизы", url=urls["releases"])],
     ]
@@ -374,7 +374,7 @@ def developer_links_keyboard(
 
         if tips_enabled():
             rows.append(
-                [InlineKeyboardButton(text="💝 Поддержать", callback_data="menu:thanks")]
+                [InlineKeyboardButton(text="💝 Поддержать · Stars", callback_data="menu:thanks")]
             )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
