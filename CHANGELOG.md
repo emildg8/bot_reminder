@@ -4,6 +4,13 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.46.1] — 2026-06-03
+
+### Группы / assignee (polish)
+- Preview в группе: display name (`Emil`) без лишнего `@`, unresolved `Emil?`
+- Подсказки «Как создать» / меню группы — тап по имени в @
+- Duplicate confirm — reply в группе
+
 ## [3.46.0] — 2026-06-03
 
 ### Группы / assignee (display name)

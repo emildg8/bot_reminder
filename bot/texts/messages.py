@@ -225,7 +225,7 @@ def format_group_menu_home(bot_username: str | None = None) -> str:
     return (
         f"📋 <b>Меню группы</b>\n\n"
         f"✅ <code>/remind@{uname} через час …</code>\n"
-        f"Или {at} + @user + фраза · ответ + /remind\n"
+        f"Или {at} + @user или <b>имя</b> (тап в @) + фраза · ответ + /remind\n"
         "📔 Дневник — только в личке."
     )
 
@@ -238,9 +238,9 @@ def format_group_create_hint(bot_username: str | None = None) -> str:
         f"• <code>/remind@{uname} через час созвон</code> — всегда работает\n"
         f"• <code>/remind@{uname} @user завтра в 14:00 задача</code> — на участника\n"
         f"• ответ на сообщение + <code>/remind@{uname} завтра задача</code>\n"
-        f"• {at} <b>из списка</b> + @user + фраза "
-        f"(<code>{at}@user</code>, <code>{at} + @user</code>)\n\n"
-        "⚠️ @ вручную — бот может не увидеть; выбирай @ из списка Telegram.\n"
+        f"• {at} <b>из списка</b> + @user или <b>имя</b> (тап в @) + фраза "
+        f"(<code>{at}@user</code>, <code>{at} + @user</code>, <code>{at} Имя …</code>)\n\n"
+        "⚠️ Имя с клавиатуры без @ — бот не узнает участника.\n"
         "Подтверждение и кнопки — в личке с ботом."
     )
 
@@ -469,6 +469,7 @@ def format_assignee_preview_plain(
     mention_username: str | None,
     *,
     source: str | None = None,
+    resolved: bool = True,
 ) -> str:
     if not mention_username:
         return ""
@@ -478,6 +479,8 @@ def format_assignee_preview_plain(
         label = f"@{name}"
     else:
         label = name
+    if not resolved:
+        label = f"{label}?"
     return f"{icon} {label}"
 
 

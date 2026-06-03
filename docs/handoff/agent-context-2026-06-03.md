@@ -4,7 +4,7 @@
 
 - **Репо:** `d:\Dev\Telegram\bot_reminder` · GitHub `emildg8/bot_reminder`
 - **Бот:** `@break_remind_bot`
-- **Версия:** **v3.46.0** · **587** тестов
+- **Версия:** **v3.46.1** · **589** тестов
 
 ## Завершено: assignee display name в группах
 

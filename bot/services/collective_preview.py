@@ -22,10 +22,11 @@ def build_group_confirm_preview(
         if len(parsed_items) == 1
         else f"{len(parsed_items)} напоминания"
     )
-    assignee_part = format_assignee_preview_plain(mention_username, source=mention_source)
-    if mention_username and not mention_resolved:
-        icon = "↩️" if mention_source == "reply" else "👤"
-        assignee_part = f"{icon} @{mention_username}?"
+    assignee_part = format_assignee_preview_plain(
+        mention_username,
+        source=mention_source,
+        resolved=mention_resolved,
+    )
     parts = [str(p) for p in (assignee_part, when_part) if p]
     return " · ".join(parts) if parts else None
 

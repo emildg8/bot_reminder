@@ -270,10 +270,10 @@ _process_text_and_reply (create.py)
 | 4.1 | Inline «Выберите участника» при P1 | M | P3 | Кнопки из recent @ в фразе |
 | 4.2 | Welcome в группе: пример `@бот` + **тап по имени** | S | P2 | ✅ |
 | 4.3 | `/remind` help: строка про display name | S | P2 | ✅ |
-| 4.4 | format_collective_check_dm: имя без @ | S | P2 | уже частично в preview |
+| 4.4 | format_collective_check_dm: имя без @ | S | P2 | ✅ preview |
 | 4.5 | Не создавать draft при unresolved plain name? | M | P3 | product decision |
 
-### Фаза 5 — Документация и ops ⬜
+### Фаза 5 — Документация и ops ✅
 
 | ID | Задача | Файл | Статус |
 |----|--------|------|--------|
@@ -283,7 +283,7 @@ _process_text_and_reply (create.py)
 | 5.4 | CHANGELOG секция | `CHANGELOG.md` | ✅ |
 | 5.5 | Чеклист ops после деплоя | `docs/guides/ops-checklist.md` | ✅ |
 
-### Фаза 6 — Релиз ⬜
+### Фаза 6 — Релиз ✅ (деплой/smoke — ручной)
 
 | ID | Действие |
 |----|----------|
@@ -308,7 +308,7 @@ _process_text_and_reply (create.py)
 | E3 | Два text_mention user | auto nearest_time |
 | E4 | Bot text_mention (display name бота) | is_bot_mention → skip |
 | E5 | Entity offset после `/remind@bot ` | prefix_len учтён |
-| E6 | Emoji в имени «👋 Emil» | ⚠️ риск UTF-16 (фаза 3.1) |
+| E6 | Emoji в имени «👋 Emil» | UTF-16 offsets (v3.46) |
 
 ### 7.2 Текст без entities
 
@@ -506,27 +506,26 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 - [x] Фаза 1 — парсинг display name
 - [x] Фаза 2.1 — reply в группе
-- [ ] Фаза 2.2–2.3 — недостающие тесты handlers
-- [ ] Фаза 3.1 или documented known issue UTF-16
+- [x] Фаза 2.2–2.3 — тесты handlers
+- [x] Фаза 3.1 — UTF-16 entities
 
 ### Качество
 
-- [ ] pytest §9.2 green
-- [ ] `verify_ops` OK
-- [ ] ruff clean
-- [ ] smoke_group_mentions OK
+- [x] pytest §9.2 green
+- [x] `verify_ops` OK
+- [x] ruff clean
+- [x] smoke_group_mentions OK
 
 ### Документация
 
-- [ ] group-assignee.md обновлён
-- [ ] release note + CHANGELOG
-- [ ] ops-checklist smoke S1–S8
+- [x] group-assignee.md обновлён
+- [x] release note + CHANGELOG
+- [x] ops-checklist smoke S1–S8
 
-### Prod
+### Prod (ручной)
 
-- [ ] `/ping` v3.46.0 на Wispbyte
+- [ ] `/ping` v3.46.1 на Wispbyte
 - [ ] S2 (display name) passed в «Болталке»
-- [ ] 7 дней без жалоб «@бот не работает»
 
 ---
 

@@ -46,6 +46,34 @@ def test_build_group_confirm_preview_unresolved_assignee():
     assert "@ghost?" in preview
 
 
+def test_build_group_confirm_preview_unresolved_display_name():
+    parsed = ParsedReminder(text="тест", kind="once", delay_seconds=60, run_at=None)
+    preview = build_group_confirm_preview(
+        [parsed],
+        "Europe/Moscow",
+        mention_username="Emil",
+        mention_source="text",
+        mention_resolved=False,
+    )
+    assert preview is not None
+    assert "Emil?" in preview
+    assert "@Emil" not in preview
+
+
+def test_build_group_confirm_preview_display_name_resolved():
+    parsed = ParsedReminder(text="тест", kind="once", delay_seconds=60, run_at=None)
+    preview = build_group_confirm_preview(
+        [parsed],
+        "Europe/Moscow",
+        mention_username="Emil",
+        mention_source="text",
+        mention_resolved=True,
+    )
+    assert preview is not None
+    assert "👤 Emil" in preview
+    assert "@Emil" not in preview
+
+
 def test_build_group_confirm_preview_batch():
     tz = ZoneInfo("Europe/Moscow")
     items = [

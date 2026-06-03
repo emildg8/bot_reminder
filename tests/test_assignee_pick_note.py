@@ -74,6 +74,8 @@ def test_parsed_one_liner():
 def test_assignee_preview_plain():
     assert format_assignee_preview_plain("ivan") == "👤 @ivan"
     assert format_assignee_preview_plain("ivan", source="reply").startswith("↩️")
+    assert format_assignee_preview_plain("Emil") == "👤 Emil"
+    assert format_assignee_preview_plain("Emil", resolved=False) == "👤 Emil?"
 
 
 def test_assignee_choice_prompt_includes_task_preview():

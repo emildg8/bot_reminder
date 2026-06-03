@@ -225,6 +225,7 @@ async def _create_from_draft(
                         chat_title=None,
                         body=dup_body,
                         reply_markup=dup_kb,
+                        reply_to_message_id=callback.message.message_id,
                     )
                     if sent_dm:
                         await callback.message.edit_text("⚠️ Дубликат — подтверди в сообщении выше.")
