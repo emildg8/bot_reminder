@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Coverage ≥65%](https://img.shields.io/badge/coverage-≥65%25-green.svg)](.github/workflows/ci.yml)
 
-**Версия:** [v3.46.2](CHANGELOG.md) · **592 теста** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
+**Версия:** [v3.46.3](CHANGELOG.md) · **595 тестов** · [статус](docs/v1.0-final-status.md) · [план](docs/plans/improvements-plan-2026-06.md)
 
 Telegram-бот для напоминаний на русском языке: пиши текстом, надиктуй голосом или отправь кружочек — бот поймёт время и напомнит. Работает в личке, группах и каналах.
 
@@ -184,7 +184,7 @@ bot/
   services/     # NLP, scheduler, drafts, collective UX
   db/           # models, repository
   keyboards/    # inline + reply
-tests/          # unit + handler tests (592, см. quality-metrics.md)
+tests/          # unit + handler tests (595, см. quality-metrics.md)
 scripts/        # deploy, backup, healthcheck
 docs/           # guides, releases, plans
 ```
@@ -223,7 +223,7 @@ docs/           # guides, releases, plans
 | [docs/guides/groups-and-channels.md](docs/guides/groups-and-channels.md) | Группы, каналы, privacy |
 | [docs/guides/group-assignee.md](docs/guides/group-assignee.md) | Напоминание на участника |
 | [docs/guides/stars-tips.md](docs/guides/stars-tips.md) | Stars `/thanks` |
-| [docs/releases/](docs/releases/) | Release notes (`v3.46.2.md` — текущий) |
+| [docs/releases/](docs/releases/) | Release notes (`v3.46.3.md` — текущий) |
 
 ---
 

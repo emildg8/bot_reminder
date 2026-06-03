@@ -1,6 +1,6 @@
 # План v2: `@бот` + участник в группах
 
-**Статус:** ✅ **ЗАКРЫТО** · v3.46.1 · [Release](https://github.com/emildg8/bot_reminder/releases/tag/v3.46.1)  
+**Статус:** ✅ **ЗАКРЫТО** · v3.46.3  
 **Контекст:** жалоба «формат `@бот @пользователь` не работает» (скрин: `@break_remind_bot Emil Через 1 минуту тест`)  
 **Связано:** [group-assignee.md](../guides/group-assignee.md) · [groups-and-channels.md](../guides/groups-and-channels.md) · [feature-group-assignee.md](../releases/feature-group-assignee.md)
 
@@ -293,7 +293,7 @@ _process_text_and_reply (create.py)
 | 6.4 | pytest assignee + collective suite | ✅ |
 | 6.5 | Deploy Wispbyte | 📋 ручной (ops-checklist) |
 | 6.6 | Telegram smoke (раздел 8) | 📋 ручной |
-| 6.7 | GitHub Release + tag | ✅ [v3.46.1](https://github.com/emildg8/bot_reminder/releases/tag/v3.46.1) |
+| 6.7 | GitHub Release + tag | ✅ v3.46.2+ (push v3.46.3 tag) |
 
 ---
 
@@ -458,7 +458,7 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 - [x] Push → CI green
 - [ ] Wispbyte restart / auto-update
-- [ ] `/ping` → **v3.46.1**
+- [ ] `/ping` → **v3.46.3** (+ Group Privacy в группе)
 
 ### 11.3 Post-deploy (15 мин)
 
@@ -507,11 +507,12 @@ WARNING Cannot send collective check-dm hint to -100…: …
 - [x] Фаза 1 — парсинг display name (`text_mention`, plain name)
 - [x] Фаза 2 — reply в группе, retry hint, метрика
 - [x] Фаза 3 — UTF-16 entities, `caption_entities`
-- [x] v3.46.1 — preview display name, `_looks_like_telegram_username()`
+- [x] v3.46.2 — tips routing fix (`@бот` тишина)
+- [x] v3.46.3 — срабатывание display name, `/ping` privacy
 
 ### Качество — ✅
 
-- [x] pytest green (**589** тестов)
+- [x] pytest green (**595** тестов)
 - [x] `verify_ops` OK
 - [x] ruff clean
 - [x] `smoke_group_mentions.py` OK
@@ -523,7 +524,7 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ### Prod (ручной чеклист ops)
 
-- [ ] `/ping` v3.46.1 на Wispbyte
+- [ ] `/ping` v3.46.3 на Wispbyte
 - [ ] S2 display name в «Болталке»
 
 ---
@@ -549,4 +550,4 @@ WARNING Cannot send collective check-dm hint to -100…: …
 
 ---
 
-*Последнее обновление: 2026-06-03 · линия закрыта v3.46.1*
+*Последнее обновление: 2026-06-03 · линия закрыта v3.46.3*

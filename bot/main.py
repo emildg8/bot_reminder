@@ -177,6 +177,7 @@ async def main() -> None:
     dp = Dispatcher()
     register_shutdown_dispatcher(dp)
     dp.include_router(errors.router)
+    # tips ПЕРЕД create: USER_PHRASE_TEXT + tip_custom_text_filter (Stars custom amount)
     dp.include_router(tips.router)
     dp.include_router(payments.router)
     dp.include_router(start.router)

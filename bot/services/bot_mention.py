@@ -8,7 +8,7 @@ from aiogram.enums import ChatType
 from aiogram.types import Message
 
 from bot.services.chat_ctx import is_collective_chat
-from bot.services.mention_parse import _is_bot_mention
+from bot.services.mention_parse import _entity_span_py, _is_bot_mention
 
 
 def _contains_bot_mention_text(text: str, bot_username: str | None) -> bool:
@@ -45,7 +45,8 @@ def is_bot_mentioned(
     if text:
         for entity in _iter_message_entities(message):
             if entity.type == "mention":
-                username = text[entity.offset + 1 : entity.offset + entity.length]
+                py_start, py_end = _entity_span_py(text, entity)
+                username = text[py_start + 1 : py_end]
                 if _is_bot_mention(username, bot_username, bot_id=bot_id):
                     return True
             if entity.type == "text_mention" and entity.user:

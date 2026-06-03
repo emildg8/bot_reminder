@@ -88,3 +88,14 @@ def test_voice_caption_mention():
         caption_entities=[SimpleNamespace(type="mention", offset=0, length=6)],
     )
     assert should_handle_collective_message(msg, bot_username="mybot", bot_id=1)
+
+
+def test_is_bot_mentioned_utf16_emoji_prefix():
+    text = "👋@mybot задача"
+    msg = MagicMock()
+    msg.text = text
+    msg.caption = None
+    msg.caption_entities = []
+    msg.entities = [SimpleNamespace(type="mention", offset=2, length=6)]
+    msg.reply_to_message = None
+    assert is_bot_mentioned(msg, bot_username="mybot", bot_id=99)

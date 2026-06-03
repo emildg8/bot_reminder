@@ -69,11 +69,31 @@ async def test_cmd_search_without_query(patched_db):
 async def test_cmd_ping(patched_db):
     message = make_message(9403)
 
-    await cmd_ping(message)
+    await cmd_ping(message, make_bot())
 
     body = message.answer.await_args[0][0]
     assert "работает" in body.lower()
     assert "v3." in body
+
+
+@pytest.mark.asyncio
+async def test_cmd_ping_group_shows_privacy(patched_db):
+    from aiogram.enums import ChatType
+    from unittest.mock import AsyncMock, MagicMock
+
+    message = make_message(9406)
+    message.chat.id = -100999
+    message.chat.type = ChatType.SUPERGROUP
+    bot = make_bot()
+    bot.get_me = AsyncMock(
+        return_value=MagicMock(can_read_all_group_messages=True, username="bot", id=1)
+    )
+
+    await cmd_ping(message, bot)
+
+    body = message.answer.await_args[0][0]
+    assert "Group Privacy" in body
+    assert "выкл" in body
 
 
 @pytest.mark.asyncio

@@ -24,6 +24,18 @@ def test_group_mentions_creator():
     assert "@boss" in text
 
 
+def test_explicit_mention_display_name():
+    text = format_reminder_message(
+        "тест",
+        mention_user_id=42,
+        mention_username="Emil",
+        chat_id=-1001,
+    )
+    assert "tg://user?id=42" in text
+    assert "Emil" in text
+    assert "@Emil" not in text
+
+
 def test_explicit_mention():
     text = format_reminder_message(
         "задача",

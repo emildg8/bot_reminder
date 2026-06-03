@@ -4,6 +4,17 @@
 
 Полная документация: [README.md](README.md) · [docs/](docs/README.md)
 
+## [3.46.3] — 2026-06-03
+
+### Исправления
+- Срабатывание: display name (`Emil`) вместо «участник», если у assignee нет @username
+- `bot_mention.py`: UTF-16 offsets для entity (emoji перед @бот)
+- `/ping` в группе: строка Group Privacy (без `/sysinfo` admin)
+
+### Улучшения
+- `USER_PHRASE_TEXT` — общий фильтр tips/create, комментарий порядка роутеров
+- `format_reminder_message` — `_assignee_display_name()` как в confirm/preview
+
 ## [3.46.2] — 2026-06-03
 
 ### Исправления

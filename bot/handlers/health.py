@@ -15,13 +15,14 @@ router = Router()
 
 
 @router.message(Command("ping"))
-async def cmd_ping(message: Message) -> None:
+async def cmd_ping(message: Message, bot: Bot) -> None:
     uptime = format_uptime(uptime_seconds())
     text = f"✅ Бот работает · v{__version__} · аптайм {uptime}"
-    if (
-        chat_kind_from_chat(message.chat) == ChatKind.PRIVATE
-        and is_admin_listed(message.from_user.id)
-    ):
+    kind = chat_kind_from_chat(message.chat)
+    if kind != ChatKind.PRIVATE:
+        me = await bot.get_me()
+        text += f"\n{format_group_privacy_status(can_read_all_group_messages=me.can_read_all_group_messages)}"
+    elif is_admin_listed(message.from_user.id):
         text += format_ping_admin_suffix(admin_tools=is_bot_admin(message.from_user.id))
     await message.answer(text)
 

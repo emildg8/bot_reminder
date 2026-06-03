@@ -135,7 +135,7 @@ async def test_custom_amount_phrase_passthrough(patched_db, monkeypatch):
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
     collective = AsyncMock()
     monkeypatch.setattr(
-        "bot.handlers.create._handle_collective_phrase_message",
+        "bot.handlers.tips._handle_collective_phrase_message",
         collective,
     )
     user_id = 77005
@@ -258,7 +258,7 @@ async def test_custom_amount_single_reminder_word_passthrough(patched_db, monkey
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
     collective = AsyncMock()
     monkeypatch.setattr(
-        "bot.handlers.create._handle_collective_phrase_message",
+        "bot.handlers.tips._handle_collective_phrase_message",
         collective,
     )
     user_id = 77013
@@ -564,7 +564,7 @@ async def test_tip_reminder_phrase_delegates_to_create(monkeypatch):
     monkeypatch.setattr("bot.config.settings.stars_tips_enabled", True)
     collective = AsyncMock()
     monkeypatch.setattr(
-        "bot.handlers.create._handle_collective_phrase_message",
+        "bot.handlers.tips._handle_collective_phrase_message",
         collective,
     )
     user_id = 88032

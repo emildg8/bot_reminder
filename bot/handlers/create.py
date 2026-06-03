@@ -5,10 +5,12 @@ from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 
+from bot.handlers.filters import USER_PHRASE_TEXT
+
 from bot.db.repository import async_session
 from bot.handlers.edit import process_edit_phrase
 from bot.keyboards.inline import task_time_keyboard
-from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.bot_mention import should_handle_collective_message
 from bot.services.assignee_prompt import offer_assignee_choice
 from bot.services.create_confirm import deliver_create_confirm
@@ -239,7 +241,7 @@ async def _handle_collective_phrase_message(message: Message, bot: Bot) -> None:
     await _route_user_phrase(message, text, bot)
 
 
-@router.message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
+@router.message(USER_PHRASE_TEXT)
 async def handle_text(message: Message, bot: Bot) -> None:
     try:
         await _handle_collective_phrase_message(message, bot)
@@ -250,7 +252,7 @@ async def handle_text(message: Message, bot: Bot) -> None:
         )
 
 
-@router.edited_message(F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS))
+@router.edited_message(USER_PHRASE_TEXT)
 async def handle_edited_text(message: Message, bot: Bot) -> None:
     try:
         await _handle_collective_phrase_message(message, bot)

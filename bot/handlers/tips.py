@@ -2,13 +2,16 @@ from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
+from bot.handlers.create import _handle_collective_phrase_message
+from bot.handlers.filters import USER_PHRASE_TEXT
+
 from bot.db.repository import (
     async_session,
     count_user_star_tips,
     get_user_by_telegram_id,
     set_user_tip_nudge_dismissed,
 )
-from bot.keyboards.reply import MENU_BUTTON_TEXTS, menu_keyboard_for_chat
+from bot.keyboards.reply import menu_keyboard_for_chat
 from bot.services.stars_tips import (
     custom_amount_confirm_keyboard,
     custom_amount_keyboard,
@@ -154,13 +157,8 @@ async def cb_tip_nudge_dismiss(callback: CallbackQuery) -> None:
         await callback.message.edit_reply_markup(reply_markup=None)
 
 
-@router.message(
-    F.text & ~F.text.startswith("/") & ~F.text.in_(MENU_BUTTON_TEXTS),
-    tip_custom_text_filter,
-)
+@router.message(USER_PHRASE_TEXT, tip_custom_text_filter)
 async def handle_custom_tip_amount(message: Message, bot: Bot) -> None:
-    from bot.handlers.create import _handle_collective_phrase_message
-
     user_id = message.from_user.id
     text = message.text or ""
 

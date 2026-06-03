@@ -1,6 +1,6 @@
 # Feature complete: напоминание на участника группы
 
-**Закрыто:** v3.46.1 · **Гайд:** [group-assignee.md](../guides/group-assignee.md) · **План:** [group-assignee-v2.md](../plans/group-assignee-v2.md)
+**Закрыто:** v3.46.3 · **Гайд:** [group-assignee.md](../guides/group-assignee.md) · **План:** [group-assignee-v2.md](../plans/group-assignee-v2.md)
 
 ## Версии
 
@@ -11,7 +11,8 @@
 | v3.44.8 | auto-pick nearest_time, edited_message, `@бот` детект |
 | v3.45.0 | Кнопки «Кому?» при нескольких @ без времени |
 | v3.46.0 | Display name (`text_mention`), UTF-16, caption_entities, reply в группе |
-| v3.46.1 | Preview `Emil` без `@`; `_looks_like_telegram_username()` |
+| v3.46.3 | Срабатывание display name; `/ping` privacy; UTF-16 bot_mention |
+| v3.46.2 | tips не перехватывает `@бот` (routing) |
 
 ## Scope (включено)
 

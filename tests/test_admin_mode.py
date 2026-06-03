@@ -125,7 +125,7 @@ async def test_ping_shows_admin_suffix(monkeypatch):
     monkeypatch.setattr("bot.services.admin_access.settings.admin_telegram_ids", [54])
     set_admin_tools_cached(54, True)
     message = make_message(54)
-    await cmd_ping(message)
+    await cmd_ping(message, make_bot())
     assert "admin" in message.answer.await_args[0][0]
 
 

@@ -1,6 +1,6 @@
 # Напоминание на участника группы
 
-**Статус:** ✅ v3.46.1 · код: `mention_create.py`, `mention_parse.py`, `assignee_prompt.py`, `create_confirm.py`, `collective_confirm.py`
+**Статус:** ✅ v3.46.3 · код: `mention_create.py`, `mention_parse.py`, `assignee_prompt.py`, `create_confirm.py`, `collective_confirm.py`
 
 Назначьте, **кому** в группе придёт упоминание при срабатывании.
 
@@ -66,7 +66,7 @@
 ## Чеклист smoke (после деплоя)
 
 - [ ] `make smoke-group-mentions` или `python scripts/smoke_group_mentions.py`
-- [ ] `/ping` → ≥ v3.46.1
+- [ ] `/ping` → ≥ v3.46.3 (в группе — строка Group Privacy)
 - [ ] `@бот` + **тап по участнику** + `через 1 мин тест` → reply в группе с **именем**
 - [ ] `@бот @a @b созвон` → кнопки «Кому?»; `@бот @a @b через час` → автовыбор
 - [ ] `/remind@бот @user через 5 минут тест` → confirm с **Кому**

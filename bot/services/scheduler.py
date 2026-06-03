@@ -118,7 +118,7 @@ async def _send_reminder_impl(bot: Bot, reminder_id: int) -> None:
         if reminder.mention_telegram_id:
             try:
                 chat = await bot.get_chat(reminder.mention_telegram_id)
-                mention_username = chat.username
+                mention_username = chat.username or chat.first_name
             except Exception:
                 pass
         try:
